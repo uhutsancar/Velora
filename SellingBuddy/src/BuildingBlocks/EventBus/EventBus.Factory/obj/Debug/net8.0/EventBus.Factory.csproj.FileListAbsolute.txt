@@ -1,0 +1,11 @@
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.Factory.deps.json
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.Factory.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.Factory.pdb
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.GeneratedMSBuildEditorConfig.editorconfig
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.AssemblyInfoInputs.cache
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.AssemblyInfo.cs
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.csproj.CoreCompileInputs.cache
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\refint\EventBus.Factory.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.pdb
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\ref\EventBus.Factory.dll

@@ -1,0 +1,14 @@
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\bin\Debug\net8.0\NotificationService.exe
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\bin\Debug\net8.0\NotificationService.deps.json
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\bin\Debug\net8.0\NotificationService.runtimeconfig.json
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\bin\Debug\net8.0\NotificationService.dll
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\bin\Debug\net8.0\NotificationService.pdb
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\NotificationService.GeneratedMSBuildEditorConfig.editorconfig
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\NotificationService.AssemblyInfoInputs.cache
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\NotificationService.AssemblyInfo.cs
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\NotificationService.csproj.CoreCompileInputs.cache
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\NotificationService.dll
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\refint\NotificationService.dll
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\NotificationService.pdb
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\NotificationService.genruntimeconfig.cache
+D:\microservice_project\SellingBuddy\src\Services\NotificationService\NotificationService\obj\Debug\net8.0\ref\NotificationService.dll
