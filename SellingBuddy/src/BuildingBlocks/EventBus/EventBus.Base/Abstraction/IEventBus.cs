@@ -9,7 +9,7 @@ namespace EventBus.Base.Abstraction
 {
 
     //Bu arayüz, her mikroservisin sahip olması gereken 3 temel aksiyonu tanımlıyor: Yayınla, Abone Ol ve Abonelikten Çık.
-    public interface IEventBus
+    public interface IEventBus: IDisposable
     {
         void Publish(IntegrationEvent @event);
 

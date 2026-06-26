@@ -9,3 +9,8 @@ D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureS
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\obj\Debug\net8.0\refint\EventBus.AzureServiceBus.dll
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\obj\Debug\net8.0\EventBus.AzureServiceBus.pdb
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\obj\Debug\net8.0\ref\EventBus.AzureServiceBus.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\obj\Debug\net8.0\EventBus.AzureServiceBus.csproj.AssemblyReference.cache
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\obj\Debug\net8.0\EventBus.AzureServiceBus.sourcelink.json
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\bin\Debug\net8.0\EventBus.Base.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\bin\Debug\net8.0\EventBus.Base.pdb
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.AzureServiceBus\obj\Debug\net8.0\EventBus.4B749085.Up2Date

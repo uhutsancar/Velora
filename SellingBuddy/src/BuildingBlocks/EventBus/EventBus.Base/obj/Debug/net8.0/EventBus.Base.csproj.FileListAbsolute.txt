@@ -10,3 +10,4 @@ D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Base\o
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Base\obj\Debug\net8.0\EventBus.Base.pdb
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Base\obj\Debug\net8.0\ref\EventBus.Base.dll
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Base\obj\Debug\net8.0\EventBus.Base.csproj.AssemblyReference.cache
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Base\obj\Debug\net8.0\EventBus.Base.sourcelink.json
