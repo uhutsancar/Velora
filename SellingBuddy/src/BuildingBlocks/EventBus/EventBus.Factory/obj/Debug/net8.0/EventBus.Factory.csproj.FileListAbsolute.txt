@@ -9,3 +9,12 @@ D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factor
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\refint\EventBus.Factory.dll
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.pdb
 D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\ref\EventBus.Factory.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.AzureServiceBus.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.Base.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.RabbitMQ.dll
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.AzureServiceBus.pdb
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.Base.pdb
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\bin\Debug\net8.0\EventBus.RabbitMQ.pdb
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.csproj.AssemblyReference.cache
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.Factory.sourcelink.json
+D:\microservice_project\SellingBuddy\src\BuildingBlocks\EventBus\EventBus.Factory\obj\Debug\net8.0\EventBus.DF3238A7.Up2Date
