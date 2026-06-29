@@ -23,25 +23,39 @@ namespace EventBus.RabbitMQ
 
         public EventBusRabbitMQ(EventBusConfig config, IServiceProvider serviceProvider) : base(config, serviceProvider)
         {
+
+
+
+            // GÜNCELLEME: JSON hatasını ortadan kaldıran güvenli atama
             if (config.Connection != null)
-            {
-                var connJson = JsonConvert.SerializeObject(EventBusConfig.Connection, new JsonSerializerSettings()
-                {
-                    //self referencing loop detected for property
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-                });
-
-                connectionFactory = JsonConvert.DeserializeObject<ConnectionFactory>(connJson);
-            }
-
+                connectionFactory = config.Connection as ConnectionFactory;
             else
                 connectionFactory = new ConnectionFactory();
 
             persistentConnection = new RabbitMQPersistentConnection(connectionFactory, config.ConnectionRetryCount);
-
             consumerChannel = CreateConsumerChannel();
-
             SubsManager.OnEventRemoved += SubsManager_OnEventRemoved;
+
+
+            //if (config.Connection != null)
+            //{
+            //    var connJson = JsonConvert.SerializeObject(EventBusConfig.Connection, new JsonSerializerSettings()
+            //    {
+            //        //self referencing loop detected for property
+            //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            //    });
+
+            //    connectionFactory = JsonConvert.DeserializeObject<ConnectionFactory>(connJson);
+            //}
+
+            //else
+            //    connectionFactory = new ConnectionFactory();
+
+            //persistentConnection = new RabbitMQPersistentConnection(connectionFactory, config.ConnectionRetryCount);
+
+            //consumerChannel = CreateConsumerChannel();
+
+            //SubsManager.OnEventRemoved += SubsManager_OnEventRemoved;
 
         }
 
@@ -83,6 +97,7 @@ namespace EventBus.RabbitMQ
 
             consumerChannel.ExchangeDeclare(exchange: EventBusConfig.DefaultTopicName, type: "direct"); // Ensure exchange exists while publishing
 
+         
             var message = JsonConvert.SerializeObject(@event);
             var body = Encoding.UTF8.GetBytes(message);
 
@@ -96,6 +111,12 @@ namespace EventBus.RabbitMQ
                                              exclusive: false,
                                              autoDelete: false,
                                              arguments: null);
+
+                //// mantıklı bir kullanım değil deneme yapıyoruz //KALDIR
+                consumerChannel.QueueBind(queue: GetSubName(eventName),
+                                                exchange: EventBusConfig.DefaultTopicName,
+                                                routingKey: eventName);
+
 
                 consumerChannel.BasicPublish(
                     exchange: EventBusConfig.DefaultTopicName,
