@@ -30,3 +30,11 @@ D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityServic
 D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\obj\Debug\net8.0\IdentityService.Api.pdb
 D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\obj\Debug\net8.0\IdentityService.Api.genruntimeconfig.cache
 D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\obj\Debug\net8.0\ref\IdentityService.Api.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\bin\Debug\net8.0\Microsoft.Bcl.Cryptography.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\bin\Debug\net8.0\Microsoft.IdentityModel.Abstractions.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\bin\Debug\net8.0\Microsoft.IdentityModel.JsonWebTokens.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\bin\Debug\net8.0\Microsoft.IdentityModel.Logging.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\bin\Debug\net8.0\System.Formats.Asn1.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+D:\microservice_project\SellingBuddy\src\Services\IdentityService\IdentityService.Api\obj\Debug\net8.0\IdentityService.Api.sourcelink.json
