@@ -1,6 +1,6 @@
 using CatalogService.Api.Extensions;
 using CatalogService.Api.Infrastructure.Context;
-using CatalogService.Api.Infrastructure; // CatalogSettings sýnýfý için eklendi
+using CatalogService.Api.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
@@ -12,19 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-// ---> VÝDEODAKÝ ADAMIN EKLEDÝÐÝ YER (.NET 8 VERSÝYONU) <---
-// appsettings.json'daki CatalogSettings bloðunu koddaki sýnýfa baðlýyoruz
+
 builder.Services.Configure<CatalogSettings>(builder.Configuration.GetSection("CatalogSettings"));
 
-// Veritabaný baðlantýsý burada kuruluyor
+
 builder.Services.ConfigureDbContext(builder.Configuration);
+
+
+builder.Services.ConfigureConsul(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Veritabaný yoksa oluþtur ve verileri bas
 app.MigrateDbContext<CatalogContext>((context, services) =>
 {
     var env = services.GetRequiredService<IWebHostEnvironment>();
@@ -41,5 +42,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+app.RegisterWithConsul(app.Lifetime);
 
 app.Run();

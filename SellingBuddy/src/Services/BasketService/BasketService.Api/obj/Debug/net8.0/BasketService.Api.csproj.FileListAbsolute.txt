@@ -16,6 +16,7 @@ D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Ap
 D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Api\obj\Debug\net8.0\BasketService.Api.csproj.CoreCompileInputs.cache
 D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Api\obj\Debug\net8.0\BasketService.Api.MvcApplicationPartsAssemblyInfo.cs
 D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Api\obj\Debug\net8.0\BasketService.Api.MvcApplicationPartsAssemblyInfo.cache
+D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Api\obj\Debug\net8.0\BasketService.Api.sourcelink.json
 D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Api\obj\Debug\net8.0\staticwebassets.build.json
 D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Api\obj\Debug\net8.0\staticwebassets.development.json
 D:\microservice_project\SellingBuddy\src\Services\BasketService\BasketService.Api\obj\Debug\net8.0\staticwebassets\msbuild.BasketService.Api.Microsoft.AspNetCore.StaticWebAssets.props

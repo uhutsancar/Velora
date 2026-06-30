@@ -23,7 +23,7 @@ namespace IdentityServer.Application.Services
                 new Claim(ClaimTypes.Name, "Uhut Sancar"),
             };
 
-         
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("UhutSancarSecretKeyShouldBeLong123456!"));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expiry = DateTime.Now.AddDays(10);

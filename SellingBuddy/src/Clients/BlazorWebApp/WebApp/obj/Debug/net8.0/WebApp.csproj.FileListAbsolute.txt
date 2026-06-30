@@ -615,6 +615,7 @@ D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\n
 D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\net8.0\WebApp.AssemblyInfo.cs
 D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\net8.0\WebApp.csproj.CoreCompileInputs.cache
 D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\net8.0\WebApp.MvcApplicationPartsAssemblyInfo.cache
+D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\net8.0\WebApp.sourcelink.json
 D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\net8.0\webcil\Microsoft.AspNetCore.Authorization.wasm
 D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\net8.0\webcil\Microsoft.AspNetCore.Components.wasm
 D:\microservice_project\SellingBuddy\src\Clients\BlazorWebApp\WebApp\obj\Debug\net8.0\webcil\Microsoft.AspNetCore.Components.Forms.wasm

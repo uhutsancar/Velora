@@ -5,6 +5,7 @@ D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Appl
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.AssemblyInfoInputs.cache
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.AssemblyInfo.cs
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.csproj.CoreCompileInputs.cache
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.sourcelink.json
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.dll
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\refint\OrderService.Application.dll
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.pdb

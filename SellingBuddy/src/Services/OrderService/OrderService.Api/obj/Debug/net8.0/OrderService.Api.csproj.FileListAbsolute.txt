@@ -16,6 +16,7 @@ D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\obj\Debug\net8.0\OrderService.Api.csproj.CoreCompileInputs.cache
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\obj\Debug\net8.0\OrderService.Api.MvcApplicationPartsAssemblyInfo.cs
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\obj\Debug\net8.0\OrderService.Api.MvcApplicationPartsAssemblyInfo.cache
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\obj\Debug\net8.0\OrderService.Api.sourcelink.json
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\obj\Debug\net8.0\staticwebassets.build.json
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\obj\Debug\net8.0\staticwebassets.development.json
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Api\obj\Debug\net8.0\staticwebassets\msbuild.OrderService.Api.Microsoft.AspNetCore.StaticWebAssets.props

@@ -1,20 +1,21 @@
-using IdentityService.Api.Application.Services; // IIdentityService arayüzünü (interface) bulmasý için
-using IdentityServer.Application.Services;      // IdentityService sýnýfýný bulmasý için
+using IdentityService.Api.Application.Services;
+using IdentityServer.Application.Services;
+using IdentityService.Api.Extensions.Registration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+builder.Services.ConfigureConsul(builder.Configuration);
 
 builder.Services.AddScoped<IIdentityService, IdentityServer.Application.Services.IdentityService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -22,9 +23,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
+
+
+app.RegisterWithConsul(app.Lifetime);
 
 app.Run();
