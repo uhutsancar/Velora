@@ -28,6 +28,9 @@ namespace IdentityServer.Application.Services
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expiry = DateTime.Now.AddDays(10);
 
+
+
+
             var token = new JwtSecurityToken(claims: claims, expires: expiry, signingCredentials: creds, notBefore: DateTime.Now);
 
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(token);
@@ -42,3 +45,9 @@ namespace IdentityServer.Application.Services
         }
     }
 }
+
+
+
+
+
+

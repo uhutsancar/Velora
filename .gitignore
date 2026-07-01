@@ -1,1 +1,37 @@
+# Build Dosyalarý (Kritik)
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / VS Code
 .vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Docker & Container Kalýntýlarý
+docker-compose.override.yml
+.env
+.secrets
+
+# Baðýmlýlýklar (Node varsa)
+node_modules/
+packages/
+
+# Ýþletim Sistemi Kalýntýlarý
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# NuGet Paketleri
+*.nupkg
+packages/
+
+# Çeþitli
+*.log
+*.tmp
+*.bak
+*.swp
