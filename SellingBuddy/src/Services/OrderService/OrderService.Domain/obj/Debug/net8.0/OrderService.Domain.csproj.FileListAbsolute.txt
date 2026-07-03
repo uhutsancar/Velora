@@ -1,6 +1,7 @@
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Domain\bin\Debug\net8.0\OrderService.Domain.deps.json
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Domain\bin\Debug\net8.0\OrderService.Domain.dll
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Domain\bin\Debug\net8.0\OrderService.Domain.pdb
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Domain\obj\Debug\net8.0\OrderService.Domain.csproj.AssemblyReference.cache
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Domain\obj\Debug\net8.0\OrderService.Domain.GeneratedMSBuildEditorConfig.editorconfig
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Domain\obj\Debug\net8.0\OrderService.Domain.AssemblyInfoInputs.cache
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Domain\obj\Debug\net8.0\OrderService.Domain.AssemblyInfo.cs

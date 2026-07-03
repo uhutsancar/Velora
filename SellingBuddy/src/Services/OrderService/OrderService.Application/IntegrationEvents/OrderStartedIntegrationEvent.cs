@@ -11,6 +11,6 @@ namespace OrderService.Application.IntegrationEvents
     {
         public string UserName { get; set; }
 
-        public OrderStartedIntegrationEvent(string UserName) => UserName = userName;
+        public OrderStartedIntegrationEvent(string userName) => UserName = userName;
     }
 }

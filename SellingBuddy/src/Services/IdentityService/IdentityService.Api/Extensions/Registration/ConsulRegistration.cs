@@ -107,7 +107,6 @@ namespace IdentityService.Api.Extensions.Registration
                     {
                         ID = "IdentityService",
                         Name = "IdentityService",
-                        // KONTEYNER ADI YERİNE LOCALHOST KULLANIYORUZ
                         Address = "localhost",
                         Port = uri.Port,
                         Tags = new[] { "Identity Service", "Identity", "Token", "JWT" }

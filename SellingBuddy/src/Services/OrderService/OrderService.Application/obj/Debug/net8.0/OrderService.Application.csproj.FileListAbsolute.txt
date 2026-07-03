@@ -1,11 +1,17 @@
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\bin\Debug\net8.0\OrderService.Application.deps.json
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\bin\Debug\net8.0\OrderService.Application.dll
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\bin\Debug\net8.0\OrderService.Application.pdb
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\bin\Debug\net8.0\EventBus.Base.dll
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\bin\Debug\net8.0\OrderService.Domain.dll
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\bin\Debug\net8.0\EventBus.Base.pdb
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\bin\Debug\net8.0\OrderService.Domain.pdb
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.csproj.AssemblyReference.cache
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.GeneratedMSBuildEditorConfig.editorconfig
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.AssemblyInfoInputs.cache
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.AssemblyInfo.cs
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.csproj.CoreCompileInputs.cache
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.sourcelink.json
+D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderSer.7EAAA39B.Up2Date
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.dll
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\refint\OrderService.Application.dll
 D:\microservice_project\SellingBuddy\src\Services\OrderService\OrderService.Application\obj\Debug\net8.0\OrderService.Application.pdb
