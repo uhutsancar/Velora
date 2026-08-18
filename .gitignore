@@ -1,37 +1,178 @@
-# Build Dosyalarý (Kritik)
+# ============================================================
+#  SellingBuddy â€” .gitignore
+#  .NET 8 / Visual Studio / Docker mikroservis projesi
+# ============================================================
+
+# ------------------------------------------------------------
+#  Build Ã‡Ä±ktÄ±larÄ± (Kritik)
+# ------------------------------------------------------------
 [Bb]in/
 [Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Bb]uild/
+[Bb]ld/
+bld/
 [Ll]og/
 [Ll]ogs/
 
-# Visual Studio / VS Code
+# ------------------------------------------------------------
+#  Visual Studio / VS Code / Rider
+# ------------------------------------------------------------
 .vs/
 .vscode/
+.idea/
 *.user
 *.suo
 *.userosscache
+*.userprefs
 *.sln.docstates
+*.sln.iml
+*.csproj.user
+*.dbmdl
+*.jfm
+*.svclog
+*.psess
+*.vsp
+*.vspx
+*.sap
+*.VisualState.xml
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
 
-# Docker & Container Kalýntýlarý
-docker-compose.override.yml
-.env
-.secrets
+# ------------------------------------------------------------
+#  Test SonuÃ§larÄ± ve Kod KapsamÄ±
+# ------------------------------------------------------------
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+[Cc]overlet/
+.axoCover/
 
-# Baðýmlýlýklar (Node varsa)
-node_modules/
+# ------------------------------------------------------------
+#  Entity Framework
+# ------------------------------------------------------------
+*.edmx.diagram
+*.mdf
+*.ldf
+*.ndf
+
+# ------------------------------------------------------------
+#  NuGet Paketleri
+# ------------------------------------------------------------
+*.nupkg
+*.snupkg
 packages/
+!packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+.nuget/
 
-# Ýþletim Sistemi Kalýntýlarý
+# ------------------------------------------------------------
+#  Docker & Container KalÄ±ntÄ±larÄ±
+# ------------------------------------------------------------
+docker-compose.override.yml
+docker-compose.*.override.yml
+.env
+.env.*
+!.env.example
+.secrets
+*.secrets.json
+
+# ------------------------------------------------------------
+#  KullanÄ±cÄ± SÄ±rlarÄ± (ASLA COMMIT ETME)
+# ------------------------------------------------------------
+appsettings.*.local.json
+appsettings.Local.json
+secrets.json
+*.pfx
+*.p12
+*.key
+*.pem
+
+# ------------------------------------------------------------
+#  BaÄŸÄ±mlÄ±lÄ±klar (Node / Blazor / wwwroot)
+# ------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-error.log*
+bower_components/
+wwwroot/lib/
+wwwroot/dist/
+
+# ------------------------------------------------------------
+#  Publish / Deploy
+# ------------------------------------------------------------
+publish/
+[Pp]ublish[Pp]rofiles/*.pubxml
+*.pubxml
+*.pubxml.user
+*.publishproj
+*.azurePubxml
+PublishScripts/
+*.[Pp]ublish.xml
+
+# ------------------------------------------------------------
+#  Ä°ÅŸletim Sistemi KalÄ±ntÄ±larÄ±
+# ------------------------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 Thumbs.db
 ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# NuGet Paketleri
-*.nupkg
-packages/
-
-# Çeþitli
+# ------------------------------------------------------------
+#  Ã‡eÅŸitli
+# ------------------------------------------------------------
 *.log
 *.tmp
+*.temp
 *.bak
 *.swp
+*.swo
+*~
+*.cache
+*.pidb
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp_proj
+*_wpftmp.csproj
+*.tlog
+*.vspscc
+*.vssscc
+.builds
