@@ -1,18 +1,25 @@
-﻿using EventBus.Base.Events;
+using EventBus.Base.Events;
 
 namespace PaymentService.Api.IntegrationEvents.Events
 {
-    public class OrderPaymentFailedIntegrationEvent: IntegrationEvent
+    /// <summary>Published when the charge for an order is declined.</summary>
+    public class OrderPaymentFailedIntegrationEvent : IntegrationEvent
     {
-        public int OrderId { get;  }
+        public OrderPaymentFailedIntegrationEvent()
+        {
+        }
 
-        public string ErrorMessage { get; }
-
-
-        public OrderPaymentFailedIntegrationEvent(int orderId, string errorMessage)
+        public OrderPaymentFailedIntegrationEvent(Guid orderId, string errorMessage, string? orderNumber = null)
         {
             OrderId = orderId;
             ErrorMessage = errorMessage;
+            OrderNumber = orderNumber;
         }
+
+        public Guid OrderId { get; set; }
+
+        public string? OrderNumber { get; set; }
+
+        public string ErrorMessage { get; set; } = default!;
     }
 }

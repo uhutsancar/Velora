@@ -1,22 +1,23 @@
-﻿using EventBus.Base.Abstraction;
+using EventBus.Base.Abstraction;
 using EventBus.Base.Events;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using PaymentService.Api.IntegrationEvents.Events;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace PaymentService.Api.IntegrationEvents.EventHandlers
 {
+    /// <summary>
+    /// Simulated payment step of the checkout saga. A real provider integration would
+    /// replace the body of <see cref="Handle"/>; the contract stays the same.
+    /// </summary>
     public class OrderStartedIntegrationEventHandler : IIntegrationEventHandler<OrderStartedIntegrationEvent>
     {
         private readonly IConfiguration configuration;
         private readonly IEventBus eventBus;
         private readonly ILogger<OrderStartedIntegrationEventHandler> logger;
 
-        public OrderStartedIntegrationEventHandler(IConfiguration configuration, IEventBus eventBus, ILogger<OrderStartedIntegrationEventHandler> logger)
+        public OrderStartedIntegrationEventHandler(
+            IConfiguration configuration,
+            IEventBus eventBus,
+            ILogger<OrderStartedIntegrationEventHandler> logger)
         {
             this.configuration = configuration;
             this.eventBus = eventBus;
@@ -25,18 +26,23 @@ namespace PaymentService.Api.IntegrationEvents.EventHandlers
 
         public Task Handle(OrderStartedIntegrationEvent @event)
         {
-            //Fake payment process
-            string keyword = "PaymentSuccess";
-            bool paymentSuccessFlag = configuration.GetValue<bool>(keyword);
+            if (@event.OrderId == Guid.Empty)
+            {
+                logger.LogWarning("OrderStarted event {EventId} arrived without an order id, skipping.", @event.Id);
+                return Task.CompletedTask;
+            }
 
-            IntegrationEvent paymentEvent = paymentSuccessFlag
-                ? new OrderPaymentSuccessIntegrationEvent(@event.OrderId)
-                : new OrderPaymentFailedIntegrationEvent(@event.OrderId, "This is a fake error message");
+            // "PaymentSuccess" in configuration decides the outcome of the fake gateway.
+            var paymentSucceeded = configuration.GetValue("PaymentSuccess", true);
 
-            logger.LogInformation($"OrderCreatedIntegrationEventHandler in PaymentService is fired with PaymentSuccess: {paymentSuccessFlag}, orderId: {@event.OrderId}");
+            IntegrationEvent result = paymentSucceeded
+                ? new OrderPaymentSuccessIntegrationEvent(@event.OrderId, @event.OrderNumber, @event.TotalAmount)
+                : new OrderPaymentFailedIntegrationEvent(@event.OrderId, "Kart provizyonu alınamadı.", @event.OrderNumber);
 
+            logger.LogInformation("Payment for order {OrderNumber} ({OrderId}) processed. Success: {Success}",
+                @event.OrderNumber, @event.OrderId, paymentSucceeded);
 
-            eventBus.Publish(paymentEvent);
+            eventBus.Publish(result);
 
             return Task.CompletedTask;
         }

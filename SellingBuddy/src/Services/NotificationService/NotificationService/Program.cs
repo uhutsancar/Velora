@@ -1,42 +1,32 @@
-﻿using EventBus.Base;
 using EventBus.Base.Abstraction;
 using EventBus.Factory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RabbitMQ.Client;
+using Microsoft.Extensions.Logging;
 using NotificationService.IntegrationEvents.EventHandlers;
-using PaymentService.Api.IntegrationEvents.Events;
+using NotificationService.IntegrationEvents.Events;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// 1. İşleyicileri (Handlers) Sisteme Tanıt
+builder.Services.AddLogging(logging => logging.AddConsole());
+
 builder.Services.AddTransient<OrderPaymentFailedIntegrationEventHandler>();
 builder.Services.AddTransient<OrderPaymentSuccessIntegrationEventHandler>();
+builder.Services.AddTransient<OrderStatusChangedIntegrationEventHandler>();
+builder.Services.AddTransient<OrderPaidIntegrationEventHandler>();
+builder.Services.AddTransient<ProductStockChangedIntegrationEventHandler>();
 
-// 2. EventBus'ı Singleton olarak ekliyoruz
-builder.Services.AddSingleton<IEventBus>(sp =>
-{
-    EventBusConfig config = new()
-    {
-        ConnectionRetryCount = 5,
-        EventNameSuffix = "IntegrationEvent",
-        SubscriberClientAppName = "NotificationService",
-        EventBusType = EventBusType.RabbitMQ,
-        Connection = new ConnectionFactory()
-    };
-
-    return EventBusFactory.Create(config, sp);
-});
-
+builder.Services.AddVeloraEventBus(builder.Configuration, "NotificationService");
 var host = builder.Build();
 
-// 3. Subscription (Dinlemeye ve Tüketmeye Başla)
 var eventBus = host.Services.GetRequiredService<IEventBus>();
 
 eventBus.Subscribe<OrderPaymentFailedIntegrationEvent, OrderPaymentFailedIntegrationEventHandler>();
 eventBus.Subscribe<OrderPaymentSuccessIntegrationEvent, OrderPaymentSuccessIntegrationEventHandler>();
+eventBus.Subscribe<OrderStatusChangedIntegrationEvent, OrderStatusChangedIntegrationEventHandler>();
+eventBus.Subscribe<OrderPaidIntegrationEvent, OrderPaidIntegrationEventHandler>();
+eventBus.Subscribe<ProductStockChangedIntegrationEvent, ProductStockChangedIntegrationEventHandler>();
 
-// Sadece ekranda çalıştığını görmek için bir mesaj (Adamın Console.WriteLine kısmı)
-Console.WriteLine("NotificationService is Running and Listening to RabbitMQ....");
+Console.WriteLine("Velora NotificationService is listening on RabbitMQ...");
 
 host.Run();

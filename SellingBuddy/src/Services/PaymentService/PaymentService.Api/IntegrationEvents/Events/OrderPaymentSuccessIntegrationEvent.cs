@@ -1,12 +1,25 @@
-﻿using EventBus.Base.Events;
+using EventBus.Base.Events;
 
 namespace PaymentService.Api.IntegrationEvents.Events
 {
-    public class OrderPaymentSuccessIntegrationEvent: IntegrationEvent
+    /// <summary>Published when the charge for an order succeeds.</summary>
+    public class OrderPaymentSuccessIntegrationEvent : IntegrationEvent
     {
-        public int OrderId { get; }
+        public OrderPaymentSuccessIntegrationEvent()
+        {
+        }
 
-        public OrderPaymentSuccessIntegrationEvent(int orderId) => OrderId = orderId;
-    
+        public OrderPaymentSuccessIntegrationEvent(Guid orderId, string? orderNumber = null, decimal totalAmount = 0)
+        {
+            OrderId = orderId;
+            OrderNumber = orderNumber;
+            TotalAmount = totalAmount;
+        }
+
+        public Guid OrderId { get; set; }
+
+        public string? OrderNumber { get; set; }
+
+        public decimal TotalAmount { get; set; }
     }
 }
