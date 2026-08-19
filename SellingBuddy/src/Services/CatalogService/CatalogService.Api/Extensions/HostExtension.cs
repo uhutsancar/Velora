@@ -1,54 +1,66 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
 using System;
-using Microsoft.Data.SqlClient;
 
 namespace CatalogService.Api.Extensions
 {
     public static class HostExtension
     {
-        public static IHost MigrateDbContext<TContext>(this IHost host, Action<TContext, IServiceProvider> seeder) where TContext : DbContext
+        /// <summary>
+        /// Applies pending EF Core migrations and runs the seeder, retrying while SQL Server
+        /// finishes booting (typical when the whole stack starts from docker compose).
+        ///
+        /// Migrate() and not EnsureCreated(): EnsureCreated bypasses the migrations history
+        /// table, so a database it created can never be migrated afterwards.
+        ///
+        /// A failure is logged and swallowed in Development so the API still starts for
+        /// front-end work; anywhere else it stops the process rather than serving traffic
+        /// against a schema that does not match the model.
+        /// </summary>
+        public static IHost MigrateDbContext<TContext>(this IHost host, Action<TContext, IServiceProvider> seeder)
+            where TContext : DbContext
         {
-            using (var scope = host.Services.CreateScope())
+            using var scope = host.Services.CreateScope();
+
+            var services = scope.ServiceProvider;
+            var logger = services.GetRequiredService<ILogger<TContext>>();
+            var environment = services.GetRequiredService<IHostEnvironment>();
+            var context = services.GetRequiredService<TContext>();
+
+            try
             {
-                var services = scope.ServiceProvider;
-                var logger = services.GetRequiredService<ILogger<TContext>>();
-                var context = services.GetService<TContext>();
+                logger.LogInformation("Migrating database for {DbContextName}", typeof(TContext).Name);
 
-                try
+                var retry = Policy.Handle<SqlException>()
+                    .WaitAndRetry(new[]
+                    {
+                        TimeSpan.FromSeconds(3),
+                        TimeSpan.FromSeconds(5),
+                        TimeSpan.FromSeconds(8),
+                        TimeSpan.FromSeconds(13)
+                    });
+
+                retry.Execute(() =>
                 {
-                    logger.LogInformation("Migrating database associated with context {DbContextName}", typeof(TContext).Name);
+                    context.Database.Migrate();
+                    seeder(context, services);
+                });
 
-                    var retry = Policy.Handle<SqlException>()
-                        .WaitAndRetry(new TimeSpan[]
-                        {
-                            TimeSpan.FromSeconds(3),
-                            TimeSpan.FromSeconds(5),
-                            TimeSpan.FromSeconds(8),
-                        });
+                logger.LogInformation("Database ready for {DbContextName}", typeof(TContext).Name);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Database preparation failed for {DbContextName}", typeof(TContext).Name);
 
-                    retry.Execute(() => InvokeSeeder(seeder, context, services));
-
-                    logger.LogInformation("Migrated database associated with context {DbContextName}", typeof(TContext).Name);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "An error occurred while migrating the database used on context {DbContextName}", typeof(TContext).Name);
-                }
+                if (!environment.IsDevelopment())
+                    throw;
             }
 
             return host;
-        }
-
-        private static void InvokeSeeder<TContext>(Action<TContext, IServiceProvider> seeder, TContext context, IServiceProvider services)
-            where TContext : DbContext
-        {
-            context.Database.EnsureCreated();
-            context.Database.Migrate();
-            seeder(context, services);
         }
     }
 }
