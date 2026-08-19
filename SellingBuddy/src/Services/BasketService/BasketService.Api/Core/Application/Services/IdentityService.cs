@@ -1,8 +1,8 @@
-﻿using System.Security.Claims;
+using Velora.Shared.Security;
 
 namespace BasketService.Api.Core.Application.Services
 {
-    public class IdentityService : IIdentityService
+    public sealed class IdentityService : IIdentityService
     {
         private readonly IHttpContextAccessor httpContextAccessor;
 
@@ -11,16 +11,20 @@ namespace BasketService.Api.Core.Application.Services
             this.httpContextAccessor = httpContextAccessor;
         }
 
-        //public int GetUserId()
-        //{
-        //    return 1;
-        //}
-
+        /// <summary>User id from the token; also the Redis key the basket is stored under.</summary>
         public string GetUserName()
         {
-            return httpContextAccessor.HttpContext.User.FindFirst(x => x.Type == ClaimTypes.NameIdentifier).Value;
+            var user = httpContextAccessor.HttpContext?.User
+                       ?? throw new UnauthorizedAccessException("No authenticated user on the current request.");
+
+            return user.GetUserKey();
         }
 
+        public string GetDisplayName()
+        {
+            var user = httpContextAccessor.HttpContext?.User;
 
+            return user?.GetDisplayName() ?? GetUserName();
+        }
     }
 }

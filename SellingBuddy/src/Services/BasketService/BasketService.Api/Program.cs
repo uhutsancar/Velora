@@ -1,43 +1,59 @@
+using BasketService.Api.Core.Application.Repository;
+using BasketService.Api.Core.Application.Services;
 using BasketService.Api.Extensions;
-using EventBus.Base;
+using BasketService.Api.Infrastructure.Repository;
+using BasketService.Api.IntegrationEvents.EventHandlers;
+using BasketService.Api.IntegrationEvents.Events;
 using EventBus.Base.Abstraction;
 using EventBus.Factory;
-using BasketService.Api.Core.Application.Repository;
-using BasketService.Api.Infrastructure.Repository;
-using BasketService.Api.Core.Application.Services;
-using BasketService.Api.IntegrationEvents.Events;
-using BasketService.Api.IntegrationEvents.EventHandlers;
+using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
+using Velora.Shared.Middleware;
+using Velora.Shared.Security;
+using Velora.Shared.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Velora Basket API", Version = "v1" });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
-// 1. BÜTÜN AUTH ÝÞLEMLERÝ BURADA (Tek satýrda çaðýrýyoruz)
-builder.Services.ConfigureAuth(builder.Configuration);
-
-// 2. DÝÐER SERVÝS KAYITLARI
+// Same JWT validation as every other Velora service (lifetime validation included).
+builder.Services.AddVeloraJwtAuth(builder.Configuration, builder.Environment);
+builder.Services.ConfigureCors(builder.Configuration);
 builder.Services.ConfigureConsul(builder.Configuration);
-builder.Services.AddSingleton(sp => sp.ConfigureRedis(builder.Configuration));
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => sp.ConfigureRedis(builder.Configuration));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IBasketRepository, RedisBasketRepository>();
 builder.Services.AddTransient<IIdentityService, IdentityService>();
 builder.Services.AddTransient<OrderCreatedIntegrationEventHandler>();
 
-builder.Services.AddSingleton<IEventBus>(sp =>
-{
-    var config = new EventBusConfig()
-    {
-        ConnectionRetryCount = 5,
-        EventNameSuffix = "IntegrationEvent",
-        SubscriberClientAppName = "BasketService",
-        EventBusType = EventBusType.RabbitMQ
-    };
-    return EventBusFactory.Create(config, sp);
-});
-
+builder.Services.AddVeloraEventBus(builder.Configuration, "BasketService");
 var app = builder.Build();
+
+app.UseVeloraExceptionHandling();
 
 if (app.Environment.IsDevelopment())
 {
@@ -45,41 +61,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors(CorsRegistration.PolicyName);
 
-// Debug Middleware 1: Ýsteði Yakala 
-app.Use(async (context, next) =>
-{
-    var authHeader = context.Request.Headers["Authorization"].ToString();
-    Console.WriteLine($"\n[DEBUG] Ýstek URL: {context.Request.Path}");
-    if (!string.IsNullOrEmpty(authHeader))
-        Console.WriteLine($"[DEBUG] Token Baþlangýcý: {authHeader.Substring(0, Math.Min(authHeader.Length, 20))}...");
-    else
-        Console.WriteLine("[DEBUG] !!! AUTH HEADER BOÞ !!!");
-    await next();
-});
-
-// Debug Middleware 2: Sonuç 401 ise Yakala 
-app.Use(async (context, next) =>
-{
-    await next();
-    if (context.Response.StatusCode == 401)
-    {
-        Console.WriteLine(">>> 401 ALINDI! ÝSTEK DETAYI:");
-        foreach (var header in context.Request.Headers)
-            Console.WriteLine($"{header.Key}: {header.Value}");
-    }
-});
-
-// MÝDDLEWARE HATTI 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "BasketService" })).AllowAnonymous();
+
 app.RegisterWithConsul(app.Lifetime);
 
+// Clears the basket once the checkout event has been accepted.
 var eventBus = app.Services.GetRequiredService<IEventBus>();
 eventBus.Subscribe<OrderCreatedIntegrationEvent, OrderCreatedIntegrationEventHandler>();
 
 app.Run();
+
+public partial class Program;

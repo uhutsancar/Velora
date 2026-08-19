@@ -1,20 +1,20 @@
-﻿using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BasketService.Api.Extensions
 {
     public static class RedisRegistration
     {
-        public static ConnectionMultiplexer ConfigureRedis(this IServiceProvider services, IConfiguration configuration)
+        public static IConnectionMultiplexer ConfigureRedis(this IServiceProvider services, IConfiguration configuration)
         {
-            var redisConf = ConfigurationOptions.Parse(configuration["RedisSettings:ConnectionString"], true);
-            redisConf.ResolveDns = true;
+            var connectionString = configuration["RedisSettings:ConnectionString"]
+                                   ?? throw new InvalidOperationException("RedisSettings:ConnectionString is not configured.");
 
-            return ConnectionMultiplexer.Connect(redisConf);
+            var options = ConfigurationOptions.Parse(connectionString, true);
+            options.ResolveDns = true;
+            options.AbortOnConnectFail = false;
+            options.ConnectRetry = 5;
+
+            return ConnectionMultiplexer.Connect(options);
         }
     }
 }
