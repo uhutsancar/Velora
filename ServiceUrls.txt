@@ -1,10 +1,29 @@
+Velora — servis adresleri
+=========================
 
+Frontend
+  Storefront (React)        http://localhost:5173
+  Admin (React + MUI)       http://localhost:5174
 
-NotificationService      -> Console App
+Backend
+  Web.ApiGateway (Ocelot)   http://localhost:5000
+  PaymentService.Api        http://localhost:5001
+  OrderService.Api          http://localhost:5002
+  BasketService.Api         http://localhost:5003
+  CatalogService.Api        http://localhost:5004
+  IdentityService.Api       http://localhost:5005
+  NotificationService       Console App (HTTP ucu yok)
 
-Web.ApiGateway           -> http://localhost:5000
-PaymentService.Api       -> http://localhost:5001
-OrderService.Api         -> http://localhost:5002
-BasketService.Api        -> http://localhost:5003
-CatalogService.Api       -> http://localhost:5004
-IdentityService.Api      -> http://localhost:5005
+Altyapi
+  Consul UI                 http://localhost:8500
+  RabbitMQ UI               http://localhost:15672   (guest / guest)
+  Redis                     localhost:6379
+  SQL Server                localhost,1444           (sa / UhutSancar123!)
+
+Veritabanlari
+  velora_identity  ·  velora_catalog  ·  velora_order
+
+Tohumlanan yonetici hesabi
+  admin@velora.com / Velora!Admin2024   (canliya almadan once degistirin)
+
+Ayrintilar icin README.md
