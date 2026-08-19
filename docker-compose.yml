@@ -1,10 +1,19 @@
-version: '3.8'
-
+# ============================================================================
+#  DEPRECATED - kept only so an existing `local-consul` container keeps its
+#  definition. It starts Consul alone, which is not enough to run anything.
+#
+#  Use instead:
+#    docker compose -f docker-compose.infrastructure.yml up -d   # local dev
+#    docker compose -f docker-compose.prod.yml up -d             # production
+#
+#  Do not run this alongside docker-compose.infrastructure.yml: both publish
+#  port 8500 and the second one will fail to bind.
+# ============================================================================
 services:
   consul:
     image: hashicorp/consul:latest
     container_name: local-consul
     ports:
-      - "8500:8500" 
-      - "8600:8600/udp" 
-    command: "agent -dev -ui -client=0.0.0.0"
+      - '8500:8500'
+      - '8600:8600/udp'
+    command: 'agent -dev -ui -client=0.0.0.0'

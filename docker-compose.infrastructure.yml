@@ -1,0 +1,79 @@
+# Infrastructure the Velora microservices depend on.
+# The services themselves run from the .NET SDK (scripts/run-backend.ps1) so that
+# hot reload and the debugger keep working during development.
+services:
+  consul:
+    image: hashicorp/consul:latest
+    container_name: velora-consul
+    restart: unless-stopped
+    ports:
+      - '8500:8500'
+      - '8600:8600/udp'
+    # -node=localhost keeps registrations addressable from the host.
+    command: 'agent -dev -ui -client=0.0.0.0 -node=localhost'
+    healthcheck:
+      test: ['CMD', 'consul', 'members']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: velora-rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  redis:
+    image: redis:7-alpine
+    container_name: velora-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    # Baskets and wishlists are recoverable, but AOF avoids losing an active
+    # session to a container restart.
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis-data:/data
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: velora-sqlserver
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=UhutSancar123!
+      - MSSQL_PID=Developer
+    ports:
+      # 1444 on the host so a locally installed SQL Server on 1433 keeps working.
+      - '1444:1433'
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" || exit 1',
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+volumes:
+  rabbitmq-data:
+  redis-data:
+  sqlserver-data:
