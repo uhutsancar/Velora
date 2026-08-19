@@ -1,20 +1,52 @@
 using IdentityService.Api.Application.Services;
-using IdentityServer.Application.Services;
+using IdentityService.Api.Extensions;
 using IdentityService.Api.Extensions.Registration;
+using IdentityService.Api.Infrastructure.Context;
+using Microsoft.OpenApi.Models;
+using Velora.Shared.Middleware;
+using Velora.Shared.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Velora Identity API", Version = "v1" });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste the access token (without the Bearer prefix)."
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
-
+builder.Services.ConfigureDbContext(builder.Configuration, builder.Environment);
+builder.Services.ConfigureAuth(builder.Configuration, builder.Environment);
+builder.Services.ConfigureRateLimiting();
 builder.Services.ConfigureConsul(builder.Configuration);
+builder.Services.ConfigureCors(builder.Configuration);
 
-builder.Services.AddScoped<IIdentityService, IdentityServer.Application.Services.IdentityService>();
+builder.Services.AddScoped<IIdentityService, IdentityService.Api.Application.Services.IdentityService>();
+builder.Services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+builder.Services.AddSingleton<ITokenService, TokenService>();
 
 var app = builder.Build();
+
+app.UseVeloraExceptionHandling();
 
 if (app.Environment.IsDevelopment())
 {
@@ -22,11 +54,27 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseAuthorization();
-app.MapControllers();
+app.UseCors(CorsRegistration.PolicyName);
+app.UseRateLimiter();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "IdentityService" })).AllowAnonymous();
+
+app.MigrateDbContext<IdentityDbContext>((context, services) =>
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+    var hasher = services.GetRequiredService<IPasswordHasher>();
+    var logger = services.GetRequiredService<ILogger<IdentityContextSeed>>();
+
+    new IdentityContextSeed().SeedAsync(context, configuration, app.Environment, hasher, logger).GetAwaiter().GetResult();
+});
 
 app.RegisterWithConsul(app.Lifetime);
 
 app.Run();
+
+/// <summary>Exposed so the integration test host can reference the entry point assembly.</summary>
+public partial class Program;

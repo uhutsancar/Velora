@@ -1,9 +1,14 @@
-﻿namespace IdentityService.Api.Application.Models
+using System.ComponentModel.DataAnnotations;
+
+namespace IdentityService.Api.Application.Models
 {
     public class LoginRequestModel
     {
-        public string UserName { get; set; }
+        /// <summary>Email address or username.</summary>
+        [Required]
+        public string UserName { get; set; } = default!;
 
-        public string Password { get; set; }
+        [Required]
+        public string Password { get; set; } = default!;
     }
 }
