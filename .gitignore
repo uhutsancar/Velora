@@ -176,3 +176,49 @@ $RECYCLE.BIN/
 *.vspscc
 *.vssscc
 .builds
+
+# ------------------------------------------------------------
+#  Sirlar / Ortam Dosyalari  (ASLA COMMIT EDILMEZ)
+#  appsettings.json ve appsettings.Development.json commit edilir;
+#  ikisinde de gercek sir bulunmaz. Gercek degerler ortam
+#  degiskenlerinden veya bir secret store'dan gelir.
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+!*.env.example
+appsettings.Production.json
+appsettings.Staging.json
+appsettings.*.local.json
+secrets.json
+*.secrets.json
+*.pfx
+*.p12
+*.key
+*.pem
+!**/wwwroot/**/*.key
+
+# ------------------------------------------------------------
+#  Yerel calisma ciktilari
+# ------------------------------------------------------------
+.dotnet/
+.nuget/
+*.received.*
+*.approved.received.*
+
+# --- Velora frontend ---
+velora/node_modules/
+velora/**/node_modules/
+velora/**/dist/
+velora/**/coverage/
+velora/**/playwright-report/
+velora/**/test-results/
+velora/**/.vite/
+velora/**/*.tsbuildinfo
+velora/apps/*/.env
+velora/apps/*/.env.local
+
+# Uploaded product media (runtime artefact, not source)
+SellingBuddy/src/Services/CatalogService/CatalogService.Api/wwwroot/media/*
+!SellingBuddy/src/Services/CatalogService/CatalogService.Api/wwwroot/media/.gitkeep

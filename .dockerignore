@@ -1,0 +1,21 @@
+# Keeps the build context small and stops local build output leaking into images.
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vite/
+**/coverage/
+**/playwright-report/
+**/test-results/
+**/TestResults/
+.git/
+.github/
+.vs/
+.vscode/
+.idea/
+**/*.user
+**/.env
+**/.env.*
+!**/.env.example
+scripts/
+*.md

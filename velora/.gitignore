@@ -1,0 +1,43 @@
+# ============================================================
+#  Velora frontend (pnpm workspace: storefront + admin + shared)
+# ============================================================
+
+# --- Bagimliliklar ---
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# --- Build ciktilari ---
+dist/
+dist-ssr/
+build/
+.vite/
+*.tsbuildinfo
+
+# --- Test ve kapsam ---
+coverage/
+playwright-report/
+playwright/.cache/
+test-results/
+blob-report/
+.vitest-cache/
+
+# --- Arac onbellekleri ---
+.eslintcache
+.turbo/
+.cache/
+
+# --- Ortam dosyalari ---
+# .env.example commit edilir, gercek degerler edilmez.
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.local
+
+# --- Editor / isletim sistemi ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
