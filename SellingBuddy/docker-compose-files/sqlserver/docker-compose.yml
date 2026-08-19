@@ -6,6 +6,6 @@ services:
     container_name: local-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=SellingBuddyStrongP@ssw0rd!
+      - SA_PASSWORD=UhutSancar123!
     ports:
-      - "1433:1433"
+      - "1444:1433"
