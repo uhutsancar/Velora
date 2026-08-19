@@ -1,0 +1,29 @@
+{
+  "name": "velora",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Velora — premium e-commerce platform (storefront + admin) on top of the SellingBuddy microservices",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./apps/*\" dev",
+    "dev:store": "pnpm --filter @velora/storefront dev",
+    "dev:admin": "pnpm --filter @velora/admin dev",
+    "build": "pnpm --filter @velora/shared build && pnpm --filter \"./apps/*\" build",
+    "preview": "pnpm --parallel --filter \"./apps/*\" preview",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @velora/storefront test:e2e && pnpm --filter @velora/admin test:e2e",
+    "clean": "pnpm -r exec rm -rf dist node_modules/.vite"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}
