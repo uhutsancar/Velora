@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -12,10 +12,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Dtos\" />
-	</ItemGroup>
-
-	<ItemGroup>
+	  <ProjectReference Include="..\..\..\BuildingBlocks\Common\Velora.Shared\Velora.Shared.csproj" />
 	  <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Base\EventBus.Base.csproj" />
 	  <ProjectReference Include="..\OrderService.Domain\OrderService.Domain.csproj" />
 	</ItemGroup>

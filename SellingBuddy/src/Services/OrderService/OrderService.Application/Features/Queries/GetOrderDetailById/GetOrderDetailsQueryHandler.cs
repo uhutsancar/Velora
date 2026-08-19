@@ -1,17 +1,11 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using OrderService.Application.Features.Queries.ViewModels;
 using OrderService.Application.Interfaces.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OrderService.Application.Features.Queries.GetOrderDetailById
 {
-    public class GetOrderDetailsQueryHandler : IRequestHandler<GetOrderDetailsQuery, OrderDetailViewModel>
+    public class GetOrderDetailsQueryHandler : IRequestHandler<GetOrderDetailsQuery, OrderDetailViewModel?>
     {
         private readonly IOrderRepository orderRepository;
         private readonly IMapper mapper;
@@ -22,13 +16,11 @@ namespace OrderService.Application.Features.Queries.GetOrderDetailById
             this.mapper = mapper;
         }
 
-        public async Task<OrderDetailViewModel> Handle(GetOrderDetailsQuery request, CancellationToken cancellationToken)
+        public async Task<OrderDetailViewModel?> Handle(GetOrderDetailsQuery request, CancellationToken cancellationToken)
         {
-            var order = await orderRepository.GetByIdAsync(request.OrderId, i => i.OrderItems);
+            var order = await orderRepository.GetWithItemsAsync(request.OrderId, cancellationToken);
 
-            var result = mapper.Map<OrderDetailViewModel>(order);
-
-            return result;
+            return order is null ? null : mapper.Map<OrderDetailViewModel>(order);
         }
     }
 }

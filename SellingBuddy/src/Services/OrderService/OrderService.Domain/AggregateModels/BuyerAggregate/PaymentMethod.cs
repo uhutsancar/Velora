@@ -1,4 +1,4 @@
-﻿using OrderService.Domain.Exceptions;
+using OrderService.Domain.Exceptions;
 using OrderService.Domain.SeedWork;
 using System;
 using System.Collections.Generic;
@@ -24,9 +24,13 @@ namespace OrderService.Domain.AggregateModels.BuyerAggregate
 
         public CardType CardType { get; private set; }
 
-        public PaymentMethod() { }
+        public PaymentMethod()
+        {
+            // Same reason as Buyer: the key is never database generated.
+            Id = Guid.NewGuid();
+        }
 
-        public PaymentMethod(int cardTypeId, string alias, string cardNumber, string securityNumber, string cardHolderName, DateTime expiration)
+        public PaymentMethod(int cardTypeId, string alias, string cardNumber, string securityNumber, string cardHolderName, DateTime expiration) : this()
         {
             CardNumber = !string.IsNullOrWhiteSpace(cardNumber) ? cardNumber : throw new OrderingDomainException(nameof(cardNumber));
             SecurityNumber = !string.IsNullOrWhiteSpace(securityNumber) ? securityNumber : throw new OrderingDomainException(nameof(securityNumber));

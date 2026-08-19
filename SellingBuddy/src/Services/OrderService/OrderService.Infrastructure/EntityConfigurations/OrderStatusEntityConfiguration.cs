@@ -1,14 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderService.Domain.AggregateModels.OrderAggregate;
 using OrderService.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace OrderService.Persistence.EntityConfigurations
+namespace OrderService.Infrastructure.EntityConfigurations
 {
     internal class OrderStatusEntityConfiguration : IEntityTypeConfiguration<OrderStatus>
     {
@@ -16,15 +11,13 @@ namespace OrderService.Persistence.EntityConfigurations
         {
             builder.ToTable("orderstatus", OrderDbContext.DEFAULT_SCHEMA);
 
-            builder.HasKey(o => o.Id);
-            builder.Property(i => i.Id).ValueGeneratedOnAdd();
+            builder.HasKey(os => os.Id);
 
-            builder.Property(o => o.Id)
-                .HasDefaultValue(1)
+            builder.Property(os => os.Id)
                 .ValueGeneratedNever()
                 .IsRequired();
 
-            builder.Property(o => o.Name)
+            builder.Property(os => os.Name)
                 .HasMaxLength(200)
                 .IsRequired();
         }

@@ -1,54 +1,67 @@
-using OrderService.Api.Extensions.Registration;
 using EventBus.Base.Abstraction;
-using EventBus.Base;
 using EventBus.Factory;
+using Microsoft.OpenApi.Models;
+using OrderService.Api.Extensions;
+using OrderService.Api.Extensions.Registration;
 using OrderService.Api.IntegrationEvents.EventHandlers;
 using OrderService.Api.IntegrationEvents.Events;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using BasketService.Api.Extensions;
-using OrderService.Api.Extensions;
-using OrderService.Infrastructure.Context;
-using OrderService.Persistence.Context;
 using OrderService.Application;
-using OrderService.Persistence;
 using OrderService.Application.Features.Commands.CreateOrder;
+using OrderService.Infrastructure;
+using OrderService.Infrastructure.Context;
+using Velora.Shared.Middleware;
+using Velora.Shared.Security;
+using Velora.Shared.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Velora Order API", Version = "v1" });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 builder.Logging.AddConsole();
 
 builder.Services.AddApplicationRegistration(typeof(Program));
-builder.Services.AddPersistenceRegistration(builder.Configuration);
+builder.Services.AddPersistenceRegistration(builder.Configuration, builder.Environment);
 
-builder.Services.ConfigureAuth(builder.Configuration);
+builder.Services.AddVeloraJwtAuth(builder.Configuration, builder.Environment);
+builder.Services.ConfigureCors(builder.Configuration);
 builder.Services.ConfigureEventHandlers();
 builder.Services.ConfigureConsul(builder.Configuration);
 
-builder.Services.AddSingleton<IEventBus>(sp =>
+builder.Services.AddVeloraEventBus(builder.Configuration, "OrderService");
+// One registration covering the API assembly and the Application assembly;
+// AddApplicationRegistration already wires the Application handlers, this adds the API ones.
+builder.Services.AddMediatR(cfg =>
 {
-    var config = new EventBusConfig()
-    {
-        ConnectionRetryCount = 5,
-        EventNameSuffix = "IntegrationEvent",
-        SubscriberClientAppName = "OrderService",
-        EventBusType = EventBusType.RabbitMQ
-    };
-    return EventBusFactory.Create(config, sp);
-});
-
-builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(CreateOrderCommand).Assembly);
 });
 
 var app = builder.Build();
+
+app.UseVeloraExceptionHandling();
 
 if (app.Environment.IsDevelopment())
 {
@@ -56,24 +69,32 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseCors(CorsRegistration.PolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.RegisterWithConsul(app.Lifetime);
-
-var eventBus = app.Services.GetRequiredService<IEventBus>();
-eventBus.Subscribe<OrderCreatedIntegrationEvent, OrderCreatedIntegrationEventHandler>();
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "OrderService" })).AllowAnonymous();
 
 app.MigrateDbContext<OrderDbContext>((context, services) =>
 {
     var logger = services.GetRequiredService<ILogger<OrderDbContext>>();
 
-    var dbContextSeeder = new OrderDbContextSeed();
-    dbContextSeeder.SeedAsync(context, logger).Wait();
+    new OrderDbContextSeed().SeedAsync(context, logger).GetAwaiter().GetResult();
 });
 
+app.RegisterWithConsul(app.Lifetime);
+
+var eventBus = app.Services.GetRequiredService<IEventBus>();
+
+// Checkout accepted -> create the order aggregate.
+eventBus.Subscribe<OrderCreatedIntegrationEvent, OrderCreatedIntegrationEventHandler>();
+
+// Payment result -> close the saga by moving the order to Paid or Cancelled.
+eventBus.Subscribe<OrderPaymentSuccessIntegrationEvent, OrderPaymentSuccessIntegrationEventHandler>();
+eventBus.Subscribe<OrderPaymentFailedIntegrationEvent, OrderPaymentFailedIntegrationEventHandler>();
+
 app.Run();
+
+public partial class Program;

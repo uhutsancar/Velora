@@ -1,12 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderService.Domain.AggregateModels.OrderAggregate;
 using OrderService.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OrderService.Infrastructure.EntityConfigurations
 {
@@ -17,33 +12,51 @@ namespace OrderService.Infrastructure.EntityConfigurations
             builder.ToTable("orders", OrderDbContext.DEFAULT_SCHEMA);
 
             builder.HasKey(o => o.Id);
-            builder.Property(i => i.Id).ValueGeneratedOnAdd();
+            builder.Property(o => o.Id).ValueGeneratedNever();
 
-            builder.Ignore(i => i.DomainEvents);
+            builder.Ignore(o => o.DomainEvents);
+            builder.Ignore(o => o.OrderStatusId);
 
-            builder
-                .OwnsOne(o => o.Address, a =>
-                {
-                    a.WithOwner();
-                });
+            builder.Property(o => o.OrderNumber).IsRequired().HasMaxLength(32);
+            builder.Property(o => o.UserId).HasMaxLength(64);
+            builder.Property(o => o.UserName).HasMaxLength(200);
+            builder.Property(o => o.Description).HasMaxLength(500);
+            builder.Property(o => o.CancelReason).HasMaxLength(500);
+            builder.Property(o => o.CouponCode).HasMaxLength(64);
+            builder.Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
+            builder.Property(o => o.DiscountAmount).HasColumnType("decimal(18,2)");
 
-            builder
-                .Property<int>("orderStatusId")
+            builder.HasIndex(o => o.OrderNumber).IsUnique();
+            builder.HasIndex(o => o.UserId);
+            builder.HasIndex(o => o.OrderDate);
+
+            builder.OwnsOne(o => o.Address, address =>
+            {
+                address.WithOwner();
+                address.Property(a => a.Street).HasMaxLength(256);
+                address.Property(a => a.City).HasMaxLength(128);
+                address.Property(a => a.State).HasMaxLength(128);
+                address.Property(a => a.Country).HasMaxLength(128);
+                address.Property(a => a.ZipCode).HasMaxLength(16);
+            });
+
+            builder.Property<int>("orderStatusId")
                 .UsePropertyAccessMode(PropertyAccessMode.Field)
                 .HasColumnName("OrderStatusId")
                 .IsRequired();
 
-            var navigation = builder.Metadata.FindNavigation(nameof(Order.OrderItems));
-
-            navigation.SetPropertyAccessMode(PropertyAccessMode.Field);
+            builder.Metadata.FindNavigation(nameof(Order.OrderItems))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
 
             builder.HasOne(o => o.Buyer)
                 .WithMany()
-                .HasForeignKey(i => i.BuyerId);
+                .HasForeignKey(o => o.BuyerId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(o => o.OrderStatus)
                 .WithMany()
-                .HasForeignKey("orderStatusId");
+                .HasForeignKey("orderStatusId")
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

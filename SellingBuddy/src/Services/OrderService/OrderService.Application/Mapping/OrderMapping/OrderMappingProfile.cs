@@ -1,12 +1,7 @@
-﻿using AutoMapper;
+using AutoMapper;
 using OrderService.Application.Features.Commands.CreateOrder;
 using OrderService.Application.Features.Queries.ViewModels;
 using OrderService.Domain.AggregateModels.OrderAggregate;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OrderService.Application.Mapping.OrderMapping
 {
@@ -14,26 +9,28 @@ namespace OrderService.Application.Mapping.OrderMapping
     {
         public OrderMappingProfile()
         {
-            CreateMap<Order, CreateOrderCommand>()
-                .ReverseMap();
+            CreateMap<OrderItem, OrderItemDTO>().ReverseMap();
 
-            CreateMap<OrderItem, OrderItemDTO>()
-                .ReverseMap();
-
-        //    CreateMap<Order, OrderDto>().ReverseMap();
+            CreateMap<OrderItem, Orderitem>()
+                .ForMember(d => d.Productname, o => o.MapFrom(s => s.ProductName))
+                .ForMember(d => d.Unitprice, o => o.MapFrom(s => s.UnitPrice))
+                .ForMember(d => d.Pictureurl, o => o.MapFrom(s => s.PictureUrl))
+                .ForMember(d => d.LineTotal, o => o.MapFrom(s => s.UnitPrice * s.Units));
 
             CreateMap<Order, OrderDetailViewModel>()
-                .ForMember(x => x.City, y => y.MapFrom(z => z.Address.City))
-                .ForMember(x => x.Country, y => y.MapFrom(z => z.Address.Country))
-                .ForMember(x => x.Street, y => y.MapFrom(z => z.Address.Street))
-                .ForMember(x => x.Zipcode, y => y.MapFrom(z => z.Address.ZipCode))
-                .ForMember(x => x.Date, y => y.MapFrom(z => z.OrderDate))
-                .ForMember(x => x.Ordernumber, y => y.MapFrom(z => z.Id.ToString()))
-                .ForMember(x => x.Status, y => y.MapFrom(z => z.OrderStatus.Name))
-                .ForMember(x => x.Total, y => y.MapFrom(z => z.OrderItems.Sum(i => i.Units * i.UnitPrice)))
-                .ReverseMap();
-
-            CreateMap<OrderItem, Orderitem>();
+                .ForMember(d => d.Ordernumber, o => o.MapFrom(s => s.OrderNumber))
+                .ForMember(d => d.Date, o => o.MapFrom(s => s.OrderDate))
+                .ForMember(d => d.StatusId, o => o.MapFrom(s => s.OrderStatusId))
+                .ForMember(d => d.Status, o => o.MapFrom(s => s.OrderStatus != null ? s.OrderStatus.Name : string.Empty))
+                .ForMember(d => d.Street, o => o.MapFrom(s => s.Address.Street))
+                .ForMember(d => d.City, o => o.MapFrom(s => s.Address.City))
+                .ForMember(d => d.State, o => o.MapFrom(s => s.Address.State))
+                .ForMember(d => d.Country, o => o.MapFrom(s => s.Address.Country))
+                .ForMember(d => d.Zipcode, o => o.MapFrom(s => s.Address.ZipCode))
+                .ForMember(d => d.Orderitems, o => o.MapFrom(s => s.OrderItems))
+                // Subtotal is the pre-discount figure; Total is what the customer paid.
+                .ForMember(d => d.Subtotal, o => o.MapFrom(s => s.OrderItems.Sum(i => i.Units * i.UnitPrice)))
+                .ForMember(d => d.Total, o => o.MapFrom(s => s.TotalAmount));
         }
     }
 }

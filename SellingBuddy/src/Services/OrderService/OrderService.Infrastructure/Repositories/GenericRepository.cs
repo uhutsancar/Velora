@@ -1,186 +1,94 @@
-﻿//using OrderService.Application.Interfaces.Repositories;
-//using OrderService.Domain.SeedWork;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Linq.Expressions;
-//using System.Text;
-//using System.Threading.Tasks;
-
-//namespace OrderService.Infrastructure.Repositories
-//{
-//    public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
-//    {
-//        public IUnitOfWork UnitOfWork { get; }
-
-//        public Task<T> AddAsync(T entity)
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public Task<List<T>> Get(Expression<Func<T, bool>> filter = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params Expression<Func<T, object>>[] includes)
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public Task<List<T>> Get(Expression<Func<T, bool>> filter = null, params Expression<Func<T, object>>[] includes)
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public Task<List<T>> GetAll()
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public Task<T> GetById(Guid id)
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public Task<T> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes)
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public Task<T> GetSingleAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
-//        {
-//            throw new NotImplementedException();
-//        }
-
-//        public T Update(T entity)
-//        {
-//            throw new NotImplementedException();
-//        }
-//    }
-//}
-
-
-
-
-
-
-
-
-
 using Microsoft.EntityFrameworkCore;
 using OrderService.Application.Interfaces.Repositories;
 using OrderService.Domain.SeedWork;
 using OrderService.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace OrderService.Infrastructure.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
-        private readonly OrderDbContext dbContext;
+        protected readonly OrderDbContext DbContext;
 
         public GenericRepository(OrderDbContext dbContext)
         {
-            this.dbContext = dbContext;
+            DbContext = dbContext;
         }
 
-        public IUnitOfWork UnitOfWork { get; }
+        /// <summary>
+        /// The DbContext is the unit of work. Handlers call
+        /// <c>repository.UnitOfWork.SaveEntitiesAsync()</c> to commit and dispatch domain events.
+        /// </summary>
+        public IUnitOfWork UnitOfWork => DbContext;
 
         public virtual async Task<T> AddAsync(T entity)
         {
-            await dbContext.Set<T>().AddAsync(entity);
+            await DbContext.Set<T>().AddAsync(entity);
             return entity;
         }
 
-
-        public virtual async Task<List<T>> Get(Expression<Func<T, bool>> filter = null, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<List<T>> Get(Expression<Func<T, bool>>? filter = null, params Expression<Func<T, object>>[] includes)
         {
-            IQueryable<T> query = dbContext.Set<T>();
+            IQueryable<T> query = DbContext.Set<T>();
 
-            foreach (Expression<Func<T, object>> include in includes)
-            {
+            foreach (var include in includes)
                 query = query.Include(include);
-            }
 
-            if (filter != null)
-            {
+            if (filter is not null)
                 query = query.Where(filter);
-            }
 
             return await query.ToListAsync();
         }
 
-        public virtual async Task<List<T>> Get(Expression<Func<T, bool>> filter = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, string includeProperties = "")
+        public virtual async Task<List<T>> Get(
+            Expression<Func<T, bool>>? filter = null,
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+            string includeProperties = "")
         {
-            IQueryable<T> query = dbContext.Set<T>();
+            IQueryable<T> query = DbContext.Set<T>();
 
-            if (filter != null)
-            {
+            if (filter is not null)
                 query = query.Where(filter);
-            }
 
-            foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-            {
+            foreach (var includeProperty in includeProperties.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 query = query.Include(includeProperty);
-            }
 
-            if (orderBy != null)
-            {
+            if (orderBy is not null)
                 query = orderBy(query);
-            }
 
             return await query.ToListAsync();
         }
 
-        public virtual async Task<List<T>> GetAll()
-        {
-            return await dbContext.Set<T>().ToListAsync();
-        }
+        public virtual Task<List<T>> GetAll() => DbContext.Set<T>().ToListAsync();
 
-        public virtual async Task<T> GetById(Guid id)
-        {
-            return await dbContext.Set<T>().FindAsync(id);
-        }
+        public virtual async Task<T?> GetById(Guid id) => await DbContext.Set<T>().FindAsync(id);
 
-        public virtual async Task<T> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes)
         {
-            IQueryable<T> query = dbContext.Set<T>();
+            IQueryable<T> query = DbContext.Set<T>();
 
-            foreach (Expression<Func<T, object>> include in includes)
-            {
+            foreach (var include in includes)
                 query = query.Include(include);
-            }
 
             return await query.FirstOrDefaultAsync(i => i.Id == id);
         }
 
-        public virtual async Task<T> GetSingleAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
+        public virtual async Task<T?> GetSingleAsync(Expression<Func<T, bool>> expression, params Expression<Func<T, object>>[] includes)
         {
-            IQueryable<T> query = dbContext.Set<T>();
+            IQueryable<T> query = DbContext.Set<T>();
 
-            foreach (Expression<Func<T, object>> include in includes)
-            {
+            foreach (var include in includes)
                 query = query.Include(include);
-            }
 
             return await query.Where(expression).SingleOrDefaultAsync();
         }
 
         public virtual T Update(T entity)
         {
-            dbContext.Set<T>().Update(entity);
+            DbContext.Set<T>().Update(entity);
             return entity;
         }
+
+        public virtual void Delete(T entity) => DbContext.Set<T>().Remove(entity);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,66 +1,48 @@
-﻿using EventBus.Base.Events;
+using EventBus.Base.Events;
 using OrderService.Domain.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace OrderService.Api.IntegrationEvents.Events
 {
+    /// <summary>
+    /// Mirror of the checkout event published by BasketService. Property names must match
+    /// exactly: the bus routes on the event name and binds by shape.
+    /// </summary>
     public class OrderCreatedIntegrationEvent : IntegrationEvent
     {
-        public string UserId { get; }
+        public OrderCreatedIntegrationEvent()
+        {
+        }
 
-        public string UserName { get; }
+        public string UserId { get; set; } = default!;
+
+        public string UserName { get; set; } = default!;
 
         public int OrderNumber { get; set; }
 
-        public string City { get; set; }
+        public string City { get; set; } = default!;
 
-        public string Street { get; set; }
+        public string Street { get; set; } = default!;
 
-        public string State { get; set; }
+        public string State { get; set; } = default!;
 
-        public string Country { get; set; }
+        public string Country { get; set; } = default!;
 
-        public string ZipCode { get; set; }
+        public string ZipCode { get; set; } = default!;
 
-        public string CardNumber { get; set; }
+        public string CardNumber { get; set; } = default!;
 
-        public string CardHolderName { get; set; }
+        public string CardHolderName { get; set; } = default!;
 
         public DateTime CardExpiration { get; set; }
 
-        public string CardSecurityNumber { get; set; }
+        public string CardSecurityNumber { get; set; } = default!;
 
         public int CardTypeId { get; set; }
 
-        public string Buyer { get; set; }
+        public string Buyer { get; set; } = default!;
 
         public Guid RequestId { get; set; }
 
-        public CustomerBasket Basket { get; }
-
-        public OrderCreatedIntegrationEvent(string userId, string userName, string city, string street,
-            string state, string country, string zipCode, string cardNumber, string cardHolderName,
-            DateTime cardExpiration, string cardSecurityNumber, int cardTypeId, string buyer, Guid requestId,
-            CustomerBasket basket)
-        {
-            UserId = userId;
-            UserName = userName;
-            City = city;
-            Street = street;
-            State = state;
-            Country = country;
-            ZipCode = zipCode;
-            CardNumber = cardNumber;
-            CardHolderName = cardHolderName;
-            CardExpiration = cardExpiration;
-            CardSecurityNumber = cardSecurityNumber;
-            CardTypeId = cardTypeId;
-            Buyer = buyer;
-            Basket = basket;
-            RequestId = requestId;
-        }
+        public CustomerBasket Basket { get; set; } = new();
     }
 }

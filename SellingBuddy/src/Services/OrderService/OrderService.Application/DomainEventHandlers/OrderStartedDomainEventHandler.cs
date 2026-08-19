@@ -1,53 +1,55 @@
-﻿using MediatR;
+using MediatR;
+using Microsoft.Extensions.Logging;
 using OrderService.Application.Interfaces.Repositories;
 using OrderService.Domain.AggregateModels.BuyerAggregate;
 using OrderService.Domain.Events;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace OrderService.Application.DomainEventHandlers
 {
-    class OrderStartedDomainEventHandler : INotificationHandler<OrderStartedDomainEvent>
+    /// <summary>
+    /// Creates the buyer on first purchase and verifies (or stores) the payment method.
+    /// </summary>
+    public class OrderStartedDomainEventHandler : INotificationHandler<OrderStartedDomainEvent>
     {
         private readonly IBuyerRepository buyerRepository;
+        private readonly ILogger<OrderStartedDomainEventHandler> logger;
 
-        public OrderStartedDomainEventHandler(IBuyerRepository buyerRepository)
+        public OrderStartedDomainEventHandler(IBuyerRepository buyerRepository, ILogger<OrderStartedDomainEventHandler> logger)
         {
             this.buyerRepository = buyerRepository;
+            this.logger = logger;
         }
 
         public async Task Handle(OrderStartedDomainEvent orderStartedEvent, CancellationToken cancellationToken)
         {
-            var cardTypeId = (orderStartedEvent.CardTypeId != 0) ? orderStartedEvent.CardTypeId : 1;
+            var cardTypeId = orderStartedEvent.CardTypeId != 0 ? orderStartedEvent.CardTypeId : CardType.Visa.Id;
 
-            var buyer = await buyerRepository.GetSingleAsync(i => i.Name == orderStartedEvent.UserName, i => i.PaymentMethods);
+            var buyer = await buyerRepository.GetSingleAsync(
+                b => b.Name == orderStartedEvent.UserName,
+                b => b.PaymentMethods);
 
-            bool buyerOriginallyExisted = buyer != null;
+            var buyerExisted = buyer is not null;
 
-            if (!buyerOriginallyExisted)
-            {
-                buyer = new Buyer(orderStartedEvent.UserName);
-            }
+            buyer ??= new Buyer(orderStartedEvent.UserName);
 
-            buyer.VerifyOrAddPaymentMethod(cardTypeId,
-                                           $"Payment Method on {DateTime.UtcNow}",
-                                           orderStartedEvent.CardNumber,
-                                           orderStartedEvent.CardSecurityNumber,
-                                           orderStartedEvent.CardHolderName,
-                                           orderStartedEvent.CardExpiration,
-                                           orderStartedEvent.Order.Id);
+            buyer.VerifyOrAddPaymentMethod(
+                cardTypeId,
+                $"Payment method registered on {DateTime.UtcNow:yyyy-MM-dd}",
+                orderStartedEvent.CardNumber,
+                orderStartedEvent.CardSecurityNumber,
+                orderStartedEvent.CardHolderName,
+                orderStartedEvent.CardExpiration,
+                orderStartedEvent.Order.Id);
 
-            var buyerUpdated = buyerOriginallyExisted ?
-                buyerRepository.Update(buyer) :
+            if (buyerExisted)
+                buyerRepository.Update(buyer);
+            else
                 await buyerRepository.AddAsync(buyer);
 
             await buyerRepository.UnitOfWork.SaveEntitiesAsync(cancellationToken);
 
-            // order status changed event may be fired here
+            logger.LogInformation("Buyer {BuyerName} verified for order {OrderId}.",
+                orderStartedEvent.UserName, orderStartedEvent.Order.Id);
         }
     }
 }

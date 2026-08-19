@@ -1,4 +1,4 @@
-﻿using OrderService.Domain.Events;
+using OrderService.Domain.Events;
 using OrderService.Domain.SeedWork;
 using System;
 using System.Collections.Generic;
@@ -18,6 +18,9 @@ namespace OrderService.Domain.AggregateModels.BuyerAggregate
 
         protected Buyer()
         {
+            // BaseEntity does not generate a key, and the mapping is ValueGeneratedNever,
+            // so the aggregate must assign its own id or every row collides on Guid.Empty.
+            Id = Guid.NewGuid();
             _paymentMethods = new List<PaymentMethod>();
         }
 

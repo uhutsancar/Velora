@@ -1,66 +1,60 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderService.Domain.AggregateModels.BuyerAggregate;
 using OrderService.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace OrderService.Persistence.EntityConfigurations
+namespace OrderService.Infrastructure.EntityConfigurations
 {
     internal class PaymentMethodEntityConfiguration : IEntityTypeConfiguration<PaymentMethod>
     {
-        public void Configure(EntityTypeBuilder<PaymentMethod> paymentConfiguration)
+        public void Configure(EntityTypeBuilder<PaymentMethod> builder)
         {
-            paymentConfiguration.ToTable("paymentmethods", OrderDbContext.DEFAULT_SCHEMA);
+            builder.ToTable("paymentmethods", OrderDbContext.DEFAULT_SCHEMA);
 
-            paymentConfiguration.Ignore(b => b.DomainEvents);
+            builder.HasKey(p => p.Id);
+            builder.Property(p => p.Id).HasColumnName("id").ValueGeneratedNever();
 
-            paymentConfiguration.HasKey(o => o.Id);
-            paymentConfiguration.Property(i => i.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            builder.Ignore(p => p.DomainEvents);
 
-            paymentConfiguration.Property<int>("BuyerId")
-                .IsRequired();
+            // Shadow FK must match the Buyer primary key type (Guid), not int.
+            builder.Property<Guid>("BuyerId").IsRequired();
+            builder.HasIndex("BuyerId");
 
-            paymentConfiguration
-                .Property(i => i.CardHolderName)
+            builder.Property(p => p.CardHolderName)
                 .UsePropertyAccessMode(PropertyAccessMode.Field)
                 .HasColumnName("CardHolderName")
                 .HasMaxLength(200)
                 .IsRequired();
 
-            paymentConfiguration
-                .Property(i => i.Alias)
+            builder.Property(p => p.Alias)
                 .UsePropertyAccessMode(PropertyAccessMode.Field)
                 .HasColumnName("Alias")
                 .HasMaxLength(200)
                 .IsRequired();
 
-            paymentConfiguration
-                .Property(i => i.CardNumber)
+            builder.Property(p => p.CardNumber)
                 .UsePropertyAccessMode(PropertyAccessMode.Field)
                 .HasColumnName("CardNumber")
                 .HasMaxLength(25)
                 .IsRequired();
 
-            paymentConfiguration
-                .Property(i => i.Expiration)
+            builder.Property(p => p.Expiration)
                 .UsePropertyAccessMode(PropertyAccessMode.Field)
                 .HasColumnName("Expiration")
-                .HasMaxLength(25)
                 .IsRequired();
 
-            paymentConfiguration
-                .Property(i => i.CardTypeId)
+            builder.Property(p => p.CardTypeId)
                 .UsePropertyAccessMode(PropertyAccessMode.Field)
                 .HasColumnName("CardTypeId")
                 .IsRequired();
 
-            paymentConfiguration.HasOne(p => p.CardType)
+            // The CVV is never persisted: it must not exist in the database at rest.
+            builder.Ignore(p => p.SecurityNumber);
+
+            builder.HasOne(p => p.CardType)
                 .WithMany()
-                .HasForeignKey(i => i.CardTypeId);
+                .HasForeignKey(p => p.CardTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -1,39 +1,54 @@
-﻿using OrderService.Domain.Exceptions;
+using OrderService.Domain.Exceptions;
 using OrderService.Domain.SeedWork;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OrderService.Domain.AggregateModels.OrderAggregate
 {
     public class OrderItem : BaseEntity, IValidatableObject
     {
+        protected OrderItem()
+        {
+            Id = Guid.NewGuid();
+        }
+
+        public OrderItem(int productId, string productName, decimal unitPrice, string pictureUrl, int units = 1,
+            int? variantId = null, string? variantLabel = null) : this()
+        {
+            if (units <= 0)
+                throw new OrderingDomainException("Sipariş kalemi adedi sıfırdan büyük olmalı.");
+
+            ProductId = productId;
+            ProductName = productName;
+            UnitPrice = unitPrice;
+            Units = units;
+            PictureUrl = pictureUrl;
+            VariantId = variantId;
+            VariantLabel = variantLabel;
+        }
+
         public int ProductId { get; set; }
 
-        public string ProductName { get; set; }
+        public string ProductName { get; set; } = default!;
 
-        public string PictureUrl { get; set; }
+        public string? PictureUrl { get; set; }
 
         public decimal UnitPrice { get; set; }
 
         public int Units { get; set; }
 
-        protected OrderItem()
+        /// <summary>Catalogue variant that was purchased, when the product has variants.</summary>
+        public int? VariantId { get; set; }
+
+        public string? VariantLabel { get; set; }
+
+        public decimal LineTotal => UnitPrice * Units;
+
+        public void AddUnits(int units)
         {
+            if (units < 0)
+                throw new OrderingDomainException("Eklenecek adet negatif olamaz.");
 
-        }
-
-        public OrderItem(int productId, string productName, decimal unitPrice, string pictureUrl, int units = 1)
-        {
-            ProductId = productId;
-
-            ProductName = productName;
-            UnitPrice = unitPrice;
-            Units = units;
-            PictureUrl = pictureUrl;
+            Units += units;
         }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -41,7 +56,7 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
             var results = new List<ValidationResult>();
 
             if (Units <= 0)
-                results.Add(new ValidationResult("Invalid number of units", new[] { "Units" }));
+                results.Add(new ValidationResult("Invalid number of units", new[] { nameof(Units) }));
 
             return results;
         }

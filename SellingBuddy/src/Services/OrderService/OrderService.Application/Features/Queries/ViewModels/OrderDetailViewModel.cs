@@ -1,30 +1,69 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace OrderService.Application.Features.Queries.ViewModels
 {
     public class OrderDetailViewModel
     {
-        public string Ordernumber { get; init; }
-        public DateTime Date { get; init; }
-        public string Status { get; init; }
-        public string Description { get; init; }
-        public string Street { get; init; }
-        public string City { get; init; }
-        public string Zipcode { get; init; }
-        public string Country { get; init; }
-        public List<Orderitem> Orderitems { get; set; }
+        public Guid Id { get; set; }
+
+        /// <summary>Customer facing reference, e.g. "VLR-240819-4F2A".</summary>
+        public string Ordernumber { get; set; } = default!;
+
+        public DateTime Date { get; set; }
+
+        public int StatusId { get; set; }
+
+        public string Status { get; set; } = default!;
+
+        public string? Description { get; set; }
+
+        public string? UserId { get; set; }
+
+        public string? UserName { get; set; }
+
+        public string? Street { get; set; }
+
+        public string? City { get; set; }
+
+        public string? State { get; set; }
+
+        public string? Zipcode { get; set; }
+
+        public string? Country { get; set; }
+
+        public string? CouponCode { get; set; }
+
+        public decimal DiscountAmount { get; set; }
+
+        public decimal Subtotal { get; set; }
+
         public decimal Total { get; set; }
+
+        public DateTime? PaidAtUtc { get; set; }
+
+        public DateTime? ShippedAtUtc { get; set; }
+
+        public DateTime? CancelledAtUtc { get; set; }
+
+        public string? CancelReason { get; set; }
+
+        public List<Orderitem> Orderitems { get; set; } = new();
     }
 
     public class Orderitem
     {
-        public string Productname { get; init; }
-        public int Units { get; init; }
-        public double Unitprice { get; init; }
-        public string Pictureurl { get; init; }
+        public int ProductId { get; set; }
+
+        public string Productname { get; set; } = default!;
+
+        public int Units { get; set; }
+
+        public decimal Unitprice { get; set; }
+
+        public string? Pictureurl { get; set; }
+
+        public int? VariantId { get; set; }
+
+        public string? VariantLabel { get; set; }
+
+        public decimal LineTotal { get; set; }
     }
 }

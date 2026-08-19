@@ -1,17 +1,10 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OrderService.Domain.AggregateModels.BuyerAggregate;
 using OrderService.Domain.AggregateModels.OrderAggregate;
 using OrderService.Domain.SeedWork;
 using OrderService.Infrastructure.EntityConfigurations;
-using OrderService.Infrastructure.Extensions; 
-using OrderService.Persistence.EntityConfigurations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using OrderService.Infrastructure.Extensions;
 
 namespace OrderService.Infrastructure.Context
 {
@@ -19,30 +12,32 @@ namespace OrderService.Infrastructure.Context
     {
         public const string DEFAULT_SCHEMA = "ordering";
 
-  
-        private readonly IMediator mediator;
+        private readonly IMediator? mediator;
 
-        public OrderDbContext() : base()
+        public OrderDbContext(DbContextOptions<OrderDbContext> options) : base(options)
         {
         }
 
-        public OrderDbContext(DbContextOptions<OrderDbContext> options, IMediator mediator) : base(options)
+        public OrderDbContext(DbContextOptions<OrderDbContext> options, IMediator? mediator) : base(options)
         {
-
             this.mediator = mediator;
         }
 
-        public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderItem> OrderItems { get; set; }
-        public DbSet<PaymentMethod> Payments { get; set; }
-        public DbSet<Buyer> Buyers { get; set; }
-        public DbSet<CardType> CardTypes { get; set; }
-        public DbSet<OrderStatus> OrderStatus { get; set; }
+        public DbSet<Order> Orders { get; set; } = default!;
+        public DbSet<OrderItem> OrderItems { get; set; } = default!;
+        public DbSet<PaymentMethod> Payments { get; set; } = default!;
+        public DbSet<Buyer> Buyers { get; set; } = default!;
+        public DbSet<CardType> CardTypes { get; set; } = default!;
+        public DbSet<OrderStatus> OrderStatus { get; set; } = default!;
 
+        /// <summary>
+        /// Commits the unit of work and dispatches the domain events raised by the
+        /// aggregates that took part in it.
+        /// </summary>
         public async Task<bool> SaveEntitiesAsync(CancellationToken cancellationToken = default)
         {
-            
-            await mediator.DispatchDomainEventsAsync(this);
+            if (mediator is not null)
+                await mediator.DispatchDomainEventsAsync(this);
 
             await base.SaveChangesAsync(cancellationToken);
 

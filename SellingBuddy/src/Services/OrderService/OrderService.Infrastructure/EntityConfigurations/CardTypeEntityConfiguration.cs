@@ -1,30 +1,25 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderService.Domain.AggregateModels.BuyerAggregate;
 using OrderService.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace OrderService.Persistence.EntityConfigurations
+namespace OrderService.Infrastructure.EntityConfigurations
 {
     internal class CardTypeEntityConfiguration : IEntityTypeConfiguration<CardType>
     {
-        public void Configure(EntityTypeBuilder<CardType> cardTypesConfiguration)
+        public void Configure(EntityTypeBuilder<CardType> builder)
         {
-            cardTypesConfiguration.ToTable("cardtypes", OrderDbContext.DEFAULT_SCHEMA);
+            builder.ToTable("cardtypes", OrderDbContext.DEFAULT_SCHEMA);
 
-            cardTypesConfiguration.HasKey(ct => ct.Id);
-            cardTypesConfiguration.Property(i => i.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            builder.HasKey(ct => ct.Id);
 
-            cardTypesConfiguration.Property(ct => ct.Id)
-                .HasDefaultValue(1)
+            // Enumeration ids are fixed constants, so the database must not generate them.
+            builder.Property(ct => ct.Id)
+                .HasColumnName("id")
                 .ValueGeneratedNever()
                 .IsRequired();
 
-            cardTypesConfiguration.Property(ct => ct.Name)
+            builder.Property(ct => ct.Name)
                 .HasMaxLength(200)
                 .IsRequired();
         }

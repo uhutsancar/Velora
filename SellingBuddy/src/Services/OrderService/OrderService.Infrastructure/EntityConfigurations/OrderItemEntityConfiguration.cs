@@ -1,28 +1,32 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderService.Domain.AggregateModels.OrderAggregate;
 using OrderService.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace OrderService.Persistence.EntityConfigurations
+namespace OrderService.Infrastructure.EntityConfigurations
 {
-    class OrderItemEntityConfiguration : IEntityTypeConfiguration<OrderItem>
+    internal class OrderItemEntityConfiguration : IEntityTypeConfiguration<OrderItem>
     {
-        public void Configure(EntityTypeBuilder<OrderItem> orderItemConfiguration)
+        public void Configure(EntityTypeBuilder<OrderItem> builder)
         {
-            orderItemConfiguration.ToTable("orderItems", OrderDbContext.DEFAULT_SCHEMA);
+            builder.ToTable("orderItems", OrderDbContext.DEFAULT_SCHEMA);
 
-            orderItemConfiguration.HasKey(o => o.Id);
+            builder.HasKey(oi => oi.Id);
+            builder.Property(oi => oi.Id).ValueGeneratedNever();
 
-            orderItemConfiguration.Ignore(b => b.DomainEvents);
+            builder.Ignore(oi => oi.DomainEvents);
+            builder.Ignore(oi => oi.LineTotal);
 
-            orderItemConfiguration.Property(o => o.Id).ValueGeneratedOnAdd();
+            builder.Property(oi => oi.ProductName).IsRequired().HasMaxLength(200);
+            builder.Property(oi => oi.PictureUrl).HasMaxLength(1000);
+            builder.Property(oi => oi.VariantLabel).HasMaxLength(120);
+            builder.Property(oi => oi.UnitPrice).HasColumnType("decimal(18,2)");
 
-            orderItemConfiguration.Property<int>("OrderId").IsRequired();
+            // Shadow FK must match the Order primary key type (Guid), not int.
+            builder.Property<Guid>("OrderId").IsRequired();
+
+            builder.HasIndex("OrderId");
+            builder.HasIndex(oi => oi.ProductId);
         }
     }
 }

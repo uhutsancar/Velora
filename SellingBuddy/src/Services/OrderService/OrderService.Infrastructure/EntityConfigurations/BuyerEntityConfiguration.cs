@@ -1,36 +1,35 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using OrderService.Domain.AggregateModels.BuyerAggregate;
 using OrderService.Infrastructure.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace OrderService.Persistence.EntityConfigurations
+namespace OrderService.Infrastructure.EntityConfigurations
 {
     internal class BuyerEntityConfiguration : IEntityTypeConfiguration<Buyer>
     {
-        public void Configure(EntityTypeBuilder<Buyer> buyerConfiguration)
+        public void Configure(EntityTypeBuilder<Buyer> builder)
         {
-            buyerConfiguration.ToTable("buyers", OrderDbContext.DEFAULT_SCHEMA);
+            builder.ToTable("buyers", OrderDbContext.DEFAULT_SCHEMA);
 
-            buyerConfiguration.HasKey(b => b.Id);
+            builder.HasKey(b => b.Id);
+            builder.Property(b => b.Id).ValueGeneratedNever();
 
-            buyerConfiguration.Ignore(b => b.DomainEvents);
-            buyerConfiguration.Property(b => b.Id).ValueGeneratedOnAdd();
+            builder.Ignore(b => b.DomainEvents);
 
-            buyerConfiguration.Property(b => b.Name).HasColumnType("name").HasColumnType("varchar").HasMaxLength(100);
+            builder.Property(b => b.Name)
+                .HasColumnType("varchar(200)")
+                .IsRequired();
 
-            buyerConfiguration.HasMany(b => b.PaymentMethods)
+            builder.HasIndex(b => b.Name);
+
+            builder.HasMany(b => b.PaymentMethods)
                 .WithOne()
-                .HasForeignKey(i => i.Id)
+                // Points at the shadow FK on PaymentMethod, not at its own primary key.
+                .HasForeignKey("BuyerId")
                 .OnDelete(DeleteBehavior.Cascade);
 
-            var navigation = buyerConfiguration.Metadata.FindNavigation(nameof(Buyer.PaymentMethods));
-
-            navigation.SetPropertyAccessMode(PropertyAccessMode.Field);
+            builder.Metadata.FindNavigation(nameof(Buyer.PaymentMethods))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
         }
     }
 }

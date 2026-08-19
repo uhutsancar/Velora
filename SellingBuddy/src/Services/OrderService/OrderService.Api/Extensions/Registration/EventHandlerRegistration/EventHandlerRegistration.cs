@@ -1,19 +1,18 @@
-﻿using EventBus.Base;
-using Microsoft.Extensions.DependencyInjection;
 using OrderService.Api.IntegrationEvents.EventHandlers;
-using OrderService.Api.IntegrationEvents.Events;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace OrderService.Api.Extensions.Registration
 {
     public static class EventHandlerRegistration
     {
+        /// <summary>
+        /// Integration event handlers are resolved from the scope the event bus creates,
+        /// so they must be registered as scoped or transient.
+        /// </summary>
         public static IServiceCollection ConfigureEventHandlers(this IServiceCollection services)
         {
             services.AddTransient<OrderCreatedIntegrationEventHandler>();
+            services.AddTransient<OrderPaymentSuccessIntegrationEventHandler>();
+            services.AddTransient<OrderPaymentFailedIntegrationEventHandler>();
 
             return services;
         }
