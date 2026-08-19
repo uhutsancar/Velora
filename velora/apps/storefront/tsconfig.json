@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@velora/shared": ["../../packages/shared/src"],
+      "@velora/shared/*": ["../../packages/shared/src/*"]
+    },
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"],
+    "noEmit": true
+  },
+  "include": ["src", "vite.config.ts", "e2e", "playwright.config.ts", "eslint.config.js"]
+}

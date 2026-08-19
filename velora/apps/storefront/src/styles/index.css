@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --velora-header-height: 4.5rem;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Respect the OS setting: animation is decoration, never a requirement. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    @apply bg-sand-50 font-sans text-base text-ink-800;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-ink-900;
+  }
+
+  ::selection {
+    @apply bg-tan-200 text-ink-900;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-tan-500 ring-offset-2 ring-offset-sand-50;
+  }
+
+  /* Slim, brand-tinted scrollbar on desktop. */
+  @media (pointer: fine) {
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      @apply bg-sand-100;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      @apply rounded-full bg-ink-300;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      @apply bg-ink-400;
+    }
+  }
+}
+
+@layer components {
+  .container-velora {
+    @apply mx-auto w-full max-w-container px-5 sm:px-8 lg:px-12;
+  }
+
+  .label-caps {
+    @apply text-2xs font-medium uppercase tracking-label;
+  }
+
+  /* Underline that grows from the left on hover — used across nav and links. */
+  .link-underline {
+    @apply relative inline-block;
+  }
+
+  .link-underline::after {
+    @apply absolute -bottom-0.5 left-0 h-px w-0 bg-current transition-[width] duration-300 ease-velora content-[''];
+  }
+
+  .link-underline:hover::after,
+  .link-underline:focus-visible::after {
+    @apply w-full;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-ink-100;
+  }
+
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/60 to-transparent content-[''];
+  }
+
+  /* Horizontal rails: hide the scrollbar but keep native momentum scrolling. */
+  .scroll-rail {
+    @apply flex snap-x snap-mandatory overflow-x-auto scroll-smooth;
+    scrollbar-width: none;
+  }
+
+  .scroll-rail::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Applied while a drawer or modal is open to stop background scroll. */
+  .scroll-locked {
+    overflow: hidden;
+    touch-action: none;
+  }
+}

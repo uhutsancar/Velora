@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Personal and transactional areas must never be indexed.
+Disallow: /hesabim
+Disallow: /sepet
+Disallow: /odeme
+Disallow: /siparis-alindi
+Disallow: /giris
+Disallow: /kayit
+Disallow: /*?*sort=
+Disallow: /*?*page=
+
+Sitemap: http://localhost:5173/sitemap.xml
