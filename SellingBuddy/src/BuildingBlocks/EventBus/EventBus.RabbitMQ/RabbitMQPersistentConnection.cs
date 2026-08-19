@@ -23,6 +23,7 @@ namespace EventBus.RabbitMQ
         public RabbitMQPersistentConnection(IConnectionFactory connectionFactory, int retryCount = 5)
         {
             this.connectionFactory = connectionFactory;
+            this.retryCount = retryCount > 0 ? retryCount : 5;
         }
 
         public bool IsConnected => connection != null && connection.IsOpen;
@@ -35,7 +36,7 @@ namespace EventBus.RabbitMQ
         public void Dispose()
         {
             _disposed = true;
-            connection.Dispose();
+            connection?.Dispose();
         }
 
 

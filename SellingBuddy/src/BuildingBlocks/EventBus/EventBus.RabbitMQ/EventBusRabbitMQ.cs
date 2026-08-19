@@ -1,4 +1,4 @@
-﻿using EventBus.Base;
+using EventBus.Base;
 using EventBus.Base.Events;
 using Newtonsoft.Json;
 using Polly;
@@ -6,57 +6,50 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EventBus.RabbitMQ
 {
     public class EventBusRabbitMQ : BaseEventBus
     {
+        private const string DeadLetterExchangeSuffix = ".dlx";
 
-        RabbitMQPersistentConnection persistentConnection;
+        private readonly RabbitMQPersistentConnection persistentConnection;
         private readonly IConnectionFactory connectionFactory;
-        private readonly IModel consumerChannel;
+
+        /// <summary>Channel used exclusively for consuming (RabbitMQ IModel is not thread-safe).</summary>
+        private IModel consumerChannel;
+
+        /// <summary>Dedicated publish channel guarded by <see cref="publishLock"/>.</summary>
+        private readonly IModel publisherChannel;
+        private readonly object publishLock = new();
 
         public EventBusRabbitMQ(EventBusConfig config, IServiceProvider serviceProvider) : base(config, serviceProvider)
         {
-
-
-
-            // GÜNCELLEME: JSON hatasını ortadan kaldıran güvenli atama
-            if (config.Connection != null)
-                connectionFactory = config.Connection as ConnectionFactory;
-            else
-                connectionFactory = new ConnectionFactory();
+            connectionFactory = config.Connection as IConnectionFactory ?? new ConnectionFactory();
 
             persistentConnection = new RabbitMQPersistentConnection(connectionFactory, config.ConnectionRetryCount);
-            consumerChannel = CreateConsumerChannel();
+
+            consumerChannel = CreateChannel();
+            publisherChannel = CreateChannel();
+
             SubsManager.OnEventRemoved += SubsManager_OnEventRemoved;
+        }
 
+        private string DeadLetterExchangeName => EventBusConfig.DefaultTopicName + DeadLetterExchangeSuffix;
 
-            //if (config.Connection != null)
-            //{
-            //    var connJson = JsonConvert.SerializeObject(EventBusConfig.Connection, new JsonSerializerSettings()
-            //    {
-            //        //self referencing loop detected for property
-            //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            //    });
+        private IModel CreateChannel()
+        {
+            if (!persistentConnection.IsConnected)
+                persistentConnection.TryConnect();
 
-            //    connectionFactory = JsonConvert.DeserializeObject<ConnectionFactory>(connJson);
-            //}
+            var channel = persistentConnection.CreateModel();
 
-            //else
-            //    connectionFactory = new ConnectionFactory();
+            channel.ExchangeDeclare(exchange: EventBusConfig.DefaultTopicName, type: "direct", durable: true);
+            channel.ExchangeDeclare(exchange: DeadLetterExchangeName, type: "direct", durable: true);
 
-            //persistentConnection = new RabbitMQPersistentConnection(connectionFactory, config.ConnectionRetryCount);
-
-            //consumerChannel = CreateConsumerChannel();
-
-            //SubsManager.OnEventRemoved += SubsManager_OnEventRemoved;
-
+            return channel;
         }
 
         private void SubsManager_OnEventRemoved(object? sender, string eventName)
@@ -64,98 +57,74 @@ namespace EventBus.RabbitMQ
             eventName = ProcessEventName(eventName);
 
             if (!persistentConnection.IsConnected)
-            {
                 persistentConnection.TryConnect();
-            }
 
-            consumerChannel.QueueUnbind(queue: eventName,
+            consumerChannel.QueueUnbind(queue: GetSubName(eventName),
                 exchange: EventBusConfig.DefaultTopicName,
                 routingKey: eventName);
 
             if (SubsManager.IsEmpty)
-            {
                 consumerChannel.Close();
-            }
         }
 
         public override void Publish(IntegrationEvent @event)
         {
             if (!persistentConnection.IsConnected)
-            {
                 persistentConnection.TryConnect();
-            }
 
             var policy = Policy.Handle<BrokerUnreachableException>()
                 .Or<SocketException>()
-                .WaitAndRetry(EventBusConfig.ConnectionRetryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), (ex, time) =>
-                {
-                    //log
-                });
+                .WaitAndRetry(EventBusConfig.ConnectionRetryCount,
+                    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
-            var eventName = @event.GetType().Name;
-            eventName = ProcessEventName(eventName);
+            var eventName = ProcessEventName(@event.GetType().Name);
 
-            consumerChannel.ExchangeDeclare(exchange: EventBusConfig.DefaultTopicName, type: "direct"); // Ensure exchange exists while publishing
-
-         
             var message = JsonConvert.SerializeObject(@event);
             var body = Encoding.UTF8.GetBytes(message);
 
             policy.Execute(() =>
             {
-                var properties = consumerChannel.CreateBasicProperties();
-                properties.DeliveryMode = 2; // persistent
+                lock (publishLock)
+                {
+                    var properties = publisherChannel.CreateBasicProperties();
+                    properties.DeliveryMode = 2; // persistent
+                    properties.MessageId = @event.Id.ToString();
+                    properties.ContentType = "application/json";
 
-                //consumerChannel.QueueDeclare(queue: GetSubName(eventName), // Ensure queue exists while publishing
-                //                             durable: true,
-                //                             exclusive: false,
-                //                             autoDelete: false,
-                //                             arguments: null);
-
-                ////// mantıklı bir kullanım değil deneme yapıyoruz //KALDIR
-                //consumerChannel.QueueBind(queue: GetSubName(eventName),
-                //                                exchange: EventBusConfig.DefaultTopicName,
-                //                                routingKey: eventName);
-
-
-                consumerChannel.BasicPublish(
-                    exchange: EventBusConfig.DefaultTopicName,
-                    routingKey: eventName,
-                    mandatory: true,
-                    basicProperties: properties,
-                    body: body);
+                    publisherChannel.BasicPublish(
+                        exchange: EventBusConfig.DefaultTopicName,
+                        routingKey: eventName,
+                        mandatory: false,
+                        basicProperties: properties,
+                        body: body);
+                }
             });
         }
 
         public override void Subscribe<T, TH>()
         {
-            var eventName = typeof(T).Name;
-            eventName = ProcessEventName(eventName);
+            var eventName = ProcessEventName(typeof(T).Name);
 
-            if (!SubsManager.HasSubscriptionsForEvent(eventName))
+            if (SubsManager.HasSubscriptionsForEvent(eventName))
             {
-                if (!SubsManager.HasSubscriptionsForEvent(eventName))
-                {
-                    if (!persistentConnection.IsConnected)
-                    {
-                        persistentConnection.TryConnect();
-                    }
-
-                    consumerChannel.QueueDeclare(queue: GetSubName(eventName), // Ensure queue exists while consuming
-                                                 durable: true,
-                                                 exclusive: false,
-                                                 autoDelete: false,
-                                                 arguments: null);
-
-                    consumerChannel.QueueBind(queue: GetSubName(eventName),
-                                              exchange: EventBusConfig.DefaultTopicName,
-                                              routingKey: eventName);
-                }
-
+                // Another handler for the same event: register it, the consumer is already running.
                 SubsManager.AddSubscription<T, TH>();
-                StartBasicConsume(eventName);
+                return;
             }
 
+            if (!persistentConnection.IsConnected)
+                persistentConnection.TryConnect();
+
+            var queueName = GetSubName(eventName);
+
+            DeclareSubscriberQueue(queueName, eventName);
+
+            consumerChannel.QueueBind(queue: queueName,
+                exchange: EventBusConfig.DefaultTopicName,
+                routingKey: eventName);
+
+            SubsManager.AddSubscription<T, TH>();
+            StartBasicConsume(eventName);
         }
 
         public override void UnSubscribe<T, TH>()
@@ -163,53 +132,106 @@ namespace EventBus.RabbitMQ
             SubsManager.RemoveSubscription<T, TH>();
         }
 
-        private IModel CreateConsumerChannel()
+        /// <summary>
+        /// Declares the subscriber queue with a dead-letter policy.
+        ///
+        /// RabbitMQ rejects a re-declare whose arguments differ from the existing
+        /// queue (406 PRECONDITION_FAILED), which is exactly what happens on an
+        /// upgrade from a build that had no DLQ. Rather than crash the service on
+        /// start-up, fall back to the existing definition and tell the operator how
+        /// to enable dead-lettering.
+        /// </summary>
+        private void DeclareSubscriberQueue(string queueName, string eventName)
         {
-            if (!persistentConnection.IsConnected)
+            var deadLetterQueueName = queueName + DeadLetterExchangeSuffix;
+
+            try
             {
-                persistentConnection.TryConnect();
+                consumerChannel.QueueDeclare(
+                    queue: deadLetterQueueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null);
+
+                consumerChannel.QueueBind(
+                    queue: deadLetterQueueName,
+                    exchange: DeadLetterExchangeName,
+                    routingKey: eventName);
+
+                consumerChannel.QueueDeclare(
+                    queue: queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: new Dictionary<string, object>
+                    {
+                        ["x-dead-letter-exchange"] = DeadLetterExchangeName,
+                        ["x-dead-letter-routing-key"] = eventName
+                    });
             }
+            catch (OperationInterruptedException ex) when (ex.ShutdownReason?.ReplyCode == 406)
+            {
+                Console.Error.WriteLine(
+                    $"[EventBus] Queue '{queueName}' already exists without a dead-letter policy. " +
+                    "Continuing without dead-lettering; delete the queue in the RabbitMQ console to enable it.");
 
-            var channel = persistentConnection.CreateModel();
+                // The 406 closed the channel, so a fresh one is required.
+                consumerChannel = CreateChannel();
 
-            channel.ExchangeDeclare(exchange: EventBusConfig.DefaultTopicName,
-                                    type: "direct");
-
-            return channel;
+                consumerChannel.QueueDeclare(
+                    queue: queueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    arguments: null);
+            }
         }
 
         private void StartBasicConsume(string eventName)
         {
-            if (consumerChannel != null)
-            {
-                var consumer = new EventingBasicConsumer(consumerChannel);
+            if (consumerChannel == null) return;
 
-                consumer.Received += Consumer_Received;
+            var consumer = new EventingBasicConsumer(consumerChannel);
+            consumer.Received += Consumer_Received;
 
-                consumerChannel.BasicConsume(
-                    queue: GetSubName(eventName),
-                    autoAck: false,
-                    consumer: consumer);
-            }
+            consumerChannel.BasicConsume(
+                queue: GetSubName(eventName),
+                autoAck: false,
+                consumer: consumer);
         }
 
-        private async void Consumer_Received(object sender, BasicDeliverEventArgs eventArgs)
+        private void Consumer_Received(object? sender, BasicDeliverEventArgs eventArgs)
         {
-            var eventName = eventArgs.RoutingKey;
-            eventName = ProcessEventName(eventName);
+            var eventName = ProcessEventName(eventArgs.RoutingKey);
             var message = Encoding.UTF8.GetString(eventArgs.Body.Span);
 
             try
             {
-                await ProcessEvent(eventName, message);
+                // The RabbitMQ dispatcher thread is synchronous; blocking here preserves
+                // ordering per consumer and guarantees ack/nack happens exactly once.
+                ProcessEvent(eventName, message).GetAwaiter().GetResult();
+                consumerChannel.BasicAck(eventArgs.DeliveryTag, multiple: false);
             }
             catch (Exception ex)
             {
-                //logging
-            }
+                Console.Error.WriteLine($"[EventBus] Handling '{eventName}' failed, routed to dead-letter queue: {ex.Message}");
 
-            consumerChannel.BasicAck(eventArgs.DeliveryTag, multiple: false);
+                // requeue:false -> the broker routes the message to the configured dead-letter exchange.
+                consumerChannel.BasicNack(eventArgs.DeliveryTag, multiple: false, requeue: false);
+            }
         }
 
+        public override void Dispose()
+        {
+            SubsManager.OnEventRemoved -= SubsManager_OnEventRemoved;
+
+            if (consumerChannel?.IsOpen == true) consumerChannel.Close();
+            if (publisherChannel?.IsOpen == true) publisherChannel.Close();
+
+            persistentConnection.Dispose();
+
+            base.Dispose();
+        }
     }
 }
