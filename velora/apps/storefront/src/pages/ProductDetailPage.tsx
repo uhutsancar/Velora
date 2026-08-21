@@ -81,8 +81,8 @@ export default function ProductDetailPage() {
     return (
       <div className="container-velora py-24">
         <ErrorState
-          title="Ürün bulunamadı"
-          message="Bu ürün kaldırılmış veya adresi değişmiş olabilir."
+          title={t('product.notFound')}
+          message={t('product.notFoundBody')}
           onRetry={() => void refetch()}
         />
       </div>
@@ -100,7 +100,7 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      toast('Sepete eklemek için giriş yapın', 'info');
+      toast(t('product.loginToAdd'), 'info');
       return;
     }
 
@@ -126,7 +126,7 @@ export default function ProductDetailPage() {
       toast(t('product.addedToCart', { name: product.name }), 'success');
       dispatch(openCartDrawer());
     } catch {
-      toast('Ürün sepete eklenemedi', 'error');
+      toast(t('product.addFailed'), 'error');
     }
   };
 
@@ -146,7 +146,7 @@ export default function ProductDetailPage() {
       />
 
       <div className="container-velora py-8 md:py-12">
-        <nav aria-label="Breadcrumb" className="mb-8 flex flex-wrap items-center gap-2 text-xs text-ink-400">
+        <nav aria-label={t('product.breadcrumb')} className="mb-8 flex flex-wrap items-center gap-2 text-xs text-ink-400">
           {breadcrumbs.map((crumb, index) => (
             <span key={crumb.url} className="flex items-center gap-2">
               {index > 0 && <span aria-hidden>/</span>}
@@ -209,7 +209,7 @@ export default function ProductDetailPage() {
               <div className="flex items-center border border-ink-200">
                 <button
                   type="button"
-                  aria-label="Adet azalt"
+                  aria-label={t('common.decreaseQuantity')}
                   onClick={() => setQuantity((current) => Math.max(1, current - 1))}
                   disabled={quantity <= 1}
                   className="flex h-12 w-12 items-center justify-center text-ink-600 transition-colors hover:bg-ink-100 disabled:opacity-40"
@@ -223,7 +223,7 @@ export default function ProductDetailPage() {
 
                 <button
                   type="button"
-                  aria-label="Adet artır"
+                  aria-label={t('common.increaseQuantity')}
                   onClick={() => setQuantity((current) => Math.min(stock || 20, current + 1))}
                   disabled={stock > 0 && quantity >= stock}
                   className="flex h-12 w-12 items-center justify-center text-ink-600 transition-colors hover:bg-ink-100 disabled:opacity-40"
@@ -242,7 +242,7 @@ export default function ProductDetailPage() {
                 aria-pressed={wishlisted}
                 onClick={() => {
                   if (!isAuthenticated) {
-                    toast('Favorilere eklemek için giriş yapın', 'info');
+                    toast(t('product.loginToWishlist'), 'info');
                     return;
                   }
                   void toggleWishlist(product.id);
@@ -264,15 +264,15 @@ export default function ProductDetailPage() {
             <dl className="mt-8 space-y-3 border-t border-ink-100 pt-6 text-sm">
               <div className="flex items-start gap-3 text-ink-600">
                 <Truck className="mt-0.5 h-4 w-4 shrink-0 text-tan-600" aria-hidden />
-                <span>500 TL üzeri siparişlerde ücretsiz kargo, 1-3 iş günü içinde teslim.</span>
+                <span>{t('product.shippingNote')}</span>
               </div>
               <div className="flex items-start gap-3 text-ink-600">
                 <RotateCcw className="mt-0.5 h-4 w-4 shrink-0 text-tan-600" aria-hidden />
-                <span>30 gün içinde koşulsuz iade ve değişim.</span>
+                <span>{t('product.returnNote')}</span>
               </div>
               <div className="flex items-start gap-3 text-ink-600">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-tan-600" aria-hidden />
-                <span>Üretim hatalarına karşı 2 yıl garanti.</span>
+                <span>{t('product.warrantyNote')}</span>
               </div>
             </dl>
 

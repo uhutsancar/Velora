@@ -27,7 +27,7 @@ export default function HomePage() {
     <>
       <Seo
         title={`${env.siteName} — ${t('common.tagline')}`}
-        description="Velora, tam tabaklanmış deriden el yapımı çanta, cüzdan ve aksesuar koleksiyonu. 500 TL üzeri ücretsiz kargo, 30 gün koşulsuz iade."
+        description={t('home.metaDescription')}
         path="/"
         jsonLd={[
           buildOrganizationJsonLd(env.siteUrl, env.siteName),

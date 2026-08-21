@@ -6,26 +6,28 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/hooks';
 import { useGetCategoryTreeQuery } from '@/store/api/catalogApi';
 
+// Labels are resolved through i18n at render time so the footer follows the
+// active language like the rest of the shell.
 const HELP_LINKS = [
-  { label: 'Kargo ve Teslimat', to: '/yardim/kargo' },
-  { label: 'İade ve Değişim', to: '/yardim/iade' },
-  { label: 'Sipariş Takibi', to: '/hesabim/siparisler' },
-  { label: 'Deri Bakımı', to: '/yardim/bakim' },
-  { label: 'Sıkça Sorulan Sorular', to: '/yardim/sss' },
+  { labelKey: 'footer.shipping', to: '/yardim/kargo' },
+  { labelKey: 'footer.returns', to: '/yardim/iade' },
+  { labelKey: 'footer.orderTracking', to: '/hesabim/siparisler' },
+  { labelKey: 'footer.leatherCare', to: '/yardim/bakim' },
+  { labelKey: 'footer.faq', to: '/yardim/sss' },
 ];
 
 const CORPORATE_LINKS = [
-  { label: 'Hakkımızda', to: '/hakkimizda' },
-  { label: 'Atölyemiz', to: '/atolye' },
-  { label: 'Sürdürülebilirlik', to: '/surdurulebilirlik' },
-  { label: 'İletişim', to: '/iletisim' },
+  { labelKey: 'nav.about', to: '/hakkimizda' },
+  { labelKey: 'footer.atelier', to: '/atolye' },
+  { labelKey: 'footer.sustainability', to: '/surdurulebilirlik' },
+  { labelKey: 'nav.contact', to: '/iletisim' },
 ];
 
 const LEGAL_LINKS = [
-  { label: 'Gizlilik Politikası', to: '/gizlilik' },
-  { label: 'Kullanım Koşulları', to: '/kosullar' },
-  { label: 'KVKK Aydınlatma Metni', to: '/kvkk' },
-  { label: 'Çerez Politikası', to: '/cerez' },
+  { labelKey: 'footer.privacy', to: '/gizlilik' },
+  { labelKey: 'footer.terms', to: '/kosullar' },
+  { labelKey: 'footer.kvkk', to: '/kvkk' },
+  { labelKey: 'footer.cookies', to: '/cerez' },
 ];
 
 export function Footer() {
@@ -38,13 +40,13 @@ export function Footer() {
     event.preventDefault();
 
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      toast('Geçerli bir e-posta adresi girin', 'error');
+      toast(t('footer.invalidEmail'), 'error');
       return;
     }
 
     // No newsletter service is wired up yet; the form validates and acknowledges
     // rather than pretending to have subscribed the address somewhere.
-    toast('Bültene kayıt talebiniz alındı', 'success');
+    toast(t('footer.newsletterThanks'), 'success');
     setEmail('');
   };
 
@@ -83,7 +85,7 @@ export function Footer() {
 
           <ul className="mt-6 space-y-2.5 text-sm text-sand-100/70">
             <li className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 shrink-0" aria-hidden /> Karaköy, İstanbul
+              <MapPin className="h-4 w-4 shrink-0" aria-hidden /> {t('footer.address')}
             </li>
             <li className="flex items-center gap-2">
               <Phone className="h-4 w-4 shrink-0" aria-hidden />
@@ -117,19 +119,25 @@ export function Footer() {
             to: `/kategori/${category.slug}`,
           }))}
         />
-        <FooterColumn title="Yardım" links={HELP_LINKS} />
-        <FooterColumn title="Kurumsal" links={CORPORATE_LINKS} />
+        <FooterColumn
+          title={t('footer.help')}
+          links={HELP_LINKS.map((link) => ({ label: t(link.labelKey), to: link.to }))}
+        />
+        <FooterColumn
+          title={t('footer.corporate')}
+          links={CORPORATE_LINKS.map((link) => ({ label: t(link.labelKey), to: link.to }))}
+        />
       </div>
 
       <div className="border-t border-white/10">
         <div className="container-velora flex flex-col gap-4 py-6 text-xs text-sand-100/50 md:flex-row md:items-center md:justify-between">
-          <p>© {new Date().getFullYear()} Velora. Tüm hakları saklıdır.</p>
+          <p>{t('footer.rights', { year: new Date().getFullYear() })}</p>
 
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {LEGAL_LINKS.map((link) => (
               <li key={link.to}>
                 <Link to={link.to} className="transition-colors hover:text-sand-50">
-                  {link.label}
+                  {t(link.labelKey)}
                 </Link>
               </li>
             ))}

@@ -4,7 +4,7 @@ import { cn } from '@/utils/cn';
 
 /** Two-language toggle. Persists the choice so it survives a reload. */
 export function LanguageSwitcher({ className }: { className?: string }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const change = (language: SupportedLanguage) => {
     if (language === i18n.language) return;
@@ -14,7 +14,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn('flex items-center gap-1', className)} role="group" aria-label="Dil seçimi">
+    <div className={cn('flex items-center gap-1', className)} role="group" aria-label={t('common.languageSelect')}>
       {SUPPORTED_LANGUAGES.map((language) => (
         <button
           key={language}

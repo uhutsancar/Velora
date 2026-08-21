@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle2, Info, X } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { dismissToast, selectToasts, type ToastVariant } from '@/store/slices/uiSlice';
 import { cn } from '@/utils/cn';
@@ -23,10 +24,12 @@ export function ProductCardSkeleton() {
 }
 
 export function Spinner({ className }: { className?: string }) {
+  const { t } = useTranslation();
+
   return (
     <span
       role="status"
-      aria-label="Yükleniyor"
+      aria-label={t('common.loading')}
       className={cn(
         'inline-block h-5 w-5 animate-spin rounded-full border-2 border-ink-200 border-t-ink-900',
         className,
@@ -60,20 +63,18 @@ export interface ErrorStateProps {
   onRetry?: () => void;
 }
 
-export function ErrorState({
-  title = 'Bir şeyler ters gitti',
-  message = 'İçerik yüklenemedi. Lütfen tekrar deneyin.',
-  onRetry,
-}: ErrorStateProps) {
+export function ErrorState({ title, message, onRetry }: ErrorStateProps) {
+  const { t } = useTranslation();
+
   return (
     <EmptyState
       icon={<AlertTriangle className="h-10 w-10" />}
-      title={title}
-      description={message}
+      title={title ?? t('common.errorTitle')}
+      description={message ?? t('common.loadFailed')}
       action={
         onRetry && (
           <Button variant="outline" onClick={onRetry}>
-            Tekrar dene
+            {t('common.retry')}
           </Button>
         )
       }
@@ -100,13 +101,14 @@ const TOAST_TIMEOUT_MS = 4000;
 
 /** Global toast stack. Rendered once in the layout. */
 export function ToastViewport() {
+  const { t } = useTranslation();
   const toasts = useAppSelector(selectToasts);
   const dispatch = useAppDispatch();
 
   return (
     <div
       role="region"
-      aria-label="Bildirimler"
+      aria-label={t('common.notifications')}
       className="pointer-events-none fixed bottom-6 left-1/2 z-[100] flex w-[min(92vw,26rem)] -translate-x-1/2 flex-col gap-2"
     >
       <AnimatePresence initial={false}>
@@ -133,7 +135,7 @@ export function ToastViewport() {
               <span className="flex-1">{toast.message}</span>
               <button
                 type="button"
-                aria-label="Bildirimi kapat"
+                aria-label={t('common.dismissNotification')}
                 onClick={() => dispatch(dismissToast(toast.id))}
                 className="opacity-70 transition-opacity hover:opacity-100"
               >

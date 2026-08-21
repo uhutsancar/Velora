@@ -100,14 +100,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <button
           type="button"
           onClick={() => dispatch(toggleSidebar())}
-          aria-label={collapsed ? 'Menüyü genişlet' : 'Menüyü daralt'}
+          aria-label={collapsed ? t('admin.expandMenu') : t('admin.collapseMenu')}
           className="hidden rounded p-1.5 text-ink-400 transition-colors hover:bg-ink-50 hover:text-ink-900 lg:block"
         >
           <ChevronLeft className={cn('h-4 w-4 transition-transform', collapsed && 'rotate-180')} />
         </button>
       </div>
 
-      <nav aria-label="Yönetim menüsü" className="flex-1 overflow-y-auto py-4">
+      <nav aria-label={t('admin.adminMenu')} className="flex-1 overflow-y-auto py-4">
         {NAV_GROUPS.map((group) => (
           <NavGroup key={group.titleKey} group={group} collapsed={collapsed} onNavigate={onNavigate} />
         ))}

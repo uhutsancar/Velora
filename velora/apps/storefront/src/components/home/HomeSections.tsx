@@ -62,7 +62,9 @@ export function CategoryShowcase({ categories, loading }: { categories: Category
                 <div>
                   <h3 className="font-display text-2xl text-sand-50">{category.name}</h3>
                   {category.productCount > 0 && (
-                    <p className="mt-1 text-xs text-sand-100/70">{category.productCount} ürün</p>
+                    <p className="mt-1 text-xs text-sand-100/70">
+                      {t('common.productCount', { count: category.productCount })}
+                    </p>
                   )}
                 </div>
 
@@ -94,7 +96,7 @@ export function EditorialSection() {
         <div className="relative aspect-editorial overflow-hidden lg:sticky lg:top-28">
           <motion.img
             src="https://picsum.photos/seed/velora-editorial/1200/1500"
-            alt="Velora atölyesinde deri işçiliği"
+            alt={t('home.editorialImageAlt')}
             loading="lazy"
             decoding="async"
             style={reduceMotion ? undefined : { scale: imageScale }}
@@ -116,9 +118,9 @@ export function EditorialSection() {
           <Reveal delay={0.1}>
             <dl className="grid gap-8 border-t border-white/10 pt-8 sm:grid-cols-3">
               {[
-                { value: '40+', label: 'üretim adımı' },
-                { value: '1994', label: 'kuruluş yılı' },
-                { value: '%100', label: 'gerçek deri' },
+                { value: '40+', label: t('home.statSteps') },
+                { value: '1994', label: t('home.statFounded') },
+                { value: '%100', label: t('home.statLeather') },
               ].map((stat) => (
                 <div key={stat.label}>
                   <dt className="font-display text-3xl text-sand-50">{stat.value}</dt>
@@ -130,7 +132,7 @@ export function EditorialSection() {
 
           <Reveal delay={0.2}>
             <Button to="/atolye" variant="outline" className="border-sand-50 text-sand-50 hover:bg-sand-50 hover:text-ink-900">
-              Atölyeyi keşfet
+              {t('home.exploreAtelier')}
             </Button>
           </Reveal>
         </div>
@@ -168,6 +170,8 @@ export function ValueProps() {
 
 /** Wide promotional banner sourced from Banner-placement campaigns. */
 export function CampaignBanner({ campaign }: { campaign?: Campaign }) {
+  const { t } = useTranslation();
+
   if (!campaign) return null;
 
   return (
@@ -191,14 +195,16 @@ export function CampaignBanner({ campaign }: { campaign?: Campaign }) {
 
           <div className="absolute inset-y-0 left-0 flex max-w-lg flex-col justify-center p-8 md:p-14">
             {campaign.discountPercentage > 0 && (
-              <p className="label-caps mb-3 text-tan-300">%{campaign.discountPercentage} indirim</p>
+              <p className="label-caps mb-3 text-tan-300">
+                {t('product.discount', { value: campaign.discountPercentage })}
+              </p>
             )}
             <h2 className="font-display text-headline text-sand-50 text-balance">{campaign.name}</h2>
             {campaign.description && (
               <p className="mt-3 text-sm text-sand-100/80 text-pretty">{campaign.description}</p>
             )}
             <span className="label-caps mt-6 inline-flex items-center gap-2 text-sand-50">
-              {campaign.ctaLabel ?? 'Keşfet'}
+              {campaign.ctaLabel ?? t('common.discover')}
               <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </span>
           </div>

@@ -52,17 +52,17 @@ export default function DashboardPage() {
     <>
       <PageHeader
         title={t('admin.dashboard')}
-        description="Satış, stok ve müşteri metriklerinin canlı görünümü"
+        description={t('admin.dashboardSubtitle')}
         actions={
           <Select
             value={days}
             size="small"
             onChange={(event) => setDays(Number(event.target.value))}
-            aria-label="Zaman aralığı"
+            aria-label={t('admin.dateRange')}
           >
             {RANGE_OPTIONS.map((option) => (
               <MenuItem key={option} value={option}>
-                Son {option} gün
+                {t('admin.lastDays', { count: option })}
               </MenuItem>
             ))}
           </Select>
@@ -78,7 +78,7 @@ export default function DashboardPage() {
               label={t('admin.totalRevenue')}
               value={summary ? money(summary.totalRevenue) : '—'}
               delta={summary?.revenueGrowthPercentage}
-              deltaLabel="geçen aya göre"
+              deltaLabel={t('admin.vsLastMonth')}
               icon={<Wallet size={17} />}
               accent="success"
               loading={dashboardLoading}
@@ -86,7 +86,7 @@ export default function DashboardPage() {
             <StatCard
               label={t('admin.todayRevenue')}
               value={summary ? money(summary.todayRevenue) : '—'}
-              hint={summary ? `${summary.todayOrders} sipariş` : undefined}
+              hint={summary ? t('admin.ordersCount', { count: summary.todayOrders }) : undefined}
               icon={<TrendingUp size={17} />}
               loading={dashboardLoading}
             />
@@ -101,7 +101,7 @@ export default function DashboardPage() {
             <StatCard
               label={t('admin.averageOrder')}
               value={summary ? money(summary.averageOrderValue) : '—'}
-              hint={summary ? `${summary.uniqueCustomers} tekil müşteri` : undefined}
+              hint={summary ? t('admin.uniqueCustomersCount', { count: summary.uniqueCustomers }) : undefined}
               icon={<Users size={17} />}
               loading={dashboardLoading}
             />
@@ -118,14 +118,14 @@ export default function DashboardPage() {
             <StatCard
               label={t('admin.totalProducts')}
               value={catalogStats ? formatNumber(catalogStats.totalProducts, locale) : '—'}
-              hint={catalogStats ? `${catalogStats.publishedProducts} yayında` : undefined}
+              hint={catalogStats ? t('admin.publishedCount', { count: catalogStats.publishedProducts }) : undefined}
               icon={<Package size={17} />}
               loading={catalogLoading}
             />
             <StatCard
               label={t('admin.lowStock')}
               value={catalogStats ? formatNumber(catalogStats.lowStockProducts, locale) : '—'}
-              hint={catalogStats ? `${catalogStats.outOfStockProducts} tükendi` : undefined}
+              hint={catalogStats ? t('admin.outOfStockCount', { count: catalogStats.outOfStockProducts }) : undefined}
               icon={<AlertTriangle size={17} />}
               accent={catalogStats && catalogStats.lowStockProducts > 0 ? 'warning' : 'neutral'}
               loading={catalogLoading}
@@ -133,14 +133,14 @@ export default function DashboardPage() {
             <StatCard
               label={t('admin.inventoryValue')}
               value={catalogStats ? formatCompactCurrency(catalogStats.inventoryValue, locale, env.currency) : '—'}
-              hint="maliyet üzerinden"
+              hint={t('admin.overCost')}
               icon={<Wallet size={17} />}
               loading={catalogLoading}
             />
             <StatCard
               label={t('admin.potentialMargin')}
               value={catalogStats ? formatCompactCurrency(catalogStats.potentialMargin, locale, env.currency) : '—'}
-              hint={userStats ? `${userStats.newUsersLast30Days} yeni müşteri (30g)` : undefined}
+              hint={userStats ? t('admin.newCustomers30', { count: userStats.newUsersLast30Days }) : undefined}
               icon={<TrendingUp size={17} />}
               accent="success"
               loading={catalogLoading}
@@ -162,14 +162,14 @@ export default function DashboardPage() {
                 titleTypographyProps={{ variant: 'h5' }}
                 action={
                   <Link to="/orders" className="text-sm text-ink-500 underline-offset-4 hover:underline">
-                    Tümü
+                    {t('common.all')}
                   </Link>
                 }
               />
               <CardContent sx={{ pt: 0 }}>
                 {(dashboard?.recentOrders ?? []).length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-                    Bu dönemde sipariş yok.
+                    {t('admin.noOrdersPeriod')}
                   </Typography>
                 ) : (
                   <ul className="divide-y divide-ink-100">
@@ -215,14 +215,14 @@ export default function DashboardPage() {
                     to="/products?lowStock=true"
                     className="text-sm text-ink-500 underline-offset-4 hover:underline"
                   >
-                    Tümü
+                    {t('common.all')}
                   </Link>
                 }
               />
               <CardContent sx={{ pt: 0 }}>
                 {(catalogStats?.lowStockItems ?? []).length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>
-                    Kritik stokta ürün yok.
+                    {t('admin.noCriticalStock')}
                   </Typography>
                 ) : (
                   <ul className="divide-y divide-ink-100">

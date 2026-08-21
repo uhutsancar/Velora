@@ -3,6 +3,7 @@ import { ExternalLink, LogOut, Menu as MenuIcon, User } from 'lucide-react';
 import { Suspense, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { persistLanguage, type SupportedLanguage } from '@velora/shared';
 import { env } from '@/config/env';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout, selectAuthUser } from '@/store/slices/authSlice';
@@ -19,6 +20,8 @@ export function AdminLayout() {
   const mobileOpen = useAppSelector(selectMobileSidebarOpen);
 
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+
+  const next: SupportedLanguage = i18n.language === 'tr' ? 'en' : 'tr';
 
   return (
     <div className="flex h-dvh overflow-hidden bg-surface-muted">
@@ -40,7 +43,7 @@ export function AdminLayout() {
           <div className="flex items-center gap-3">
             <IconButton
               onClick={() => dispatch(setMobileSidebar(true))}
-              aria-label="Menüyü aç"
+              aria-label={t('admin.openMenu')}
               sx={{ display: { lg: 'none' } }}
             >
               <MenuIcon size={20} />
@@ -52,13 +55,18 @@ export function AdminLayout() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => void i18n.changeLanguage(i18n.language === 'tr' ? 'en' : 'tr')}
+              onClick={() => {
+                // Persisted so the console reopens in the language the user picked.
+                void i18n.changeLanguage(next);
+                persistLanguage(next);
+              }}
+              aria-label={t('common.languageSelect')}
               className="label-caps rounded px-2 py-1 text-ink-400 transition-colors hover:bg-ink-50 hover:text-ink-900"
             >
-              {i18n.language === 'tr' ? 'EN' : 'TR'}
+              {next.toUpperCase()}
             </button>
 
-            <Tooltip title="Mağazayı görüntüle">
+            <Tooltip title={t('admin.viewStore')}>
               <IconButton component="a" href={env.storefrontUrl} target="_blank" rel="noreferrer noopener">
                 <ExternalLink size={18} />
               </IconButton>
@@ -67,7 +75,7 @@ export function AdminLayout() {
             <button
               type="button"
               onClick={(event) => setMenuAnchor(event.currentTarget)}
-              aria-label="Hesap menüsü"
+              aria-label={t('admin.accountMenu')}
               className="flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-ink-50"
             >
               <Avatar sx={{ width: 30, height: 30, bgcolor: '#12100E', fontSize: 13 }}>

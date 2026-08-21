@@ -96,11 +96,11 @@ export default function ProductsPage() {
       },
       {
         field: 'name',
-        headerName: 'Ürün',
+        headerName: t('admin.product'),
         flex: 1,
         minWidth: 220,
         renderCell: (params) => (
-          <div className="min-w-0 py-1">
+          <div className="flex h-full min-w-0 flex-col justify-center">
             <Link
               to={`/products/${params.row.id}`}
               className="block truncate text-sm font-medium text-ink-900 hover:underline"
@@ -108,14 +108,14 @@ export default function ProductsPage() {
               {params.row.name}
             </Link>
             <span className="block truncate text-xs text-ink-400">
-              {params.row.brandName} · {params.row.categoryName ?? 'Kategorisiz'}
+              {params.row.brandName} · {params.row.categoryName ?? t('admin.uncategorized')}
             </span>
           </div>
         ),
       },
       {
         field: 'effectivePrice',
-        headerName: 'Fiyat',
+        headerName: t('admin.price'),
         width: 140,
         renderCell: (params) => (
           <div className="text-sm tabular-nums">
@@ -128,7 +128,7 @@ export default function ProductsPage() {
       },
       {
         field: 'totalStock',
-        headerName: 'Stok',
+        headerName: t('admin.stock'),
         width: 110,
         renderCell: (params) => (
           <Chip
@@ -143,7 +143,7 @@ export default function ProductsPage() {
       },
       {
         field: 'ratingAverage',
-        headerName: 'Puan',
+        headerName: t('admin.rating'),
         width: 100,
         renderCell: (params) =>
           params.row.ratingCount > 0 ? (
@@ -157,10 +157,10 @@ export default function ProductsPage() {
       },
       {
         field: 'isFeatured',
-        headerName: 'Öne çıkan',
+        headerName: t('admin.featured'),
         width: 110,
         renderCell: (params) =>
-          params.row.isFeatured ? <Chip size="small" label="Evet" color="secondary" /> : null,
+          params.row.isFeatured ? <Chip size="small" label={t('common.yes')} color="secondary" /> : null,
       },
       {
         field: 'actions',
@@ -172,7 +172,7 @@ export default function ProductsPage() {
         headerAlign: 'right',
         renderCell: (params) => (
           <Stack direction="row" spacing={0.5} alignItems="center">
-            <Tooltip title="Mağazada görüntüle">
+            <Tooltip title={t('admin.viewInStore')}>
               <IconButton
                 size="small"
                 component="a"
@@ -206,7 +206,7 @@ export default function ProductsPage() {
                           await deleteProduct(params.row.id).unwrap();
                           toast(t('admin.deleted'), 'success');
                         } catch {
-                          toast('Ürün silinemedi', 'error');
+                          toast(t('admin.productDeleteFailed'), 'error');
                         }
                       },
                     })
@@ -227,7 +227,7 @@ export default function ProductsPage() {
     <>
       <PageHeader
         title={t('admin.products')}
-        description="Katalogdaki tüm ürünler"
+        description={t('admin.productsSubtitle')}
         actions={
           canWrite && (
             <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => navigate('/products/new')}>
@@ -241,7 +241,7 @@ export default function ProductsPage() {
         <TextField
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Ürün adı, SKU veya marka ara"
+          placeholder={t('admin.productSearchPlaceholder')}
           sx={{ minWidth: { md: 320 } }}
           InputProps={{
             startAdornment: (
@@ -254,7 +254,7 @@ export default function ProductsPage() {
 
         <TextField
           select
-          label="Durum"
+          label={t('order.status')}
           value={publishedFilter ?? 'all'}
           onChange={(event) => setFilter('published', event.target.value === 'all' ? null : event.target.value)}
           sx={{ minWidth: 160 }}

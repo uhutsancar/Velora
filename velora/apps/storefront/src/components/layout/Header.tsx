@@ -5,18 +5,18 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth, useScrollDirection } from '@/hooks';
 import { useWishlist } from '@/hooks/useWishlist';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useAppDispatch } from '@/store/hooks';
 import { useGetBasketQuery } from '@/store/api/basketApi';
 import { useGetCategoryTreeQuery } from '@/store/api/catalogApi';
-import { openCartDrawer, toggleMobileMenu, toggleSearch, selectSearchOpen } from '@/store/slices/uiSlice';
+import { openCartDrawer, toggleMobileMenu, toggleSearch } from '@/store/slices/uiSlice';
 import { cn } from '@/utils/cn';
 import { MegaMenu } from './MegaMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
-const ANNOUNCEMENTS = [
-  '500 TL üzeri siparişlerde ücretsiz kargo',
-  'İlk siparişinize özel %10 indirim: VELORA10',
-  '30 gün koşulsuz iade',
+const ANNOUNCEMENT_KEYS = [
+  'home.announcementShipping',
+  'home.announcementCoupon',
+  'home.announcementReturns',
 ];
 
 export function Header() {
@@ -25,8 +25,7 @@ export function Header() {
   const dispatch = useAppDispatch();
 
   const { isAuthenticated } = useAuth();
-  const { scrolled, direction } = useScrollDirection();
-  const searchOpen = useAppSelector(selectSearchOpen);
+  const { scrolled } = useScrollDirection();
 
   const { data: categories = [] } = useGetCategoryTreeQuery();
   const { data: basket } = useGetBasketQuery(undefined, { skip: !isAuthenticated });
@@ -39,7 +38,7 @@ export function Header() {
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') {
-        setAnnouncement((current) => (current + 1) % ANNOUNCEMENTS.length);
+        setAnnouncement((current) => (current + 1) % ANNOUNCEMENT_KEYS.length);
       }
     }, 5000);
 
@@ -51,8 +50,6 @@ export function Header() {
 
   const basketCount = basket?.totalQuantity ?? 0;
   const isHome = location.pathname === '/';
-  // Hide on scroll down, reveal on scroll up — more room for the product on mobile.
-  const hidden = direction === 'down' && !searchOpen && openCategory === null;
 
   return (
     <>
@@ -67,15 +64,13 @@ export function Header() {
               transition={{ duration: 0.4 }}
               className="label-caps text-center"
             >
-              {ANNOUNCEMENTS[announcement]}
+              {t(ANNOUNCEMENT_KEYS[announcement] ?? 'home.announcementShipping')}
             </motion.p>
           </AnimatePresence>
         </div>
       </div>
 
-      <motion.header
-        animate={{ y: hidden ? '-100%' : 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      <header
         onMouseLeave={() => setOpenCategory(null)}
         className={cn(
           'sticky top-0 z-50 border-b transition-colors duration-300',
@@ -98,7 +93,7 @@ export function Header() {
             <span className="font-display text-2xl tracking-[0.28em] text-ink-900">VELORA</span>
           </Link>
 
-          <nav aria-label="Ana menü" className="hidden flex-1 items-center justify-center gap-8 lg:flex">
+          <nav aria-label={t('nav.mainMenu')} className="hidden flex-1 items-center justify-center gap-8 lg:flex">
             {categories.map((category) => (
               <div key={category.id} onMouseEnter={() => setOpenCategory(category.id)}>
                 <NavLink
@@ -169,7 +164,7 @@ export function Header() {
           openCategoryId={openCategory}
           onClose={() => setOpenCategory(null)}
         />
-      </motion.header>
+      </header>
     </>
   );
 }

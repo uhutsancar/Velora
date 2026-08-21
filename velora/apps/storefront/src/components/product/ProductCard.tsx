@@ -39,7 +39,7 @@ function ProductCardComponent({ product, priority = false, className }: ProductC
       event.stopPropagation();
 
       if (!isAuthenticated) {
-        toast('Sepete eklemek için giriş yapın', 'info');
+        toast(t('product.loginToAdd'), 'info');
         return;
       }
 
@@ -66,7 +66,7 @@ function ProductCardComponent({ product, priority = false, className }: ProductC
 
         toast(t('product.addedToCart', { name: product.name }), 'success');
       } catch {
-        toast('Ürün sepete eklenemedi', 'error');
+        toast(t('product.addFailed'), 'error');
       }
     },
     [addItem, href, isAuthenticated, product, t, toast],
@@ -78,13 +78,13 @@ function ProductCardComponent({ product, priority = false, className }: ProductC
       event.stopPropagation();
 
       if (!isAuthenticated) {
-        toast('Favorilere eklemek için giriş yapın', 'info');
+        toast(t('product.loginToWishlist'), 'info');
         return;
       }
 
       void toggleWishlist(product.id);
     },
-    [isAuthenticated, product.id, toast, toggleWishlist],
+    [isAuthenticated, product.id, t, toast, toggleWishlist],
   );
 
   return (

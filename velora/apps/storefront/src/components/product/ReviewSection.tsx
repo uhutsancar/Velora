@@ -40,10 +40,10 @@ export function ReviewSection({ productId }: { productId: number }) {
         body: { rating: values.rating, title: values.title || null, comment: values.comment },
       }).unwrap();
 
-      toast('Değerlendirmeniz yayınlandı', 'success');
+      toast(t('product.reviewSubmitted'), 'success');
       setFormOpen(false);
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : 'Değerlendirme gönderilemedi', 'error');
+      toast(isNormalizedApiError(error) ? error.message : t('product.reviewFailed'), 'error');
     }
   };
 
@@ -106,15 +106,15 @@ export function ReviewSection({ productId }: { productId: number }) {
               {({ values, setFieldValue, errors, touched }) => (
                 <Form className="mb-10 space-y-4 border border-ink-100 bg-white p-6">
                   <div>
-                    <span className="label-caps mb-2 block text-ink-500">Puanınız</span>
-                    <div className="flex gap-1" role="radiogroup" aria-label="Puan">
+                    <span className="label-caps mb-2 block text-ink-500">{t('product.yourRating')}</span>
+                    <div className="flex gap-1" role="radiogroup" aria-label={t('product.yourRating')}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           type="button"
                           role="radio"
                           aria-checked={values.rating === star}
-                          aria-label={`${star} yıldız`}
+                          aria-label={t('product.starLabel', { count: star })}
                           onClick={() => void setFieldValue('rating', star)}
                           className="p-0.5"
                         >
@@ -136,8 +136,8 @@ export function ReviewSection({ productId }: { productId: number }) {
                     {({ field, meta }: FieldProps) => (
                       <Input
                         {...field}
-                        label="Başlık"
-                        placeholder="Kısa bir başlık"
+                        label={t('product.reviewTitle')}
+                        placeholder={t('product.reviewTitlePlaceholder')}
                         error={meta.touched ? meta.error : undefined}
                       />
                     )}
@@ -147,8 +147,8 @@ export function ReviewSection({ productId }: { productId: number }) {
                     {({ field, meta }: FieldProps) => (
                       <Textarea
                         {...field}
-                        label="Yorumunuz"
-                        placeholder="Ürünle ilgili deneyiminizi paylaşın"
+                        label={t('product.reviewComment')}
+                        placeholder={t('product.reviewCommentPlaceholder')}
                         error={meta.touched ? meta.error : undefined}
                       />
                     )}
@@ -175,7 +175,7 @@ export function ReviewSection({ productId }: { productId: number }) {
             <EmptyState
               icon={<MessageSquare className="h-8 w-8" />}
               title={t('product.noReviews')}
-              description="İlk değerlendirmeyi siz yazın."
+              description={t('product.beFirstReview')}
             />
           ) : (
             <>

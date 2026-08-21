@@ -44,7 +44,7 @@ export default function CartPage() {
       const result = await validateCoupon({ code: values.code, subtotal }).unwrap();
 
       if (!result.isValid) {
-        toast(result.message ?? 'Kupon geçersiz', 'error');
+        toast(result.message ?? t('cart.couponInvalid'), 'error');
         return;
       }
 
@@ -53,18 +53,18 @@ export default function CartPage() {
       toast(t('cart.couponApplied'), 'success');
       reset();
     } catch {
-      toast('Kupon uygulanamadı', 'error');
+      toast(t('cart.couponFailed'), 'error');
     }
   };
 
   if (!isAuthenticated) {
     return (
       <div className="container-velora py-20">
-        <Seo title={t('cart.title')} description="Velora sepetiniz" path="/sepet" noindex />
+        <Seo title={t('cart.title')} description={t('cart.metaDescription')} path="/sepet" noindex />
         <EmptyState
           icon={<ShoppingBag className="h-10 w-10" />}
           title={t('cart.empty')}
-          description="Sepetinizi görüntülemek için giriş yapın."
+          description={t('cart.loginToView')}
           action={<Button to="/giris">{t('nav.login')}</Button>}
         />
       </div>
@@ -81,7 +81,7 @@ export default function CartPage() {
 
   return (
     <div className="container-velora py-10 md:py-16">
-      <Seo title={t('cart.title')} description="Velora sepetiniz" path="/sepet" noindex />
+      <Seo title={t('cart.title')} description={t('cart.metaDescription')} path="/sepet" noindex />
 
       <h1 className="text-headline">{t('cart.title')}</h1>
 
@@ -137,7 +137,7 @@ export default function CartPage() {
                     <div className="flex items-center border border-ink-200">
                       <button
                         type="button"
-                        aria-label="Adet azalt"
+                        aria-label={t('common.decreaseQuantity')}
                         onClick={() => void updateQuantity({ lineId: item.id, quantity: item.quantity - 1 })}
                         className="flex h-10 w-10 items-center justify-center text-ink-600 transition-colors hover:bg-ink-100"
                       >
@@ -146,7 +146,7 @@ export default function CartPage() {
                       <span className="w-10 text-center text-sm tabular-nums">{item.quantity}</span>
                       <button
                         type="button"
-                        aria-label="Adet artır"
+                        aria-label={t('common.increaseQuantity')}
                         onClick={() => void updateQuantity({ lineId: item.id, quantity: item.quantity + 1 })}
                         className="flex h-10 w-10 items-center justify-center text-ink-600 transition-colors hover:bg-ink-100"
                       >

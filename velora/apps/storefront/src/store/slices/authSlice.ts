@@ -6,6 +6,7 @@ import {
   type LoginRequest,
   type RegisterRequest,
   type UserProfile,
+  i18n,
 } from '@velora/shared';
 import { apiClient } from '@/lib/apiClient';
 import type { RootState } from '../index';
@@ -38,7 +39,7 @@ export const login = createAsyncThunk<UserProfile, LoginRequest, { rejectValue: 
       apiClient.setSession(response);
       return response.user;
     } catch (error) {
-      return rejectWithValue(toMessage(error, 'Giriş yapılamadı.'));
+      return rejectWithValue(toMessage(error, i18n.t('auth.loginFailed')));
     }
   },
 );
@@ -51,7 +52,7 @@ export const register = createAsyncThunk<UserProfile, RegisterRequest, { rejectV
       apiClient.setSession(response);
       return response.user;
     } catch (error) {
-      return rejectWithValue(toMessage(error, 'Kayıt oluşturulamadı.'));
+      return rejectWithValue(toMessage(error, i18n.t('auth.registerFailed')));
     }
   },
 );
@@ -131,7 +132,7 @@ const authSlice = createSlice({
         })
         .addCase(thunk.rejected, (state, action) => {
           state.status = 'error';
-          state.error = action.payload ?? 'Beklenmeyen bir hata oluştu.';
+          state.error = action.payload ?? i18n.t('common.unexpectedError');
         });
     }
   },

@@ -2,6 +2,7 @@ import { Alert, Box, Button, CircularProgress, Skeleton, Stack, Typography } fro
 import { AlertTriangle, Inbox } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { isNormalizedApiError } from '@velora/shared';
+import { useTranslation } from 'react-i18next';
 
 export function LoadingScreen({ height = '60vh' }: { height?: string | number }) {
   return (
@@ -52,9 +53,9 @@ export function EmptyState({
  * `error` is the NormalizedApiError produced by the shared axios base query.
  */
 export function ErrorState({ error, onRetry }: { error?: unknown; onRetry?: () => void }) {
-  const message = isNormalizedApiError(error)
-    ? error.message
-    : 'Veriler yüklenemedi. Lütfen tekrar deneyin.';
+  const { t } = useTranslation();
+
+  const message = isNormalizedApiError(error) ? error.message : t('admin.dataLoadFailed');
 
   return (
     <Alert
@@ -63,7 +64,7 @@ export function ErrorState({ error, onRetry }: { error?: unknown; onRetry?: () =
       action={
         onRetry && (
           <Button color="inherit" size="small" onClick={onRetry}>
-            Tekrar dene
+            {t('common.retry')}
           </Button>
         )
       }

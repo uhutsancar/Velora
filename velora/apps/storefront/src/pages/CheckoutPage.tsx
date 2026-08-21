@@ -86,7 +86,7 @@ export default function CheckoutPage() {
 
   const submitOrder = async (values: PaymentFormValues) => {
     if (!selectedAddress) {
-      toast('Teslimat adresi seçin', 'error');
+      toast(t('checkout.selectAddress'), 'error');
       return;
     }
 
@@ -109,7 +109,7 @@ export default function CheckoutPage() {
 
       navigate('/siparis-alindi', { replace: true });
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : 'Sipariş oluşturulamadı', 'error');
+      toast(isNormalizedApiError(error) ? error.message : t('checkout.orderFailed'), 'error');
     }
   };
 
@@ -135,7 +135,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="container-velora py-10 md:py-16">
-      <Seo title={t('checkout.title')} description="Velora güvenli ödeme" path="/odeme" noindex />
+      <Seo title={t('checkout.title')} description={t('checkout.metaDescription')} path="/odeme" noindex />
 
       <h1 className="text-headline">{t('checkout.title')}</h1>
 
@@ -161,7 +161,7 @@ export default function CheckoutPage() {
             {addresses.length === 0 ? (
               <EmptyState
                 title={t('account.noAddresses')}
-                description="Siparişi tamamlamak için bir teslimat adresi ekleyin."
+                description={t('checkout.noAddressBody')}
                 action={<Button onClick={() => setAddressModalOpen(true)}>{t('checkout.newAddress')}</Button>}
               />
             ) : (
@@ -222,7 +222,7 @@ export default function CheckoutPage() {
                         {...field}
                         label={t('checkout.cardHolder')}
                         autoComplete="cc-name"
-                        placeholder="AD SOYAD"
+                        placeholder={t('checkout.cardHolderPlaceholder')}
                         error={meta.touched ? meta.error : undefined}
                         required
                       />
@@ -389,7 +389,7 @@ export default function CheckoutPage() {
           }}
         >
           <Form className="space-y-3">
-            <TextField name="title" label={t('account.addressTitle')} placeholder="Ev, İş..." required />
+            <TextField name="title" label={t('account.addressTitle')} placeholder={t('checkout.addressTitlePlaceholder')} required />
 
             <div className="grid grid-cols-2 gap-4">
               <TextField name="firstName" label={t('account.firstName')} required />

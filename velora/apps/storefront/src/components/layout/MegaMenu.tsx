@@ -64,7 +64,7 @@ export function MegaMenu({ categories, openCategoryId, onClose }: MegaMenuProps)
             </div>
 
             <div className="col-span-4">
-              <p className="label-caps mb-4 text-ink-400">Öne çıkanlar</p>
+              <p className="label-caps mb-4 text-ink-400">{t('nav.highlights')}</p>
 
               <ul className="space-y-2.5 text-sm text-ink-600">
                 <li>
@@ -73,7 +73,7 @@ export function MegaMenu({ categories, openCategoryId, onClose }: MegaMenuProps)
                     onClick={onClose}
                     className="link-underline transition-colors hover:text-ink-900"
                   >
-                    İndirimdekiler
+                    {t('catalog.onSale')}
                   </Link>
                 </li>
                 <li>

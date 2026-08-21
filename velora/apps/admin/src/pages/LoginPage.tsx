@@ -46,7 +46,7 @@ export default function LoginPage() {
               {t('auth.loginTitle')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Yönetim paneline erişmek için giriş yapın
+              {t('admin.loginSubtitle')}
             </Typography>
 
             <Formik<LoginFormValues>
@@ -109,7 +109,7 @@ export default function LoginPage() {
         </Card>
 
         <p className="mt-6 text-center text-xs text-sand-100/50">
-          Yalnızca Admin ve Manager rolündeki hesaplar giriş yapabilir.
+          {t('admin.loginRolesNote')}
         </p>
       </div>
     </div>

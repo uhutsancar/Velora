@@ -11,7 +11,13 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectSearchOpen, toggleSearch } from '@/store/slices/uiSlice';
 import { mediaUrl, PRODUCT_PLACEHOLDER } from '@/utils/media';
 
-const SUGGESTIONS = ['Omuz çantası', 'Cüzdan', 'Kartlık', 'Seyahat', 'Kemer'];
+const SUGGESTION_KEYS = [
+  'search.suggestionBag',
+  'search.suggestionWallet',
+  'search.suggestionCardHolder',
+  'search.suggestionTravel',
+  'search.suggestionBelt',
+];
 const MIN_QUERY_LENGTH = 2;
 
 export function SearchOverlay() {
@@ -114,9 +120,9 @@ export function SearchOverlay() {
 
             {!showResults && (
               <div className="mt-8">
-                <p className="label-caps mb-3 text-ink-400">Popüler aramalar</p>
+                <p className="label-caps mb-3 text-ink-400">{t('search.popular')}</p>
                 <div className="flex flex-wrap gap-2">
-                  {SUGGESTIONS.map((suggestion) => (
+                  {SUGGESTION_KEYS.map((key) => t(key)).map((suggestion) => (
                     <button
                       key={suggestion}
                       type="button"

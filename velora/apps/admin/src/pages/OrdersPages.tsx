@@ -102,8 +102,8 @@ export function OrdersPage() {
         flex: 1,
         minWidth: 180,
         renderCell: (params) => (
-          <div className="min-w-0">
-            <p className="truncate text-sm text-ink-900">{params.row.userName ?? 'Misafir'}</p>
+          <div className="flex h-full min-w-0 flex-col justify-center">
+            <p className="truncate text-sm text-ink-900">{params.row.userName ?? t('admin.guest')}</p>
             <p className="truncate text-xs text-ink-400">
               {params.row.city ?? '—'} {params.row.country ? `/ ${params.row.country}` : ''}
             </p>
@@ -140,13 +140,13 @@ export function OrdersPage() {
 
   return (
     <>
-      <PageHeader title={t('admin.orders')} description="Tüm müşteri siparişleri" />
+      <PageHeader title={t('admin.orders')} description={t('admin.ordersSubtitle')} />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
         <TextField
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Sipariş no, müşteri veya ürün ara"
+          placeholder={t('admin.orderSearchPlaceholder')}
           sx={{ minWidth: { md: 320 } }}
           InputProps={{
             startAdornment: (
@@ -234,16 +234,19 @@ export function OrderDetailPage() {
     const target = statuses.find((status) => status.id === targetId);
 
     confirm({
-      title: 'Sipariş durumu',
-      message: `${order.ordernumber} siparişini "${target?.name ?? targetId}" durumuna almak istiyor musunuz?`,
+      title: t('admin.orderStatusTitle'),
+      message: t('admin.orderStatusConfirm', {
+        order: order.ordernumber,
+        status: target?.name ?? targetId,
+      }),
       confirmLabel: t('common.confirm'),
       destructive: targetId === ORDER_STATUS.Cancelled,
       onConfirm: async () => {
         try {
           await updateStatus({ id: order.id, statusId: targetId }).unwrap();
-          toast('Sipariş durumu güncellendi', 'success');
+          toast(t('admin.orderStatusUpdated'), 'success');
         } catch (error) {
-          toast(isNormalizedApiError(error) ? error.message : 'Durum değiştirilemedi', 'error');
+          toast(isNormalizedApiError(error) ? error.message : t('admin.statusChangeFailed'), 'error');
         }
       },
     });
@@ -303,7 +306,7 @@ export function OrderDetailPage() {
                 {order.discountAmount > 0 && (
                   <Stack direction="row" justifyContent="space-between">
                     <Typography variant="body2" color="success.main">
-                      İndirim {order.couponCode ? `(${order.couponCode})` : ''}
+                      {t('admin.discount')} {order.couponCode ? `(${order.couponCode})` : ''}
                     </Typography>
                     <Typography variant="body2" color="success.main">
                       -{money(order.discountAmount)}
@@ -331,17 +334,17 @@ export function OrderDetailPage() {
               <Stack spacing={0.5} sx={{ mt: 2 }}>
                 {order.paidAtUtc && (
                   <Typography variant="caption" color="text.secondary">
-                    Ödendi: {formatDateTime(order.paidAtUtc, locale)}
+                    {t('admin.paidAt')}: {formatDateTime(order.paidAtUtc, locale)}
                   </Typography>
                 )}
                 {order.shippedAtUtc && (
                   <Typography variant="caption" color="text.secondary">
-                    Kargolandı: {formatDateTime(order.shippedAtUtc, locale)}
+                    {t('admin.shippedAt')}: {formatDateTime(order.shippedAtUtc, locale)}
                   </Typography>
                 )}
                 {order.cancelledAtUtc && (
                   <Typography variant="caption" color="error.main">
-                    İptal: {formatDateTime(order.cancelledAtUtc, locale)}
+                    {t('admin.cancelledAt')}: {formatDateTime(order.cancelledAtUtc, locale)}
                     {order.cancelReason ? ` — ${order.cancelReason}` : ''}
                   </Typography>
                 )}
@@ -370,7 +373,7 @@ export function OrderDetailPage() {
 
               {allowed.length === 0 && (
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: 'block' }}>
-                  Bu sipariş için başka bir durum geçişi yok.
+                  {t('admin.noStatusTransition')}
                 </Typography>
               )}
             </CardContent>

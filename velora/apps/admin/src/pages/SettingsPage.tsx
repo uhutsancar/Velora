@@ -22,17 +22,17 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={t('admin.settings')} description="Sistem yapılandırması ve yetki matrisi" />
+      <PageHeader title={t('admin.settings')} description={t('admin.settingsSubtitle')} />
 
       <Stack spacing={3}>
         <Card>
-          <CardHeader title="Oturum" titleTypographyProps={{ variant: 'h5' }} />
+          <CardHeader title={t('admin.session')} titleTypographyProps={{ variant: 'h5' }} />
           <CardContent>
             <Stack spacing={1.5}>
-              <Row label="Kullanıcı" value={user?.fullName ?? '—'} />
-              <Row label="E-posta" value={user?.email ?? '—'} />
+              <Row label={t('admin.user')} value={user?.fullName ?? '—'} />
+              <Row label={t('account.email')} value={user?.email ?? '—'} />
               <Row
-                label="Roller"
+                label={t('admin.roles')}
                 value={
                   <Stack direction="row" spacing={0.5}>
                     {user?.roles.map((role) => (
@@ -41,36 +41,35 @@ export default function SettingsPage() {
                   </Stack>
                 }
               />
-              <Row label="İzin sayısı" value={String(user?.permissions.length ?? 0)} />
+              <Row label={t('admin.permissionCount')} value={String(user?.permissions.length ?? 0)} />
             </Stack>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader
-            title="Servis uçları"
-            subheader="Derleme sırasında ortam değişkenlerinden okunur"
+            title={t('admin.serviceEndpoints')}
+            subheader={t('admin.serviceEndpointsHint')}
             titleTypographyProps={{ variant: 'h5' }}
           />
           <CardContent>
             <Stack spacing={1.5}>
               <Row label="API Gateway" value={env.apiUrl} mono />
-              <Row label="Medya kaynağı" value={env.mediaOrigin} mono />
-              <Row label="Mağaza" value={env.storefrontUrl} mono />
-              <Row label="Para birimi" value={env.currency} />
+              <Row label={t('admin.mediaOrigin')} value={env.mediaOrigin} mono />
+              <Row label={t('admin.storefront')} value={env.storefrontUrl} mono />
+              <Row label={t('admin.currency')} value={env.currency} />
             </Stack>
 
             <Alert severity="info" sx={{ mt: 2.5 }}>
-              Bu değerler <code>.env</code> dosyasından gelir. Değiştirmek için dağıtım
-              yapılandırmasını güncelleyip uygulamayı yeniden derleyin.
+              {t('admin.envNotePrefix')} <code>.env</code> {t('admin.envNoteSuffix')}
             </Alert>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader
-            title="Rol / izin matrisi"
-            subheader="IdentityService tarafından tohumlanır; API her istekte bu izinleri doğrular"
+            title={t('admin.roleMatrix')}
+            subheader={t('admin.roleMatrixHint')}
             titleTypographyProps={{ variant: 'h5' }}
           />
           <CardContent>
@@ -79,7 +78,7 @@ export default function SettingsPage() {
                 <div key={role.id}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Typography variant="subtitle2">{role.name}</Typography>
-                    {role.isSystemRole && <Chip size="small" label="Sistem" variant="outlined" />}
+                    {role.isSystemRole && <Chip size="small" label={t('admin.systemRole')} variant="outlined" />}
                   </Stack>
 
                   {role.description && (
@@ -91,7 +90,7 @@ export default function SettingsPage() {
                   <Stack direction="row" flexWrap="wrap" gap={0.5} sx={{ mt: 1 }}>
                     {role.permissions.length === 0 ? (
                       <Typography variant="caption" color="text.disabled">
-                        İzin tanımlı değil
+                        {t('admin.noPermission')}
                       </Typography>
                     ) : (
                       role.permissions.map((permission) => (
@@ -107,8 +106,8 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader
-            title="Tanımlı izinler"
-            subheader={`${permissions.length} izin`}
+            title={t('admin.definedPermissions')}
+            subheader={t('admin.permissionsCount', { count: permissions.length })}
             titleTypographyProps={{ variant: 'h5' }}
           />
           <CardContent>

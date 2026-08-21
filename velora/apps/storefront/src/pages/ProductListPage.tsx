@@ -86,7 +86,7 @@ export default function ProductListPage({
     <>
       <Seo
         title={heading}
-        description={description ?? 'Velora koleksiyonundaki tüm deri çanta, cüzdan ve aksesuarları keşfedin.'}
+        description={description ?? t('catalog.metaDescription')}
         path={path}
         // Filtered/paged permutations must not compete with the canonical listing.
         noindex={pageIndex > 0 || searchParams.toString().length > 0}

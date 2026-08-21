@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ProductImage } from '@velora/shared';
 import { buildSrcSet, mediaUrl, PRODUCT_PLACEHOLDER } from '@/utils/media';
 import { cn } from '@/utils/cn';
@@ -14,6 +15,7 @@ export interface ProductGalleryProps {
  * transform. On mobile it degrades to a snap-scrolling strip.
  */
 export function ProductGallery({ images, productName }: ProductGalleryProps) {
+  const { t } = useTranslation();
   const [active, setActive] = useState(0);
   const [zooming, setZooming] = useState(false);
   const [origin, setOrigin] = useState({ x: 50, y: 50 });
@@ -37,7 +39,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
         <div
           className="scroll-rail gap-3 md:w-20 md:flex-col md:overflow-y-auto md:overflow-x-hidden"
           role="tablist"
-          aria-label={`${productName} görselleri`}
+          aria-label={t('product.galleryOf', { name: productName })}
         >
           {gallery.map((image, index) => (
             <button
@@ -45,7 +47,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
               type="button"
               role="tab"
               aria-selected={index === active}
-              aria-label={`Görsel ${index + 1}`}
+              aria-label={t('product.imageIndex', { index: index + 1 })}
               onClick={() => setActive(index)}
               className={cn(
                 'aspect-product w-16 shrink-0 overflow-hidden border-2 transition-colors md:w-full',

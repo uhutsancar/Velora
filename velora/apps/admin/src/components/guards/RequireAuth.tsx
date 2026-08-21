@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Alert, Box } from '@mui/material';
 import type { PermissionCode } from '@velora/shared';
 import { LoadingScreen } from '@/components/ui/Feedback';
@@ -23,6 +24,7 @@ export function RequireAuth({
   children: ReactNode;
   permission?: PermissionCode;
 }) {
+  const { t } = useTranslation();
   const location = useLocation();
 
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -42,8 +44,7 @@ export function RequireAuth({
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="warning">
-          Bu bölüme erişim yetkiniz yok. Gerekirse yöneticinizden <strong>{permission}</strong> iznini
-          talep edin.
+          {t('admin.noAccessPrefix')} <strong>{permission}</strong> {t('admin.noAccessSuffix')}
         </Alert>
       </Box>
     );

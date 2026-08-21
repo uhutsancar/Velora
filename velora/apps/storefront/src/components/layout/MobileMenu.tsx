@@ -26,7 +26,7 @@ export function MobileMenu() {
 
   return (
     <Drawer open={open} onClose={close} title={t('nav.menu')} side="left">
-      <nav aria-label="Mobil menü" className="flex flex-col">
+      <nav aria-label={t('nav.mobileMenu')} className="flex flex-col">
         <ul className="divide-y divide-ink-100">
           {categories.map((category) => {
             const hasChildren = category.children.length > 0;
@@ -48,7 +48,7 @@ export function MobileMenu() {
                       type="button"
                       onClick={() => setExpanded(isExpanded ? null : category.id)}
                       aria-expanded={isExpanded}
-                      aria-label={`${category.name} alt kategorileri`}
+                      aria-label={t('nav.subcategoriesOf', { name: category.name })}
                       className="px-6 py-4 text-ink-400"
                     >
                       <ChevronDown

@@ -68,10 +68,11 @@ const toLocalInput = (iso: string): string => {
 
 const toIso = (local: string): string => (local ? new Date(local).toISOString() : new Date().toISOString());
 
-const DISCOUNT_LABELS: Record<number, string> = {
-  [DISCOUNT_TYPE.Percentage]: 'Yüzde',
-  [DISCOUNT_TYPE.FixedAmount]: 'Tutar',
-  [DISCOUNT_TYPE.FreeShipping]: 'Ücretsiz kargo',
+/** Translation keys, resolved at render time so the console follows the active language. */
+const DISCOUNT_LABEL_KEYS: Record<number, string> = {
+  [DISCOUNT_TYPE.Percentage]: 'admin.typePercentage',
+  [DISCOUNT_TYPE.FixedAmount]: 'admin.typeAmount',
+  [DISCOUNT_TYPE.FreeShipping]: 'admin.typeFreeShipping',
 };
 
 const emptyCoupon = (): AdminCouponFormValues => ({
@@ -105,7 +106,7 @@ export function CouponsPage() {
     () => [
       {
         field: 'code',
-        headerName: 'Kod',
+        headerName: t('admin.code'),
         width: 170,
         renderCell: (params) => (
           <span className="font-mono text-sm font-medium text-ink-900">{params.row.code}</span>
@@ -113,36 +114,36 @@ export function CouponsPage() {
       },
       {
         field: 'discountValue',
-        headerName: 'İndirim',
+        headerName: t('admin.discount'),
         width: 150,
         renderCell: (params) =>
           params.row.discountType === DISCOUNT_TYPE.Percentage
             ? `%${params.row.discountValue}`
             : params.row.discountType === DISCOUNT_TYPE.FixedAmount
               ? formatCurrency(params.row.discountValue, locale, env.currency)
-              : DISCOUNT_LABELS[params.row.discountType],
+              : t(DISCOUNT_LABEL_KEYS[params.row.discountType] ?? 'admin.discount'),
       },
       {
         field: 'minimumOrderAmount',
-        headerName: 'Min. sepet',
+        headerName: t('admin.minBasket'),
         width: 130,
         renderCell: (params) => formatCurrency(params.row.minimumOrderAmount, locale, env.currency),
       },
       {
         field: 'usedCount',
-        headerName: 'Kullanım',
+        headerName: t('admin.usage'),
         width: 120,
         renderCell: (params) => `${params.row.usedCount}${params.row.usageLimit ? ` / ${params.row.usageLimit}` : ''}`,
       },
       {
         field: 'endsAtUtc',
-        headerName: 'Bitiş',
+        headerName: t('admin.endDate'),
         width: 140,
         renderCell: (params) => formatDate(params.row.endsAtUtc, locale),
       },
       {
         field: 'isActive',
-        headerName: 'Durum',
+        headerName: t('order.status'),
         width: 110,
         renderCell: (params) => {
           const expired = new Date(params.row.endsAtUtc) < new Date();
@@ -150,7 +151,9 @@ export function CouponsPage() {
           return (
             <Chip
               size="small"
-              label={expired ? 'Süresi doldu' : params.row.isActive ? 'Aktif' : 'Pasif'}
+              label={
+                expired ? t('admin.statusExpired') : params.row.isActive ? t('common.active') : t('common.inactive')
+              }
               color={expired ? 'default' : params.row.isActive ? 'success' : 'default'}
               variant={params.row.isActive && !expired ? 'filled' : 'outlined'}
             />
@@ -247,7 +250,7 @@ export function CouponsPage() {
     <>
       <PageHeader
         title={t('admin.coupons')}
-        description="Checkout sırasında uygulanan indirim kodları"
+        description={t('admin.couponsSubtitle')}
         actions={
           <Button
             variant="contained"
@@ -284,7 +287,7 @@ export function CouponsPage() {
                   <Stack spacing={2.5} sx={{ pt: 1 }}>
                     <TextField
                       name="code"
-                      label="Kupon kodu"
+                      label={t('admin.couponCode')}
                       value={values.code}
                       onChange={(event) => void setFieldValue('code', event.target.value.toUpperCase())}
                       error={Boolean(touched.code && errors.code)}
@@ -295,7 +298,7 @@ export function CouponsPage() {
 
                     <TextField
                       name="description"
-                      label="Açıklama"
+                      label={t('admin.description')}
                       value={values.description ?? ''}
                       onChange={handleChange}
                       fullWidth
@@ -305,21 +308,21 @@ export function CouponsPage() {
                       <TextField
                         select
                         name="discountType"
-                        label="İndirim tipi"
+                        label={t('admin.discountType')}
                         value={values.discountType}
                         onChange={(event) => void setFieldValue('discountType', Number(event.target.value))}
                         fullWidth
                       >
-                        {Object.entries(DISCOUNT_LABELS).map(([value, label]) => (
+                        {Object.entries(DISCOUNT_LABEL_KEYS).map(([value, labelKey]) => (
                           <MenuItem key={value} value={Number(value)}>
-                            {label}
+                            {t(labelKey)}
                           </MenuItem>
                         ))}
                       </TextField>
 
                       <TextField
                         name="discountValue"
-                        label={values.discountType === DISCOUNT_TYPE.Percentage ? 'Yüzde' : 'Tutar'}
+                        label={values.discountType === DISCOUNT_TYPE.Percentage ? t('admin.typePercentage') : t('admin.typeAmount')}
                         type="number"
                         value={values.discountValue}
                         onChange={(event) => void setFieldValue('discountValue', Number(event.target.value))}
@@ -333,7 +336,7 @@ export function CouponsPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <TextField
                         name="minimumOrderAmount"
-                        label="Minimum sepet tutarı"
+                        label={t('admin.minBasketAmount')}
                         type="number"
                         value={values.minimumOrderAmount}
                         onChange={(event) => void setFieldValue('minimumOrderAmount', Number(event.target.value))}
@@ -342,7 +345,7 @@ export function CouponsPage() {
 
                       <TextField
                         name="maxDiscountAmount"
-                        label="Maksimum indirim"
+                        label={t('admin.maxDiscount')}
                         type="number"
                         value={values.maxDiscountAmount ?? ''}
                         onChange={(event) =>
@@ -351,7 +354,7 @@ export function CouponsPage() {
                             event.target.value === '' ? null : Number(event.target.value),
                           )
                         }
-                        helperText="Yüzde indirimleri sınırlar"
+                        helperText={t('admin.maxDiscountHint')}
                         fullWidth
                       />
                     </div>
@@ -359,19 +362,19 @@ export function CouponsPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <TextField
                         name="usageLimit"
-                        label="Toplam kullanım limiti"
+                        label={t('admin.totalUsageLimit')}
                         type="number"
                         value={values.usageLimit ?? ''}
                         onChange={(event) =>
                           void setFieldValue('usageLimit', event.target.value === '' ? null : Number(event.target.value))
                         }
-                        helperText="Boş = sınırsız"
+                        helperText={t('admin.unlimitedHint')}
                         fullWidth
                       />
 
                       <TextField
                         name="perUserLimit"
-                        label="Kullanıcı başına"
+                        label={t('admin.perUser')}
                         type="number"
                         value={values.perUserLimit}
                         onChange={(event) => void setFieldValue('perUserLimit', Number(event.target.value))}
@@ -382,7 +385,7 @@ export function CouponsPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <TextField
                         name="startsAtUtc"
-                        label="Başlangıç"
+                        label={t('admin.startDate')}
                         type="datetime-local"
                         value={values.startsAtUtc}
                         onChange={handleChange}
@@ -392,7 +395,7 @@ export function CouponsPage() {
 
                       <TextField
                         name="endsAtUtc"
-                        label="Bitiş"
+                        label={t('admin.endDate')}
                         type="datetime-local"
                         value={values.endsAtUtc}
                         onChange={handleChange}
@@ -405,7 +408,7 @@ export function CouponsPage() {
 
                     <FormControlLabel
                       control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                      label="Aktif"
+                      label={t('common.active')}
                     />
                   </Stack>
                 </DialogContent>
@@ -429,11 +432,11 @@ export function CouponsPage() {
   );
 }
 
-const PLACEMENT_LABELS: Record<number, string> = {
-  [CAMPAIGN_PLACEMENT.Home]: 'Ana sayfa',
-  [CAMPAIGN_PLACEMENT.Hero]: 'Hero slider',
-  [CAMPAIGN_PLACEMENT.Banner]: 'Banner',
-  [CAMPAIGN_PLACEMENT.Collection]: 'Koleksiyon',
+const PLACEMENT_LABEL_KEYS: Record<number, string> = {
+  [CAMPAIGN_PLACEMENT.Home]: 'admin.placementHome',
+  [CAMPAIGN_PLACEMENT.Hero]: 'admin.placementHero',
+  [CAMPAIGN_PLACEMENT.Banner]: 'admin.placementBanner',
+  [CAMPAIGN_PLACEMENT.Collection]: 'admin.placementCollection',
 };
 
 const emptyCampaign = (): CampaignFormValues => ({
@@ -520,7 +523,7 @@ export function CampaignsPage() {
     <>
       <PageHeader
         title={t('admin.campaigns')}
-        description="Mağaza ana sayfasında görünen kampanya ve koleksiyonlar"
+        description={t('admin.campaignsSubtitle')}
         actions={
           <Button
             variant="contained"
@@ -534,7 +537,7 @@ export function CampaignsPage() {
 
       {campaigns.length === 0 ? (
         <Card>
-          <EmptyState title="Kampanya yok" description="İlk kampanyayı ekleyerek başlayın." />
+          <EmptyState title={t('admin.noCampaigns')} description={t('admin.noCampaignsBody')} />
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -555,7 +558,7 @@ export function CampaignsPage() {
 
                   <Chip
                     size="small"
-                    label={live ? 'Yayında' : 'Pasif'}
+                    label={live ? t('admin.published') : t('common.inactive')}
                     color={live ? 'success' : 'default'}
                     sx={{ position: 'absolute', top: 8, left: 8 }}
                   />
@@ -566,7 +569,7 @@ export function CampaignsPage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-ink-900">{campaign.name}</p>
                       <p className="truncate text-xs text-ink-400">
-                        {PLACEMENT_LABELS[campaign.placement]} · /{campaign.slug}
+                        {t(PLACEMENT_LABEL_KEYS[campaign.placement] ?? 'admin.placement')} · /{campaign.slug}
                       </p>
                     </div>
 
@@ -624,7 +627,7 @@ export function CampaignsPage() {
                   <Stack spacing={2.5} sx={{ pt: 1 }}>
                     <TextField
                       name="name"
-                      label="Kampanya adı"
+                      label={t('admin.campaignName')}
                       value={values.name}
                       onChange={handleChange}
                       error={Boolean(touched.name && errors.name)}
@@ -635,7 +638,7 @@ export function CampaignsPage() {
 
                     <TextField
                       name="description"
-                      label="Açıklama"
+                      label={t('admin.description')}
                       value={values.description ?? ''}
                       onChange={handleChange}
                       fullWidth
@@ -647,14 +650,14 @@ export function CampaignsPage() {
                       <TextField
                         select
                         name="placement"
-                        label="Konum"
+                        label={t('admin.placement')}
                         value={values.placement}
                         onChange={(event) => void setFieldValue('placement', Number(event.target.value))}
                         fullWidth
                       >
-                        {Object.entries(PLACEMENT_LABELS).map(([value, label]) => (
+                        {Object.entries(PLACEMENT_LABEL_KEYS).map(([value, labelKey]) => (
                           <MenuItem key={value} value={Number(value)}>
-                            {label}
+                            {t(labelKey)}
                           </MenuItem>
                         ))}
                       </TextField>
@@ -662,7 +665,7 @@ export function CampaignsPage() {
                       <TextField
                         select
                         name="categoryId"
-                        label="Kategori"
+                        label={t('admin.category')}
                         value={values.categoryId ?? ''}
                         onChange={(event) =>
                           void setFieldValue('categoryId', event.target.value === '' ? null : Number(event.target.value))
@@ -680,7 +683,7 @@ export function CampaignsPage() {
 
                     <TextField
                       name="bannerUrl"
-                      label="Banner görseli (geniş)"
+                      label={t('admin.bannerImage')}
                       value={values.bannerUrl ?? ''}
                       onChange={handleChange}
                       fullWidth
@@ -688,7 +691,7 @@ export function CampaignsPage() {
 
                     <TextField
                       name="imageUrl"
-                      label="Kare görsel"
+                      label={t('admin.squareImage')}
                       value={values.imageUrl ?? ''}
                       onChange={handleChange}
                       fullWidth
@@ -697,14 +700,14 @@ export function CampaignsPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <TextField
                         name="ctaLabel"
-                        label="Buton metni"
+                        label={t('admin.ctaLabel')}
                         value={values.ctaLabel ?? ''}
                         onChange={handleChange}
                         fullWidth
                       />
                       <TextField
                         name="ctaUrl"
-                        label="Buton adresi"
+                        label={t('admin.ctaUrl')}
                         value={values.ctaUrl ?? ''}
                         onChange={handleChange}
                         placeholder="/kategori/kadin"
@@ -715,7 +718,7 @@ export function CampaignsPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <TextField
                         name="discountPercentage"
-                        label="İndirim yüzdesi"
+                        label={t('admin.discountPercentage')}
                         type="number"
                         value={values.discountPercentage}
                         onChange={(event) => void setFieldValue('discountPercentage', Number(event.target.value))}
@@ -723,7 +726,7 @@ export function CampaignsPage() {
                       />
                       <TextField
                         name="displayOrder"
-                        label="Sıra"
+                        label={t('admin.sortOrder')}
                         type="number"
                         value={values.displayOrder}
                         onChange={(event) => void setFieldValue('displayOrder', Number(event.target.value))}
@@ -734,7 +737,7 @@ export function CampaignsPage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <TextField
                         name="startsAtUtc"
-                        label="Başlangıç"
+                        label={t('admin.startDate')}
                         type="datetime-local"
                         value={values.startsAtUtc}
                         onChange={handleChange}
@@ -743,7 +746,7 @@ export function CampaignsPage() {
                       />
                       <TextField
                         name="endsAtUtc"
-                        label="Bitiş"
+                        label={t('admin.endDate')}
                         type="datetime-local"
                         value={values.endsAtUtc}
                         onChange={handleChange}
@@ -756,7 +759,7 @@ export function CampaignsPage() {
 
                     <FormControlLabel
                       control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                      label="Aktif"
+                      label={t('common.active')}
                     />
                   </Stack>
                 </DialogContent>

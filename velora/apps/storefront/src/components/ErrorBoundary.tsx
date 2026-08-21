@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { i18n } from '@velora/shared';
 
 interface Props {
   children: ReactNode;
@@ -37,10 +38,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-5 px-6 text-center">
         <p className="font-display text-3xl tracking-[0.28em] text-ink-900">VELORA</p>
-        <h1 className="font-display text-2xl text-ink-900">Bir şeyler ters gitti</h1>
-        <p className="max-w-md text-sm text-ink-500">
-          Beklenmeyen bir hata oluştu. Sayfayı yenilemeyi ya da ana sayfaya dönmeyi deneyin.
-        </p>
+        <h1 className="font-display text-2xl text-ink-900">{i18n.t('common.errorTitle')}</h1>
+        <p className="max-w-md text-sm text-ink-500">{i18n.t('common.errorBody')}</p>
 
         {import.meta.env.DEV && (
           <pre className="max-w-lg overflow-auto bg-ink-100 p-4 text-left text-xs text-ink-700">
@@ -53,7 +52,7 @@ export class ErrorBoundary extends Component<Props, State> {
           onClick={this.reset}
           className="label-caps mt-2 bg-ink-900 px-6 py-3 text-sand-50 transition-colors hover:bg-ink-800"
         >
-          Ana sayfaya dön
+          {i18n.t('errors.goHome')}
         </button>
       </div>
     );

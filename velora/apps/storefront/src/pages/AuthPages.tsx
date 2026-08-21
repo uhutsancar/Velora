@@ -30,6 +30,8 @@ function AuthShell({
   children: React.ReactNode;
   footer: React.ReactNode;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="grid min-h-[calc(100dvh-var(--velora-header-height))] lg:grid-cols-2">
       <div className="relative hidden lg:block">
@@ -44,7 +46,7 @@ function AuthShell({
         <div className="absolute bottom-12 left-12 max-w-sm text-sand-50">
           <p className="font-display text-3xl">Velora</p>
           <p className="mt-3 text-sm text-sand-100/80">
-            El yapımı deri parçalar, ustaların imzasıyla.
+            {t('auth.heroTagline')}
           </p>
         </div>
       </div>
@@ -83,7 +85,7 @@ export function LoginPage() {
 
   return (
     <>
-      <Seo title={t('auth.loginTitle')} description="Velora hesabınıza giriş yapın" path="/giris" noindex />
+      <Seo title={t('auth.loginTitle')} description={t('auth.loginMetaDescription')} path="/giris" noindex />
 
       <AuthShell
         title={t('auth.loginTitle')}
@@ -167,7 +169,7 @@ export function RegisterPage() {
 
   return (
     <>
-      <Seo title={t('auth.registerTitle')} description="Velora hesabı oluşturun" path="/kayit" noindex />
+      <Seo title={t('auth.registerTitle')} description={t('auth.registerMetaDescription')} path="/kayit" noindex />
 
       <AuthShell
         title={t('auth.registerTitle')}
@@ -253,7 +255,7 @@ export function RegisterPage() {
                   type="password"
                   label={t('auth.password')}
                   autoComplete="new-password"
-                  hint="En az 8 karakter, bir büyük harf ve bir rakam"
+                  hint={t('auth.passwordHint')}
                   error={meta.touched ? meta.error : undefined}
                   required
                 />

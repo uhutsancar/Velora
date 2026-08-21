@@ -185,7 +185,7 @@ export default function ProductFormPage() {
         helpers.resetForm({ values });
       }
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : 'Ürün kaydedilemedi', 'error');
+      toast(isNormalizedApiError(error) ? error.message : t('admin.productSaveFailed'), 'error');
     }
   };
 
@@ -224,9 +224,9 @@ export default function ProductFormPage() {
               })),
             ]);
 
-            toast(`${uploaded.length} görsel yüklendi`, 'success');
+            toast(t('admin.imagesUploaded', { count: uploaded.length }), 'success');
           } catch (error) {
-            toast(isNormalizedApiError(error) ? error.message : 'Görsel yüklenemedi', 'error');
+            toast(isNormalizedApiError(error) ? error.message : t('admin.imageUploadFailed'), 'error');
           } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -258,22 +258,22 @@ export default function ProductFormPage() {
             />
 
             <Tabs value={tab} onChange={(_event, next: number) => setTab(next)} sx={{ mb: 3 }}>
-              <Tab label="Genel" />
-              <Tab label={`Görseller (${values.images.length})`} />
-              <Tab label={`Varyantlar (${values.variants.length})`} />
-              <Tab label="SEO" />
+              <Tab label={t('admin.tabGeneral')} />
+              <Tab label={t('admin.tabImages', { count: values.images.length })} />
+              <Tab label={t('admin.tabVariants', { count: values.variants.length })} />
+              <Tab label={t('admin.tabSeo')} />
             </Tabs>
 
             {tab === 0 && (
               <div className="grid gap-4 lg:grid-cols-3">
                 <div className="space-y-4 lg:col-span-2">
                   <Card>
-                    <CardHeader title="Ürün bilgileri" titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.productInfo')} titleTypographyProps={{ variant: 'h5' }} />
                     <CardContent>
                       <Stack spacing={2.5}>
                         <TextField
                           name="name"
-                          label="Ürün adı"
+                          label={t('admin.productName')}
                           value={values.name}
                           onChange={handleChange}
                           onBlur={handleBlur}
@@ -285,7 +285,7 @@ export default function ProductFormPage() {
 
                         <TextField
                           name="slug"
-                          label="URL (slug)"
+                          label={t('admin.urlSlug')}
                           value={values.slug ?? ''}
                           onChange={handleChange}
                           onBlur={handleBlur}
@@ -302,7 +302,7 @@ export default function ProductFormPage() {
                                   size="small"
                                   onClick={() => void setFieldValue('slug', slugify(values.name))}
                                 >
-                                  Üret
+                                  {t('admin.generate')}
                                 </Button>
                               </InputAdornment>
                             ),
@@ -311,12 +311,12 @@ export default function ProductFormPage() {
 
                         <TextField
                           name="shortDescription"
-                          label="Kısa açıklama"
+                          label={t('admin.shortDescription')}
                           value={values.shortDescription ?? ''}
                           onChange={handleChange}
                           onBlur={handleBlur}
                           error={Boolean(fieldError('shortDescription'))}
-                          helperText={fieldError('shortDescription') ?? 'Ürün kartlarında görünür'}
+                          helperText={fieldError('shortDescription') ?? t('admin.shortDescriptionHint')}
                           fullWidth
                           multiline
                           rows={2}
@@ -324,7 +324,7 @@ export default function ProductFormPage() {
 
                         <TextField
                           name="description"
-                          label="Açıklama"
+                          label={t('admin.description')}
                           value={values.description}
                           onChange={handleChange}
                           onBlur={handleBlur}
@@ -340,12 +340,12 @@ export default function ProductFormPage() {
                   </Card>
 
                   <Card>
-                    <CardHeader title="Fiyatlandırma" titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.pricing')} titleTypographyProps={{ variant: 'h5' }} />
                     <CardContent>
                       <div className="grid gap-4 sm:grid-cols-3">
                         <NumberField
                           name="price"
-                          label="Liste fiyatı"
+                          label={t('admin.listPrice')}
                           value={values.price}
                           onChange={setFieldValue}
                           onBlur={handleBlur}
@@ -354,7 +354,7 @@ export default function ProductFormPage() {
                         />
                         <NumberField
                           name="discountPrice"
-                          label="İndirimli fiyat"
+                          label={t('admin.salePrice')}
                           value={values.discountPrice ?? null}
                           onChange={setFieldValue}
                           onBlur={handleBlur}
@@ -363,19 +363,19 @@ export default function ProductFormPage() {
                         />
                         <NumberField
                           name="costPrice"
-                          label="Maliyet"
+                          label={t('admin.cost')}
                           value={values.costPrice ?? null}
                           onChange={setFieldValue}
                           onBlur={handleBlur}
                           error={fieldError('costPrice')}
                           nullable
-                          helperText="Kâr marjı için, mağazada gösterilmez"
+                          helperText={t('admin.costHint')}
                         />
                       </div>
 
                       {values.costPrice != null && values.costPrice > 0 && values.price > 0 && (
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: 'block' }}>
-                          Brüt marj:{' '}
+                          {t('admin.grossMargin')}{' '}
                           <strong>
                             %
                             {(
@@ -392,7 +392,7 @@ export default function ProductFormPage() {
 
                 <div className="space-y-4">
                   <Card>
-                    <CardHeader title="Yayın" titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.publishing')} titleTypographyProps={{ variant: 'h5' }} />
                     <CardContent>
                       <Stack spacing={1}>
                         <FormControlLabel
@@ -409,20 +409,20 @@ export default function ProductFormPage() {
                           control={
                             <Switch name="isFeatured" checked={values.isFeatured} onChange={handleChange} />
                           }
-                          label="Ana sayfada öne çıkar"
+                          label={t('admin.featureOnHome')}
                         />
                       </Stack>
                     </CardContent>
                   </Card>
 
                   <Card>
-                    <CardHeader title="Sınıflandırma" titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.classification')} titleTypographyProps={{ variant: 'h5' }} />
                     <CardContent>
                       <Stack spacing={2.5}>
                         <TextField
                           select
                           name="catalogBrandId"
-                          label="Marka"
+                          label={t('admin.brand')}
                           value={values.catalogBrandId || ''}
                           onChange={handleChange}
                           error={Boolean(fieldError('catalogBrandId'))}
@@ -440,7 +440,7 @@ export default function ProductFormPage() {
                         <TextField
                           select
                           name="categoryId"
-                          label="Kategori"
+                          label={t('admin.category')}
                           value={values.categoryId ?? ''}
                           onChange={(event) =>
                             void setFieldValue(
@@ -475,12 +475,12 @@ export default function ProductFormPage() {
                   </Card>
 
                   <Card>
-                    <CardHeader title="Stok" titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.stock')} titleTypographyProps={{ variant: 'h5' }} />
                     <CardContent>
                       <Stack spacing={2.5}>
                         <NumberField
                           name="availableStock"
-                          label="Ana stok"
+                          label={t('admin.mainStock')}
                           value={values.availableStock}
                           onChange={setFieldValue}
                           onBlur={handleBlur}
@@ -488,13 +488,13 @@ export default function ProductFormPage() {
                           integer
                           helperText={
                             values.variants.length > 0
-                              ? 'Varyantlı üründe stok varyantlardan hesaplanır'
+                              ? t('admin.variantStockHint')
                               : undefined
                           }
                         />
                         <NumberField
                           name="restockThreshold"
-                          label="Kritik stok eşiği"
+                          label={t('admin.lowStockThreshold')}
                           value={values.restockThreshold}
                           onChange={setFieldValue}
                           onBlur={handleBlur}
@@ -511,8 +511,8 @@ export default function ProductFormPage() {
             {tab === 1 && (
               <Card>
                 <CardHeader
-                  title="Görseller"
-                  subheader="İlk görsel kapak olarak kullanılır. Sıralamayı ok tuşlarıyla değiştirin."
+                  title={t('admin.images')}
+                  subheader={t('admin.imagesHint')}
                   titleTypographyProps={{ variant: 'h5' }}
                   action={
                     <Button
@@ -521,7 +521,7 @@ export default function ProductFormPage() {
                       disabled={uploading}
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      {uploading ? 'Yükleniyor…' : 'Görsel yükle'}
+                      {uploading ? t('admin.uploading') : t('admin.uploadImage')}
                     </Button>
                   }
                 />
@@ -541,13 +541,13 @@ export default function ProductFormPage() {
                         {values.images.length === 0 ? (
                           <div className="flex flex-col items-center gap-3 py-14 text-center">
                             <ImagePlus className="h-10 w-10 text-ink-300" />
-                            <p className="text-sm text-ink-500">Henüz görsel eklenmedi</p>
+                            <p className="text-sm text-ink-500">{t('admin.noImages')}</p>
                             <Button
                               variant="contained"
                               size="small"
                               onClick={() => fileInputRef.current?.click()}
                             >
-                              Görsel yükle
+                              {t('admin.uploadImage')}
                             </Button>
                           </div>
                         ) : (
@@ -565,7 +565,7 @@ export default function ProductFormPage() {
                                   <Chip
                                     size="small"
                                     icon={<Star size={12} />}
-                                    label="Kapak"
+                                    label={t('admin.cover')}
                                     color="secondary"
                                     sx={{ position: 'absolute', top: 6, left: 6 }}
                                   />
@@ -582,7 +582,7 @@ export default function ProductFormPage() {
                                     borderRadius: 0.5,
                                   }}
                                 >
-                                  <Tooltip title="Sola al">
+                                  <Tooltip title={t('admin.moveLeft')}>
                                     <span>
                                       <IconButton
                                         size="small"
@@ -593,7 +593,7 @@ export default function ProductFormPage() {
                                       </IconButton>
                                     </span>
                                   </Tooltip>
-                                  <Tooltip title="Sağa al">
+                                  <Tooltip title={t('admin.moveRight')}>
                                     <span>
                                       <IconButton
                                         size="small"
@@ -624,8 +624,8 @@ export default function ProductFormPage() {
             {tab === 2 && (
               <Card>
                 <CardHeader
-                  title="Varyantlar"
-                  subheader="Renk ve beden kombinasyonları. Varyant eklendiğinde stok varyant bazında takip edilir."
+                  title={t('admin.variants')}
+                  subheader={t('admin.variantsHint')}
                   titleTypographyProps={{ variant: 'h5' }}
                 />
                 <CardContent>
@@ -637,7 +637,7 @@ export default function ProductFormPage() {
                             <div key={variant.id ?? `new-${index}`}>
                               <div className="grid items-start gap-3 sm:grid-cols-12">
                                 <TextField
-                                  label="Renk"
+                                  label={t('admin.color')}
                                   name={`variants.${index}.color`}
                                   value={variant.color ?? ''}
                                   onChange={handleChange}
@@ -645,7 +645,7 @@ export default function ProductFormPage() {
                                   fullWidth
                                 />
                                 <TextField
-                                  label="Renk kodu"
+                                  label={t('admin.colorCode')}
                                   name={`variants.${index}.colorHex`}
                                   value={variant.colorHex ?? ''}
                                   onChange={handleChange}
@@ -664,7 +664,7 @@ export default function ProductFormPage() {
                                   }}
                                 />
                                 <TextField
-                                  label="Beden"
+                                  label={t('admin.size')}
                                   name={`variants.${index}.size`}
                                   value={variant.size ?? ''}
                                   onChange={handleChange}
@@ -672,7 +672,7 @@ export default function ProductFormPage() {
                                   fullWidth
                                 />
                                 <TextField
-                                  label="Fiyat farkı"
+                                  label={t('admin.priceDiff')}
                                   type="number"
                                   name={`variants.${index}.priceAdjustment`}
                                   value={variant.priceAdjustment}
@@ -686,7 +686,7 @@ export default function ProductFormPage() {
                                   fullWidth
                                 />
                                 <TextField
-                                  label="Stok"
+                                  label={t('admin.stock')}
                                   type="number"
                                   name={`variants.${index}.stock`}
                                   value={variant.stock}
@@ -746,29 +746,29 @@ export default function ProductFormPage() {
             {tab === 3 && (
               <Card sx={{ maxWidth: 720 }}>
                 <CardHeader
-                  title="Arama motoru optimizasyonu"
-                  subheader="Boş bırakılırsa ürün adı ve kısa açıklama kullanılır."
+                  title={t('admin.seoSection')}
+                  subheader={t('admin.seoHint')}
                   titleTypographyProps={{ variant: 'h5' }}
                 />
                 <CardContent>
                   <Stack spacing={2.5}>
                     <TextField
                       name="metaTitle"
-                      label="Meta başlık"
+                      label={t('admin.metaTitle')}
                       value={values.metaTitle ?? ''}
                       onChange={handleChange}
                       fullWidth
-                      helperText={`${(values.metaTitle ?? '').length}/60 karakter önerilir`}
+                      helperText={t('admin.metaTitleHint', { count: (values.metaTitle ?? '').length })}
                     />
                     <TextField
                       name="metaDescription"
-                      label="Meta açıklama"
+                      label={t('admin.metaDescription')}
                       value={values.metaDescription ?? ''}
                       onChange={handleChange}
                       fullWidth
                       multiline
                       rows={3}
-                      helperText={`${(values.metaDescription ?? '').length}/158 karakter önerilir`}
+                      helperText={t('admin.metaDescriptionHint', { count: (values.metaDescription ?? '').length })}
                     />
 
                     {/* Live SERP preview: the fastest way to catch a truncated title. */}
@@ -845,6 +845,7 @@ function NumberField({
 }
 
 function TagsField({ tags, onChange }: { tags: string[]; onChange: (next: string[]) => void }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState('');
 
   const add = () => {
@@ -858,7 +859,7 @@ function TagsField({ tags, onChange }: { tags: string[]; onChange: (next: string
   return (
     <div>
       <TextField
-        label="Etiketler"
+        label={t('admin.tags')}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         onKeyDown={(event) => {
@@ -868,7 +869,7 @@ function TagsField({ tags, onChange }: { tags: string[]; onChange: (next: string
           }
         }}
         fullWidth
-        helperText="Enter ile ekleyin (ör. yeni, indirim, deri)"
+        helperText={t('admin.tagsHint')}
       />
 
       {tags.length > 0 && (

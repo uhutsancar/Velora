@@ -99,7 +99,13 @@ export const theme = createTheme({
           letterSpacing: '0.04em',
           textTransform: 'uppercase',
         },
-        cell: { borderColor: '#F1F0EE' },
+        cell: {
+          borderColor: '#F1F0EE',
+          // The cell is a block by default, so any element-level renderCell
+          // content (chips, action buttons, two-line text) sticks to the top.
+          display: 'flex',
+          alignItems: 'center',
+        },
       },
     },
   },

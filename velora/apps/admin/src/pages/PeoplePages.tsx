@@ -94,11 +94,11 @@ export function CustomersPage() {
     () => [
       {
         field: 'fullName',
-        headerName: 'Müşteri',
+        headerName: t('order.customer'),
         flex: 1,
         minWidth: 220,
         renderCell: (params) => (
-          <div className="min-w-0">
+          <div className="flex h-full min-w-0 flex-col justify-center">
             <p className="truncate text-sm font-medium text-ink-900">{params.row.fullName}</p>
             <p className="truncate text-xs text-ink-400">{params.row.email}</p>
           </div>
@@ -106,7 +106,7 @@ export function CustomersPage() {
       },
       {
         field: 'roles',
-        headerName: 'Roller',
+        headerName: t('admin.roles'),
         width: 190,
         sortable: false,
         renderCell: (params) => (
@@ -125,7 +125,7 @@ export function CustomersPage() {
       },
       {
         field: 'createdAtUtc',
-        headerName: 'Kayıt',
+        headerName: t('admin.registered'),
         width: 130,
         renderCell: (params) => (
           <span className="text-sm text-ink-600">{formatDate(params.row.createdAtUtc, locale)}</span>
@@ -133,7 +133,7 @@ export function CustomersPage() {
       },
       {
         field: 'lastLoginAtUtc',
-        headerName: 'Son giriş',
+        headerName: t('admin.lastLogin'),
         width: 130,
         renderCell: (params) => (
           <span className="text-sm text-ink-500">
@@ -143,7 +143,7 @@ export function CustomersPage() {
       },
       {
         field: 'isActive',
-        headerName: 'Durum',
+        headerName: t('order.status'),
         width: 110,
         renderCell: (params) => (
           <Chip
@@ -168,7 +168,7 @@ export function CustomersPage() {
 
           return (
             <Stack direction="row">
-              <Tooltip title="Rolleri düzenle">
+              <Tooltip title={t('admin.editRoles')}>
                 <IconButton
                   size="small"
                   onClick={() => setRoleEditor({ user: params.row, roles: [...params.row.roles] })}
@@ -177,21 +177,23 @@ export function CustomersPage() {
                 </IconButton>
               </Tooltip>
 
-              <Tooltip title="Şifre sıfırla">
+              <Tooltip title={t('admin.resetPassword')}>
                 <IconButton size="small" onClick={() => setPasswordEditor({ user: params.row, password: '' })}>
                   <KeyRound size={15} />
                 </IconButton>
               </Tooltip>
 
-              <Tooltip title={params.row.isActive ? 'Pasife al' : 'Aktifleştir'}>
+              <Tooltip title={params.row.isActive ? t('admin.deactivate') : t('admin.activate')}>
                 <span>
                   <IconButton
                     size="small"
                     disabled={isSelf}
                     onClick={() =>
                       confirm({
-                        title: params.row.isActive ? 'Hesabı pasife al' : 'Hesabı aktifleştir',
-                        message: `${params.row.fullName} hesabı ${params.row.isActive ? 'pasife alınacak' : 'aktifleştirilecek'}.`,
+                        title: params.row.isActive ? t('admin.deactivateTitle') : t('admin.activateTitle'),
+                        message: params.row.isActive
+                          ? t('admin.deactivateMessage', { name: params.row.fullName })
+                          : t('admin.activateMessage', { name: params.row.fullName }),
                         confirmLabel: t('common.confirm'),
                         destructive: params.row.isActive,
                         onConfirm: async () => {
@@ -200,7 +202,7 @@ export function CustomersPage() {
                             toast(t('admin.saved'), 'success');
                           } catch (error) {
                             toast(
-                              isNormalizedApiError(error) ? error.message : 'Durum değiştirilemedi',
+                              isNormalizedApiError(error) ? error.message : t('admin.statusChangeFailed'),
                               'error',
                             );
                           }
@@ -250,20 +252,20 @@ export function CustomersPage() {
 
   return (
     <>
-      <PageHeader title={t('admin.customers')} description="Kayıtlı hesaplar, roller ve erişim durumu" />
+      <PageHeader title={t('admin.customers')} description={t('admin.customersSubtitle')} />
 
       <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Toplam kullanıcı" value={String(stats?.totalUsers ?? '—')} />
-        <StatCard label="Aktif" value={String(stats?.activeUsers ?? '—')} accent="success" />
-        <StatCard label="Son 30 gün" value={String(stats?.newUsersLast30Days ?? '—')} />
-        <StatCard label="Yönetici" value={String(stats?.adminUsers ?? '—')} accent="warning" />
+        <StatCard label={t('admin.totalUsers')} value={String(stats?.totalUsers ?? '—')} />
+        <StatCard label={t('common.active')} value={String(stats?.activeUsers ?? '—')} accent="success" />
+        <StatCard label={t('admin.last30Days')} value={String(stats?.newUsersLast30Days ?? '—')} />
+        <StatCard label={t('admin.admins')} value={String(stats?.adminUsers ?? '—')} accent="warning" />
       </div>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
         <TextField
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Ad, soyad veya e-posta ara"
+          placeholder={t('admin.customerSearchPlaceholder')}
           sx={{ minWidth: { md: 320 } }}
           InputProps={{
             startAdornment: (
@@ -276,7 +278,7 @@ export function CustomersPage() {
 
         <TextField
           select
-          label="Rol"
+          label={t('admin.role')}
           value={roleFilter}
           onChange={(event) => {
             setRoleFilter(event.target.value);
@@ -314,7 +316,7 @@ export function CustomersPage() {
       )}
 
       <Dialog open={roleEditor !== null} onClose={() => setRoleEditor(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Rolleri düzenle</DialogTitle>
+        <DialogTitle>{t('admin.editRoles')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {roleEditor?.user.fullName}
@@ -369,7 +371,7 @@ export function CustomersPage() {
                 toast(t('admin.saved'), 'success');
                 setRoleEditor(null);
               } catch (error) {
-                toast(isNormalizedApiError(error) ? error.message : 'Roller güncellenemedi', 'error');
+                toast(isNormalizedApiError(error) ? error.message : t('admin.rolesUpdateFailed'), 'error');
               }
             }}
           >
@@ -379,22 +381,22 @@ export function CustomersPage() {
       </Dialog>
 
       <Dialog open={passwordEditor !== null} onClose={() => setPasswordEditor(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Şifre sıfırla</DialogTitle>
+        <DialogTitle>{t('admin.resetPassword')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {passwordEditor?.user.email} için yeni şifre belirleyin. Mevcut tüm oturumları kapatır.
+            {t('admin.resetPasswordBody', { email: passwordEditor?.user.email ?? '' })}
           </Typography>
 
           <TextField
             type="text"
-            label="Yeni şifre"
+            label={t('admin.newPassword')}
             value={passwordEditor?.password ?? ''}
             onChange={(event) =>
               setPasswordEditor((current) => (current ? { ...current, password: event.target.value } : current))
             }
             fullWidth
             autoFocus
-            helperText="En az 8 karakter"
+            helperText={t('admin.passwordMinHint')}
           />
         </DialogContent>
 
@@ -414,10 +416,10 @@ export function CustomersPage() {
                   newPassword: passwordEditor.password,
                 }).unwrap();
 
-                toast('Şifre sıfırlandı', 'success');
+                toast(t('admin.passwordReset'), 'success');
                 setPasswordEditor(null);
               } catch (error) {
-                toast(isNormalizedApiError(error) ? error.message : 'Şifre sıfırlanamadı', 'error');
+                toast(isNormalizedApiError(error) ? error.message : t('admin.passwordResetFailed'), 'error');
               }
             }}
           >
@@ -456,7 +458,7 @@ export function ReviewsPage() {
     () => [
       {
         field: 'productName',
-        headerName: 'Ürün',
+        headerName: t('admin.product'),
         width: 200,
         renderCell: (params) => (
           <span className="truncate text-sm text-ink-900">{params.row.productName ?? '—'}</span>
@@ -464,18 +466,18 @@ export function ReviewsPage() {
       },
       {
         field: 'rating',
-        headerName: 'Puan',
+        headerName: t('admin.rating'),
         width: 140,
         renderCell: (params) => <MuiRating value={params.row.rating} readOnly size="small" />,
       },
       {
         field: 'comment',
-        headerName: 'Yorum',
+        headerName: t('admin.comment'),
         flex: 1,
         minWidth: 260,
         sortable: false,
         renderCell: (params) => (
-          <div className="min-w-0 py-1">
+          <div className="flex h-full min-w-0 flex-col justify-center">
             {params.row.title && (
               <p className="truncate text-sm font-medium text-ink-900">{params.row.title}</p>
             )}
@@ -485,13 +487,13 @@ export function ReviewsPage() {
       },
       {
         field: 'userName',
-        headerName: 'Yazan',
+        headerName: t('admin.author'),
         width: 150,
         renderCell: (params) => <span className="truncate text-sm text-ink-600">{params.row.userName}</span>,
       },
       {
         field: 'createdAtUtc',
-        headerName: 'Tarih',
+        headerName: t('order.date'),
         width: 120,
         renderCell: (params) => (
           <span className="text-sm text-ink-500">{formatDate(params.row.createdAtUtc, locale)}</span>
@@ -499,12 +501,12 @@ export function ReviewsPage() {
       },
       {
         field: 'isApproved',
-        headerName: 'Durum',
+        headerName: t('order.status'),
         width: 120,
         renderCell: (params) => (
           <Chip
             size="small"
-            label={params.row.isApproved ? 'Yayında' : 'Beklemede'}
+            label={params.row.isApproved ? t('admin.published') : t('admin.pending')}
             color={params.row.isApproved ? 'success' : 'warning'}
             variant={params.row.isApproved ? 'filled' : 'outlined'}
           />
@@ -519,7 +521,7 @@ export function ReviewsPage() {
         headerAlign: 'right',
         renderCell: (params) => (
           <Stack direction="row">
-            <Tooltip title={params.row.isApproved ? 'Yayından kaldır' : 'Yayınla'}>
+            <Tooltip title={params.row.isApproved ? t('admin.unpublish') : t('admin.publish')}>
               <IconButton
                 size="small"
                 onClick={async () => {
@@ -527,7 +529,7 @@ export function ReviewsPage() {
                     await setApproval({ id: params.row.id, isApproved: !params.row.isApproved }).unwrap();
                     toast(t('admin.saved'), 'success');
                   } catch {
-                    toast('Değerlendirme güncellenemedi', 'error');
+                    toast(t('admin.reviewUpdateFailed'), 'error');
                   }
                 }}
               >
@@ -541,7 +543,7 @@ export function ReviewsPage() {
               onClick={() =>
                 confirm({
                   title: t('common.delete'),
-                  message: 'Bu değerlendirme kalıcı olarak silinecek.',
+                  message: t('admin.reviewDeleteMessage'),
                   destructive: true,
                   confirmLabel: t('common.delete'),
                   onConfirm: async () => {
@@ -549,7 +551,7 @@ export function ReviewsPage() {
                       await deleteReview(params.row.id).unwrap();
                       toast(t('admin.deleted'), 'success');
                     } catch {
-                      toast('Silinemedi', 'error');
+                      toast(t('admin.deleteFailed'), 'error');
                     }
                   },
                 })
@@ -566,12 +568,12 @@ export function ReviewsPage() {
 
   return (
     <>
-      <PageHeader title={t('admin.reviews')} description="Müşteri değerlendirmelerini yönetin" />
+      <PageHeader title={t('admin.reviews')} description={t('admin.reviewsSubtitle')} />
 
       <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
         <TextField
           select
-          label="Durum"
+          label={t('order.status')}
           value={approvedFilter}
           onChange={(event) => {
             setApprovedFilter(event.target.value as '' | 'true' | 'false');
@@ -580,8 +582,8 @@ export function ReviewsPage() {
           sx={{ minWidth: 200 }}
         >
           <MenuItem value="">{t('common.all')}</MenuItem>
-          <MenuItem value="true">Yayında</MenuItem>
-          <MenuItem value="false">Beklemede</MenuItem>
+          <MenuItem value="true">{t('admin.published')}</MenuItem>
+          <MenuItem value="false">{t('admin.pending')}</MenuItem>
         </TextField>
       </Stack>
 

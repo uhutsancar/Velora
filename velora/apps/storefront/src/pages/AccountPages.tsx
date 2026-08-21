@@ -65,7 +65,7 @@ export function AccountLayout() {
 
   return (
     <div className="container-velora py-10 md:py-16">
-      <Seo title={t('account.title')} description="Velora hesabınız" path="/hesabim" noindex />
+      <Seo title={t('account.title')} description={t('account.metaDescription')} path="/hesabim" noindex />
 
       <header className="border-b border-ink-100 pb-6">
         <h1 className="text-headline">{t('account.title')}</h1>
@@ -148,7 +148,7 @@ export function ProfilePage() {
             dispatch(setUser(updated));
             toast(t('account.saved'), 'success');
           } catch {
-            toast('Bilgiler güncellenemedi', 'error');
+            toast(t('account.updateFailed'), 'error');
           }
         }}
       >
@@ -166,7 +166,7 @@ export function ProfilePage() {
             </Field>
           </div>
 
-          <Input label={t('account.email')} value={user.email} disabled readOnly hint="E-posta adresi değiştirilemez" />
+          <Input label={t('account.email')} value={user.email} disabled readOnly hint={t('account.emailReadOnly')} />
 
           <Field name="phoneNumber">
             {({ field, meta }: FieldProps) => (
@@ -202,10 +202,10 @@ export function SecurityPage() {
               newPassword: values.newPassword,
             }).unwrap();
 
-            toast('Şifreniz güncellendi. Diğer oturumlar kapatıldı.', 'success');
+            toast(t('account.passwordUpdated'), 'success');
             helpers.resetForm();
           } catch (error) {
-            toast(isNormalizedApiError(error) ? error.message : 'Şifre değiştirilemedi', 'error');
+            toast(isNormalizedApiError(error) ? error.message : t('account.passwordFailed'), 'error');
           }
         }}
       >
@@ -302,7 +302,7 @@ export function AddressesPage() {
         <EmptyState
           icon={<MapPin className="h-8 w-8" />}
           title={t('account.noAddresses')}
-          description="Siparişlerinizi hızlandırmak için bir adres ekleyin."
+          description={t('account.noAddressesBody')}
         />
       ) : (
         <ul className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -436,7 +436,7 @@ export function OrdersPage() {
         <EmptyState
           icon={<Package className="h-8 w-8" />}
           title={t('account.noOrders')}
-          description="İlk siparişinizi vermek için koleksiyonu keşfedin."
+          description={t('account.noOrdersBody')}
           action={<Button to="/urunler">{t('cart.continueShopping')}</Button>}
         />
       ) : (
@@ -461,7 +461,8 @@ export function OrdersPage() {
                     <p className="label-caps text-ink-400">{t('order.orderNumber')}</p>
                     <p className="font-medium text-ink-900">{order.orderNumber}</p>
                     <p className="mt-1 text-sm text-ink-500">
-                      {formatDate(order.date, localeFor(i18n.language))} · {order.itemCount} ürün
+                      {formatDate(order.date, localeFor(i18n.language))} ·{' '}
+                      {t('common.productCount', { count: order.itemCount })}
                     </p>
                   </div>
 
@@ -504,7 +505,7 @@ export function OrderDetailPage() {
   if (isLoading) return <Spinner />;
 
   if (!order) {
-    return <EmptyState title="Sipariş bulunamadı" action={<Button to="/hesabim/siparisler">{t('common.back')}</Button>} />;
+    return <EmptyState title={t('account.orderNotFound')} action={<Button to="/hesabim/siparisler">{t('common.back')}</Button>} />;
   }
 
   const cancellable = order.statusId !== 5 && order.statusId !== 6;
@@ -598,11 +599,11 @@ export function OrderDetailPage() {
               loading={cancelling}
               onClick={async () => {
                 try {
-                  await cancelOrder({ id: order.id, reason: 'Müşteri talebi' }).unwrap();
-                  toast('Siparişiniz iptal edildi', 'success');
+                  await cancelOrder({ id: order.id, reason: t('account.cancelReason') }).unwrap();
+                  toast(t('account.orderCancelled'), 'success');
                   navigate('/hesabim/siparisler');
                 } catch {
-                  toast('Sipariş iptal edilemedi', 'error');
+                  toast(t('account.orderCancelFailed'), 'error');
                 }
               }}
             >
@@ -635,7 +636,7 @@ export function WishlistPage() {
           loading={isFetching}
           columns={3}
           emptyTitle={t('account.noWishlist')}
-          emptyDescription="Beğendiğiniz ürünleri kalp simgesiyle kaydedin."
+          emptyDescription={t('account.noWishlistBody')}
           emptyAction={<Button to="/urunler">{t('cart.continueShopping')}</Button>}
         />
       </div>

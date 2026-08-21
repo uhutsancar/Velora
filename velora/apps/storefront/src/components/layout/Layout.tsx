@@ -1,4 +1,5 @@
 import { Suspense, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom';
 import { Spinner, ToastViewport } from '@/components/ui/Feedback';
 import { useAppDispatch } from '@/store/hooks';
@@ -10,6 +11,7 @@ import { MobileMenu } from './MobileMenu';
 import { SearchOverlay } from './SearchOverlay';
 
 export function Layout() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const location = useLocation();
 
@@ -24,7 +26,7 @@ export function Layout() {
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[200] focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-sand-50"
       >
-        İçeriğe geç
+        {t('common.skipToContent')}
       </a>
 
       <Header />

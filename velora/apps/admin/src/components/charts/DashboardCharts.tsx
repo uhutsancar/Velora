@@ -146,7 +146,7 @@ export function SalesTrendChart({ data, loading }: { data: SalesPoint[]; loading
   }, [data, locale, t]);
 
   return (
-    <ChartCard title={t('admin.salesTrend')} subheader={`${data.length} gün`}>
+    <ChartCard title={t('admin.salesTrend')} subheader={t('admin.daysCount', { count: data.length })}>
       <ReactEChartsCore
         echarts={echarts}
         option={option}
@@ -216,13 +216,13 @@ export function TopProductsChart({ data, loading }: { data: TopProduct[]; loadin
   if (!loading && data.length === 0) {
     return (
       <ChartCard title={t('admin.topProducts')}>
-        <p className="py-16 text-center text-sm text-ink-400">Bu dönemde satış kaydı yok.</p>
+        <p className="py-16 text-center text-sm text-ink-400">{t('admin.noSalesPeriod')}</p>
       </ChartCard>
     );
   }
 
   return (
-    <ChartCard title={t('admin.topProducts')} subheader="Ciroya göre">
+    <ChartCard title={t('admin.topProducts')} subheader={t('admin.byRevenue')}>
       <ReactEChartsCore echarts={echarts} option={option} style={{ height: CHART_HEIGHT }} showLoading={loading} notMerge />
     </ChartCard>
   );
@@ -269,7 +269,7 @@ export function OrderStatusChart({
           label: {
             show: true,
             position: 'center',
-            formatter: () => `${total}\nsipariş`,
+            formatter: () => `${total}\n${t('admin.ordersUnit')}`,
             fontSize: 13,
             lineHeight: 18,
             color: '#5E5850',
@@ -284,7 +284,7 @@ export function OrderStatusChart({
         },
       ],
     };
-  }, [data]);
+  }, [data, t]);
 
   return (
     <ChartCard title={t('admin.statusBreakdown')}>
@@ -311,7 +311,7 @@ export function CategoryDistributionChart({
         backgroundColor: '#12100E',
         borderWidth: 0,
         textStyle: { color: '#F7F4EF', fontSize: 12 },
-        formatter: '{b}: {c} ürün ({d}%)',
+        formatter: `{b}: {c} ${t('admin.productsUnit')} ({d}%)`,
       },
       series: [
         {
@@ -328,7 +328,7 @@ export function CategoryDistributionChart({
         },
       ],
     }),
-    [data],
+    [data, t],
   );
 
   return (

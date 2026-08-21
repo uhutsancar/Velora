@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ProductListItem } from '@velora/shared';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SectionHeading } from '@/components/ui/Display';
@@ -31,8 +32,9 @@ export function ProductRail({
   products,
   loading = false,
   viewAllHref,
-  viewAllLabel = 'Tümünü gör',
+  viewAllLabel,
 }: ProductRailProps) {
+  const { t } = useTranslation();
   const railRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -81,7 +83,7 @@ export function ProductRail({
             <div className="flex items-center gap-3">
               {viewAllHref && (
                 <Button to={viewAllHref} variant="link" className="label-caps">
-                  {viewAllLabel}
+                  {viewAllLabel ?? t('common.viewAll')}
                 </Button>
               )}
 
@@ -128,6 +130,7 @@ function RailButton({
   disabled: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const Icon = direction === 'left' ? ChevronLeft : ChevronRight;
 
   return (
@@ -135,7 +138,7 @@ function RailButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label={direction === 'left' ? 'Önceki ürünler' : 'Sonraki ürünler'}
+      aria-label={direction === 'left' ? t('catalog.previousProducts') : t('catalog.nextProducts')}
       className={cn(
         'flex h-10 w-10 items-center justify-center border border-ink-200 text-ink-700 transition-all duration-200',
         'hover:border-ink-900 hover:text-ink-900 disabled:opacity-30 disabled:hover:border-ink-200',

@@ -1,4 +1,4 @@
-import type { UserProfile } from '@velora/shared';
+import { i18n, type UserProfile } from '@velora/shared';
 import { describe, expect, it } from 'vitest';
 import reducer, {
   clearAuthError,
@@ -52,7 +52,7 @@ describe('authSlice', () => {
   it('falls back to a generic message when the thunk gives none', () => {
     const state = reducer(initial, { type: login.rejected.type, payload: undefined });
 
-    expect(state.error).toBe('Beklenmeyen bir hata oluştu.');
+    expect(state.error).toBe(i18n.t('common.unexpectedError'));
   });
 
   it('clears the error without touching the session', () => {

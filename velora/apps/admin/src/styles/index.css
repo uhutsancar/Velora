@@ -16,6 +16,25 @@ body,
   height: 100%;
 }
 
+/*
+ * MUI's CssBaseline resets the body but leaves the UA margins on text elements,
+ * and preflight is off. Without this, a <p> carries `margin: 1em 0`, which is
+ * what pushed two-line DataGrid cells past the row height.
+ */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;

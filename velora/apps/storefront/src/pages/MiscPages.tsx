@@ -12,13 +12,14 @@ import { mediaUrl } from '@/utils/media';
 import ProductListPage from './ProductListPage';
 
 export function SearchPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const term = searchParams.get('q') ?? '';
 
   return (
     <ProductListPage
       title={term ? `"${term}"` : undefined}
-      description={`${term} için Velora arama sonuçları`}
+      description={t('search.metaDescription', { term })}
       path="/arama"
     />
   );
@@ -32,15 +33,14 @@ export function CampaignsPage() {
     <div className="container-velora py-12 md:py-20">
       <Seo
         title={t('nav.campaigns')}
-        description="Velora kampanyaları, sezon indirimleri ve özel koleksiyonlar."
+        description={t('campaign.metaDescription')}
         path="/kampanyalar"
       />
 
       <Reveal>
         <SectionHeading
-          eyebrow={t('home.campaigns')}
           title={t('nav.campaigns')}
-          description="Sezonun öne çıkan koleksiyonları ve indirimleri."
+          description={t('campaign.subtitle')}
           align="center"
         />
       </Reveal>
@@ -54,8 +54,8 @@ export function CampaignsPage() {
       ) : campaigns.length === 0 ? (
         <EmptyState
           icon={<Compass className="h-10 w-10" />}
-          title="Şu anda aktif kampanya yok"
-          description="Yeni kampanyalar için bültenimize kayıt olun."
+          title={t('campaign.emptyTitle')}
+          description={t('campaign.emptyBody')}
         />
       ) : (
         <div className="mt-12 grid gap-6 md:grid-cols-2">
@@ -77,7 +77,7 @@ export function CampaignsPage() {
                 <div className="absolute inset-x-0 bottom-0 p-7">
                   {campaign.discountPercentage > 0 && (
                     <span className="label-caps mb-2 inline-block bg-wine-600 px-2 py-1 text-white">
-                      %{campaign.discountPercentage}
+                      {t('product.discount', { value: campaign.discountPercentage })}
                     </span>
                   )}
                   <h2 className="font-display text-2xl text-sand-50">{campaign.name}</h2>
@@ -100,7 +100,12 @@ export function OrderSuccessPage() {
 
   return (
     <>
-      <Seo title={t('checkout.successTitle')} description="Siparişiniz alındı" path="/siparis-alindi" noindex />
+      <Seo
+        title={t('checkout.successTitle')}
+        description={t('checkout.successMeta')}
+        path="/siparis-alindi"
+        noindex
+      />
 
       <div className="container-velora flex flex-col items-center py-24 text-center">
         <CheckCircle2 className="h-16 w-16 text-moss-500" aria-hidden />
@@ -108,8 +113,7 @@ export function OrderSuccessPage() {
         <h1 className="mt-6 font-display text-headline">{t('checkout.successTitle')}</h1>
 
         <p className="mt-4 max-w-md text-sm text-ink-500 text-pretty">
-          Siparişiniz işleme alındı. Ödeme onaylandığında sipariş durumunuz güncellenecek ve
-          bilgilendirme e-postası göndereceğiz.
+          {t('checkout.successDetail')}
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">

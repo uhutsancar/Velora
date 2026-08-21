@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
+import { initI18n } from '@velora/shared';
+
+// Mirrors main.tsx: modules outside React (thunks, error boundaries) read i18n.t directly.
+initI18n();
 
 // jsdom implements neither of these; several components depend on them.
 Object.defineProperty(window, 'matchMedia', {

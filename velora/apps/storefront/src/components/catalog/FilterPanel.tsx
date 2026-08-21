@@ -70,7 +70,7 @@ export function FilterPanel({ facets, values, onChange, onClear, loading, classN
             inputMode="numeric"
             min={0}
             placeholder="Min"
-            aria-label="Minimum fiyat"
+            aria-label={t('catalog.minPrice')}
             value={values.minPrice ?? ''}
             onChange={(event) =>
               onChange({
@@ -86,7 +86,7 @@ export function FilterPanel({ facets, values, onChange, onClear, loading, classN
             inputMode="numeric"
             min={0}
             placeholder="Max"
-            aria-label="Maksimum fiyat"
+            aria-label={t('catalog.maxPrice')}
             value={values.maxPrice ?? ''}
             onChange={(event) =>
               onChange({

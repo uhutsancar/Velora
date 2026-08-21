@@ -120,10 +120,10 @@ export function CategoriesPage() {
           <p className="truncate text-xs text-ink-400">/{category.slug}</p>
         </div>
 
-        <Chip size="small" variant="outlined" label={`${category.productCount} ürün`} />
+        <Chip size="small" variant="outlined" label={t('common.productCount', { count: category.productCount })} />
 
-        {category.isFeatured && <Chip size="small" color="secondary" label="Öne çıkan" />}
-        {!category.isActive && <Chip size="small" label="Pasif" />}
+        {category.isFeatured && <Chip size="small" color="secondary" label={t('admin.featured')} />}
+        {!category.isActive && <Chip size="small" label={t('common.inactive')} />}
 
         <IconButton
           size="small"
@@ -180,7 +180,7 @@ export function CategoriesPage() {
     <>
       <PageHeader
         title={t('admin.categories')}
-        description="Mağaza navigasyonunu belirleyen kategori ağacı"
+        description={t('admin.categoriesSubtitle')}
         actions={
           <Button
             variant="contained"
@@ -194,7 +194,7 @@ export function CategoriesPage() {
 
       <Card>
         {roots.length === 0 ? (
-          <EmptyState title="Kategori yok" description="İlk kategoriyi ekleyerek başlayın." />
+          <EmptyState title={t('admin.noCategories')} description={t('admin.noCategoriesBody')} />
         ) : (
           roots.map((category) => renderRow(category, 0))
         )}
@@ -215,7 +215,7 @@ export function CategoriesPage() {
                   <Stack spacing={2.5} sx={{ pt: 1 }}>
                     <TextField
                       name="name"
-                      label="Kategori adı"
+                      label={t('admin.categoryName')}
                       value={values.name}
                       onChange={handleChange}
                       error={Boolean(touched.name && errors.name)}
@@ -230,14 +230,14 @@ export function CategoriesPage() {
                       value={values.slug ?? ''}
                       onChange={handleChange}
                       error={Boolean(touched.slug && errors.slug)}
-                      helperText={touched.slug ? errors.slug : 'Boş bırakılırsa isimden üretilir'}
+                      helperText={touched.slug ? errors.slug : t('admin.slugHint')}
                       fullWidth
                     />
 
                     <TextField
                       select
                       name="parentId"
-                      label="Üst kategori"
+                      label={t('admin.parentCategory')}
                       value={values.parentId ?? ''}
                       onChange={(event) =>
                         void setFieldValue('parentId', event.target.value === '' ? null : Number(event.target.value))
@@ -256,7 +256,7 @@ export function CategoriesPage() {
 
                     <TextField
                       name="description"
-                      label="Açıklama"
+                      label={t('admin.description')}
                       value={values.description ?? ''}
                       onChange={handleChange}
                       fullWidth
@@ -266,7 +266,7 @@ export function CategoriesPage() {
 
                     <TextField
                       name="imageUrl"
-                      label="Görsel adresi"
+                      label={t('admin.imageUrl')}
                       value={values.imageUrl ?? ''}
                       onChange={handleChange}
                       fullWidth
@@ -274,7 +274,7 @@ export function CategoriesPage() {
 
                     <TextField
                       name="displayOrder"
-                      label="Sıra"
+                      label={t('admin.sortOrder')}
                       type="number"
                       value={values.displayOrder}
                       onChange={(event) => void setFieldValue('displayOrder', Number(event.target.value))}
@@ -284,11 +284,11 @@ export function CategoriesPage() {
                     <Stack direction="row" spacing={2}>
                       <FormControlLabel
                         control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                        label="Aktif"
+                        label={t('common.active')}
                       />
                       <FormControlLabel
                         control={<Switch name="isFeatured" checked={values.isFeatured} onChange={handleChange} />}
-                        label="Öne çıkan"
+                        label={t('admin.featured')}
                       />
                     </Stack>
                   </Stack>
@@ -375,7 +375,7 @@ export function BrandsPage() {
     <>
       <PageHeader
         title={t('admin.brands')}
-        description="Ürünlerin bağlı olduğu markalar"
+        description={t('admin.brandsSubtitle')}
         actions={
           <Button
             variant="contained"
@@ -389,7 +389,7 @@ export function BrandsPage() {
 
       {brands.length === 0 ? (
         <Card>
-          <EmptyState title="Marka yok" description="İlk markayı ekleyerek başlayın." />
+          <EmptyState title={t('admin.noBrands')} description={t('admin.noBrandsBody')} />
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -410,9 +410,9 @@ export function BrandsPage() {
                   <p className="truncate text-xs text-ink-400">/{brand.slug}</p>
 
                   <Stack direction="row" spacing={0.75} sx={{ mt: 1 }}>
-                    <Chip size="small" variant="outlined" label={`${brand.productCount} ürün`} />
-                    {brand.isFeatured && <Chip size="small" color="secondary" label="Öne çıkan" />}
-                    {!brand.isActive && <Chip size="small" label="Pasif" />}
+                    <Chip size="small" variant="outlined" label={t('common.productCount', { count: brand.productCount })} />
+                    {brand.isFeatured && <Chip size="small" color="secondary" label={t('admin.featured')} />}
+                    {!brand.isActive && <Chip size="small" label={t('common.inactive')} />}
                   </Stack>
                 </div>
 
@@ -464,7 +464,7 @@ export function BrandsPage() {
                   <Stack spacing={2.5} sx={{ pt: 1 }}>
                     <TextField
                       name="name"
-                      label="Marka adı"
+                      label={t('admin.brandName')}
                       value={values.name}
                       onChange={handleChange}
                       error={Boolean(touched.name && errors.name)}
@@ -478,11 +478,11 @@ export function BrandsPage() {
                       value={values.slug ?? ''}
                       onChange={handleChange}
                       fullWidth
-                      helperText="Boş bırakılırsa isimden üretilir"
+                      helperText={t('admin.slugHint')}
                     />
                     <TextField
                       name="description"
-                      label="Açıklama"
+                      label={t('admin.description')}
                       value={values.description ?? ''}
                       onChange={handleChange}
                       fullWidth
@@ -491,14 +491,14 @@ export function BrandsPage() {
                     />
                     <TextField
                       name="logoUrl"
-                      label="Logo adresi"
+                      label={t('admin.logoUrl')}
                       value={values.logoUrl ?? ''}
                       onChange={handleChange}
                       fullWidth
                     />
                     <TextField
                       name="displayOrder"
-                      label="Sıra"
+                      label={t('admin.sortOrder')}
                       type="number"
                       value={values.displayOrder}
                       onChange={(event) => void setFieldValue('displayOrder', Number(event.target.value))}
@@ -508,11 +508,11 @@ export function BrandsPage() {
                     <Stack direction="row" spacing={2}>
                       <FormControlLabel
                         control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                        label="Aktif"
+                        label={t('common.active')}
                       />
                       <FormControlLabel
                         control={<Switch name="isFeatured" checked={values.isFeatured} onChange={handleChange} />}
-                        label="Öne çıkan"
+                        label={t('admin.featured')}
                       />
                     </Stack>
                   </Stack>

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { i18n } from '@velora/shared';
 
 interface Props {
   children: ReactNode;
@@ -29,9 +30,9 @@ export class ErrorBoundary extends Component<Props, State> {
       <div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center' }}>
         <div>
           <p style={{ fontFamily: 'Bodoni Moda, Georgia, serif', fontSize: 28, letterSpacing: '0.2em' }}>VELORA</p>
-          <h1 style={{ fontSize: 20, marginTop: 12 }}>Bir şeyler ters gitti</h1>
+          <h1 style={{ fontSize: 20, marginTop: 12 }}>{i18n.t('common.errorTitle')}</h1>
           <p style={{ color: '#5E5850', fontSize: 14, marginTop: 8, maxWidth: 420 }}>
-            Beklenmeyen bir hata oluştu. Sayfayı yenilemeyi deneyin.
+            {i18n.t('admin.errorBody')}
           </p>
 
           {import.meta.env.DEV && (
@@ -45,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
             onClick={() => window.location.assign('/')}
             style={{ marginTop: 20, background: '#12100E', color: '#F7F4EF', border: 0, padding: '12px 24px', cursor: 'pointer' }}
           >
-            Panele dön
+            {i18n.t('admin.backToDashboard')}
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
   type LoginRequest,
   type PermissionCode,
   type UserProfile,
+  i18n,
 } from '@velora/shared';
 import { apiClient } from '@/lib/apiClient';
 import type { RootState } from '../index';
@@ -42,14 +43,14 @@ export const login = createAsyncThunk<UserProfile, LoginRequest, { rejectValue: 
       // Reject a customer account before storing anything: the API would refuse
       // every admin call anyway, and a half-signed-in state is worse than none.
       if (!isBackOffice(response.user)) {
-        return rejectWithValue('Bu hesabın yönetim paneline erişim yetkisi yok.');
+        return rejectWithValue(i18n.t('admin.noAdminAccess'));
       }
 
       apiClient.setSession(response);
       return response.user;
     } catch (error) {
       return rejectWithValue(
-        isNormalizedApiError(error) ? error.message : 'Giriş yapılamadı.',
+        isNormalizedApiError(error) ? error.message : i18n.t('auth.loginFailed'),
       );
     }
   },
@@ -108,7 +109,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.status = 'error';
-        state.error = action.payload ?? 'Giriş yapılamadı.';
+        state.error = action.payload ?? i18n.t('auth.loginFailed');
       })
       .addCase(restoreSession.fulfilled, (state, action) => {
         state.user = action.payload;

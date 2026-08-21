@@ -1,6 +1,8 @@
 import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { formatCurrency, localeFor } from '@velora/shared';
+import { env } from '@/config/env';
 import { Button } from '@/components/ui/Button';
 import { EmptyState, Spinner } from '@/components/ui/Feedback';
 import { Price } from '@/components/ui/Display';
@@ -17,7 +19,7 @@ import { closeCartDrawer, selectCartDrawerOpen } from '@/store/slices/uiSlice';
 import { mediaUrl, PRODUCT_PLACEHOLDER } from '@/utils/media';
 
 export function CartDrawer() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const dispatch = useAppDispatch();
   const open = useAppSelector(selectCartDrawerOpen);
   const { isAuthenticated } = useAuth();
@@ -70,7 +72,7 @@ export function CartDrawer() {
         <EmptyState
           icon={<ShoppingBag className="h-10 w-10" />}
           title={t('cart.empty')}
-          description="Sepetinizi görüntülemek için giriş yapın."
+          description={t('cart.loginToView')}
           action={
             <Button to="/giris" onClick={close}>
               {t('nav.login')}
@@ -98,10 +100,12 @@ export function CartDrawer() {
           <div className="border-b border-ink-100 px-6 py-4">
             {remainingForFreeShipping > 0 ? (
               <p className="text-xs text-ink-600">
-                Ücretsiz kargoya <Price value={remainingForFreeShipping} size="sm" /> kaldı
+                {t('cart.freeShippingRemaining', {
+                  amount: formatCurrency(remainingForFreeShipping, localeFor(i18n.language), env.currency),
+                })}
               </p>
             ) : (
-              <p className="text-xs font-medium text-moss-500">Kargonuz ücretsiz</p>
+              <p className="text-xs font-medium text-moss-500">{t('cart.freeShippingReached')}</p>
             )}
 
             <div className="mt-2 h-0.5 w-full bg-ink-100">
@@ -157,7 +161,7 @@ export function CartDrawer() {
                     <div className="flex items-center border border-ink-200">
                       <button
                         type="button"
-                        aria-label="Adet azalt"
+                        aria-label={t('common.decreaseQuantity')}
                         onClick={() =>
                           void updateQuantity({ lineId: item.id, quantity: item.quantity - 1 })
                         }
@@ -170,7 +174,7 @@ export function CartDrawer() {
 
                       <button
                         type="button"
-                        aria-label="Adet artır"
+                        aria-label={t('common.increaseQuantity')}
                         onClick={() =>
                           void updateQuantity({ lineId: item.id, quantity: item.quantity + 1 })
                         }
