@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
  * E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD when the seed values differ.
  */
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? 'admin@velora.com';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? 'Velora!Admin2024';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? process.env.VELORA_ADMIN_PASSWORD ?? '';
 
 async function signIn(page: Page): Promise<void> {
   await page.goto('/login');

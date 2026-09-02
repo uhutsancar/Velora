@@ -20,7 +20,8 @@
 param(
     [string]$Server = 'localhost,1444',
     [string]$User = 'sa',
-    [string]$Password = 'UhutSancar123!',
+    # Parola depoda tutulmaz; .env dosyasindan gelir.
+    [string]$Password = $(if ($env:SQL_SA_PASSWORD) { $env:SQL_SA_PASSWORD } else { throw 'SQL_SA_PASSWORD tanimli degil. Once ./scripts/load-env.ps1 calistirin.' }),
     [string]$Container,
     [switch]$Force
 )

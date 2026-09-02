@@ -12,8 +12,7 @@ namespace CatalogService.Api.Extensions
     public static class DbContextRegistration
     {
         /// <summary>Local default so a fresh clone runs against the compose SQL Server with no setup.</summary>
-        private const string DevelopmentConnection =
-            "Data Source=localhost,1444;Initial Catalog=velora_catalog;Persist Security Info=True;User ID=sa;Password=UhutSancar123!;TrustServerCertificate=True;";
+        private static string DevelopmentConnection => LocalDevSecrets.SqlConnection("velora_catalog");
 
         public static IServiceCollection ConfigureDbContext(
             this IServiceCollection services,
@@ -21,7 +20,7 @@ namespace CatalogService.Api.Extensions
             IHostEnvironment environment)
         {
             var connectionString = VeloraSecrets.RequireConnectionString(
-                configuration, environment, "CatalogConnection", DevelopmentConnection);
+                configuration, environment, "CatalogConnection", () => DevelopmentConnection);
 
             services.AddEntityFrameworkSqlServer()
                 .AddDbContext<CatalogContext>(options =>

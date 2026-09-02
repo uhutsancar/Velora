@@ -47,6 +47,22 @@ namespace Velora.Shared.Configuration
             IHostEnvironment environment,
             string name,
             string? developmentFallback = null)
+            => RequireConnectionString(
+                configuration, environment, name,
+                developmentFallback is null ? null : () => developmentFallback);
+
+        /// <summary>
+        /// Yedek deger bir fonksiyon olarak alinir, cunku uretilmesi pahali ya da
+        /// basarisiz olabilir: yerel yedek artik ortam degiskeninden okunuyor ve
+        /// eksikse istisna atiyor. Dizeyi dogrudan parametre olarak gecmek, C#
+        /// argumanlari erken degerlendirdigi icin, yapilandirmada gecerli bir
+        /// baglanti dizesi VARKEN bile o istisnayi tetikliyordu.
+        /// </summary>
+        public static string RequireConnectionString(
+            IConfiguration configuration,
+            IHostEnvironment environment,
+            string name,
+            Func<string>? developmentFallback)
         {
             var value = configuration.GetConnectionString(name) ?? configuration[name];
 
@@ -54,7 +70,7 @@ namespace Velora.Shared.Configuration
                 return value;
 
             if (environment.IsDevelopment() && developmentFallback is not null)
-                return developmentFallback;
+                return developmentFallback();
 
             throw new InvalidOperationException(BuildMessage($"ConnectionStrings:{name}", environment.EnvironmentName));
         }

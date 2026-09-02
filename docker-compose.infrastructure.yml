@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=UhutSancar123!
+      - MSSQL_SA_PASSWORD=${SQL_SA_PASSWORD:?.env dosyasinda SQL_SA_PASSWORD tanimlayin}
       - MSSQL_PID=Developer
     ports:
       # 1444 on the host so a locally installed SQL Server on 1433 keeps working.

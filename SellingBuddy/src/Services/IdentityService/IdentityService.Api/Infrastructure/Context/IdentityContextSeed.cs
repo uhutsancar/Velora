@@ -1,3 +1,4 @@
+using Velora.Shared.Configuration;
 using IdentityService.Api.Application.Services;
 using IdentityService.Api.Core.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +29,12 @@ namespace IdentityService.Api.Infrastructure.Context
 
         private static readonly string[] CustomerPermissions = { VeloraPermissions.ProductsRead };
 
-        /// <summary>Used only when ASPNETCORE_ENVIRONMENT=Development and no password is configured.</summary>
-        private const string DevelopmentAdminPassword = "Velora!Admin2024";
+        /// <summary>
+        /// Gelistirmede, yapilandirmada parola yokken kullanilir. Deger kodda
+        /// DEGIL ortam degiskeninde durur (VELORA_SEED_ADMIN_PASSWORD): bu depo
+        /// herkese acik ve buraya yazilan her parola yayinlanmis sayilir.
+        /// </summary>
+        private static string? DevelopmentAdminPassword => LocalDevSecrets.SeedAdminPassword;
 
         public async Task SeedAsync(
             IdentityDbContext context,

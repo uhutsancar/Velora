@@ -63,4 +63,4 @@ Write-Host 'Altyapi hazir:' -ForegroundColor Green
 Write-Host '  Consul UI    http://localhost:8500'
 Write-Host '  RabbitMQ UI  http://localhost:15672  (guest / guest)'
 Write-Host '  Redis        localhost:6379'
-Write-Host '  SQL Server   localhost,1444          (sa / UhutSancar123!)'
+Write-Host '  SQL Server   localhost,1444          (sa / $env:SQL_SA_PASSWORD)'

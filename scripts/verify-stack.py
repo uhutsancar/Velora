@@ -23,6 +23,10 @@ import urllib.request
 
 GW = os.environ.get("VELORA_GATEWAY", "http://127.0.0.1:5000").rstrip("/")
 
+# Kimlik bilgileri depoda tutulmaz; .env dosyasindan gelir.
+ADMIN_EMAIL = os.environ.get("VELORA_ADMIN_EMAIL", "admin@velora.com")
+ADMIN_PASSWORD = os.environ["VELORA_ADMIN_PASSWORD"]
+
 ok = 0
 fail = 0
 
@@ -163,7 +167,7 @@ s, _ = call("/admin/analytics/dashboard", token=tok)
 check("musteri analytics'e giremiyor", s in (401, 403), "(got %s)" % s)
 
 print("YONETIM")
-s, adm = call("/auth/login", "POST", {"userName": "admin@velora.com", "password": "Velora!Admin2024"})
+s, adm = call("/auth/login", "POST", {"userName": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
 check("admin login", s == 200 and "Admin" in adm["user"]["roles"])
 atok = adm["accessToken"]
 

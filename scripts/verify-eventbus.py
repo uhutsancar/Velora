@@ -63,7 +63,7 @@ EXCHANGE = "SellingBuddyEventBus"
 DLX = EXCHANGE + ".dlx"
 
 ADMIN_EMAIL = os.environ.get("VELORA_ADMIN_EMAIL", "admin@velora.com")
-ADMIN_PASSWORD = os.environ.get("VELORA_ADMIN_PASSWORD", "Velora!Admin2024")
+ADMIN_PASSWORD = os.environ["VELORA_ADMIN_PASSWORD"]
 
 # queue name -> routing key it must be bound to
 EXPECTED_QUEUES = {
