@@ -81,15 +81,20 @@ jobs:
       # donene ve kimlik dogrulama token uretene kadar bekliyoruz.
       - name: Yigin gercekten hazir olana kadar bekle
         run: |
+          # Basarisizligi annotation olarak da yayinlar: adim loglari depoya
+          # erisim ister, annotation'lar istemez. Hangi halkanin kopdugu boylece
+          # kosu ozetinden okunabiliyor.
           wait_for() {
-            local name="$1" seconds="$2"; shift 2
-            for i in $(seq 1 "$seconds"); do
+            local name="$1" tries="$2"; shift 2
+            for i in $(seq 1 "$tries"); do
               if "$@" >/dev/null 2>&1; then
                 echo "$name hazir (${i}. deneme)"; return 0
               fi
               sleep 5
             done
-            echo "$name ${seconds} denemede hazir olmadi"; return 1
+            echo "::error title=hazirlik::${name} ${tries} denemede (>$((tries * 5)) sn) hazir olmadi"
+            docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml ps || true
+            return 1
           }
 
           wait_for "gateway" 60 curl -fsS "$VELORA_GATEWAY/health"

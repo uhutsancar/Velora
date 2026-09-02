@@ -91,10 +91,15 @@ services:
       # broker saglikliya donmeden "unhealthy" damgasini yiyor ve
       # depends_on: service_healthy olan dokuz servis hic baslamiyor.
       test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
-      start_period: 120s
+      # Toplam butce ~8 dakika. Yuklu bir makinede broker'in saglikliya donmesi
+      # olculdu: 8 dakikaya kadar cikabiliyor. Butce yetmedigi anda compose
+      # bagimliligi "failed" sayip up'in tamamini iptal ediyor ve gateway ile
+      # on yuzler hic baslamiyor - yani cimri bir deger, sessiz degil, gurultulu
+      # bir sekilde her seyi durduruyor.
+      start_period: 180s
       interval: 10s
       timeout: 15s
-      retries: 20
+      retries: 30
     networks: [velora]
 
   consul:
