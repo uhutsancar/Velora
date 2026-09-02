@@ -52,10 +52,12 @@ services:
       - sqlserver-data:/var/opt/mssql
     healthcheck:
       test: ['CMD-SHELL', '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1"']
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 60s
+      # Ilk acilista master/model/msdb dosyalarini olusturur; yavas bir
+      # runner'da bu birkac dakika surer.
+      start_period: 120s
+      interval: 10s
+      timeout: 15s
+      retries: 30
     networks: [velora]
 
   redis:
@@ -66,9 +68,10 @@ services:
       - redis-data:/data
     healthcheck:
       test: ['CMD', 'redis-cli', '--pass', '${REDIS_PASSWORD}', 'ping']
-      interval: 15s
+      start_period: 20s
+      interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
     networks: [velora]
 
   rabbitmq:
@@ -80,10 +83,18 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
+      # rabbitmq-diagnostics bir Erlang dugumu baslatir; yuklu bir makinede
+      # tek basina saniyeler surer, bu yuzden timeout genis tutuldu.
+      #
+      # start_period kritik: broker soguk baslangicta dakikalar surebiliyor
+      # (olculdu: ~4.5 dk). O sure boyunca basarisiz denemeler sayilmazsa
+      # broker saglikliya donmeden "unhealthy" damgasini yiyor ve
+      # depends_on: service_healthy olan dokuz servis hic baslamiyor.
       test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
-      interval: 15s
-      timeout: 10s
-      retries: 5
+      start_period: 120s
+      interval: 10s
+      timeout: 15s
+      retries: 20
     networks: [velora]
 
   consul:
@@ -94,9 +105,10 @@ services:
       - consul-data:/consul/data
     healthcheck:
       test: ['CMD', 'consul', 'members']
-      interval: 15s
+      start_period: 30s
+      interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
     networks: [velora]
 
   # ------------------------------------------------------------ services ----
