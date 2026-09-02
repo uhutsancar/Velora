@@ -46,6 +46,28 @@ jobs:
             echo "PAYMENT_SUCCESS=true"
           } > .env
 
+      # Dogrulama scriptleri parolalari ortamdan okur (artik kodda yedek yok).
+      # Degerleri buradan GITHUB_ENV'e yazmak, her adimda ayni satiri tekrar
+      # etmekten daha az hata uretir: yeni bir dogrulama adimi eklendiginde
+      # degiskenleri tasimayi unutmak mumkun olmaz.
+      - name: Dogrulama degiskenlerini adimlara yay
+        run: |
+          set -a && . ./.env && set +a
+
+          # Uretilen parolalar GITHUB_ENV'e giriyor; maskelenmezse bir hata
+          # ayiklama ciktisinda log'a dusebilirler.
+          echo "::add-mask::${SEED_ADMIN_PASSWORD}"
+          echo "::add-mask::${RABBITMQ_PASSWORD}"
+
+          {
+            echo "VELORA_GATEWAY=http://localhost:${GATEWAY_PORT}"
+            echo "VELORA_ADMIN_EMAIL=${SEED_ADMIN_EMAIL}"
+            echo "VELORA_ADMIN_PASSWORD=${SEED_ADMIN_PASSWORD}"
+            echo "VELORA_RABBITMQ=http://localhost:15672"
+            echo "VELORA_RABBITMQ_USER=${RABBITMQ_USER}"
+            echo "VELORA_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}"
+          } >> "$GITHUB_ENV"
+
       - name: Stack'i ayaga kaldir
         run: docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml up -d --build
 
@@ -66,9 +88,7 @@ jobs:
         run: python scripts/verify-stack.py
 
       - name: Event bus dogrulamasi
-        run: |
-          set -a && . ./.env && set +a
-          VELORA_RABBITMQ=http://localhost:15672           VELORA_RABBITMQ_USER="$RABBITMQ_USER"           VELORA_RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD"           VELORA_ADMIN_EMAIL="$SEED_ADMIN_EMAIL"           VELORA_ADMIN_PASSWORD="$SEED_ADMIN_PASSWORD"           python scripts/verify-eventbus.py
+        run: python scripts/verify-eventbus.py
 
       - name: Hata durumunda loglar
         if: failure()

@@ -142,7 +142,7 @@ jobs:
           sbom: true
 
       - name: Imaj zafiyet taramasi
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/velora-${{ matrix.service.slug }}@${{ steps.build.outputs.digest }}
           severity: 'HIGH,CRITICAL'

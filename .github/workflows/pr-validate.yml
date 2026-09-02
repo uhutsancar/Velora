@@ -40,6 +40,29 @@ jobs:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
+
+    # EventBus testleri gercek bir broker'a konusur ve broker'a ulasamadiklarinda
+    # basarisiz degil SONUCSUZ sayilirlar. Bu, temiz bir checkout'u yesil tutmak
+    # icin makul bir tercih; ama CI'da broker olmayinca alti testin alti da
+    # atlanir ve "dotnet test" hicbir sey dogrulamadan gecer. Servis kabi, o
+    # testlerin gercekten calismasini saglar.
+    services:
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 12
+
+    env:
+      VELORA_RABBITMQ_HOST: localhost
+      VELORA_RABBITMQ_PORT: '5672'
+      VELORA_RABBITMQ_USER: guest
+      VELORA_RABBITMQ_PASSWORD: guest
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -52,7 +75,8 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
       - run: dotnet restore SellingBuddy.sln
       - run: dotnet build SellingBuddy.sln -c Release --no-restore
-      - run: dotnet test SellingBuddy.sln -c Release --no-build --logger trx --results-directory TestResults
+      - name: Testler
+        run: dotnet test SellingBuddy.sln -c Release --no-build --logger "console;verbosity=normal" --logger trx --results-directory TestResults
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -95,7 +119,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Bagimlilik ve dosya sistemi taramasi
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: fs
           scan-ref: '.'
