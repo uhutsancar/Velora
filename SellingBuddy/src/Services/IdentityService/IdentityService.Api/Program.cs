@@ -37,7 +37,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.ConfigureDbContext(builder.Configuration, builder.Environment);
 builder.Services.ConfigureAuth(builder.Configuration, builder.Environment);
-builder.Services.ConfigureRateLimiting();
+builder.Services.ConfigureRateLimiting(builder.Configuration);
 builder.Services.ConfigureConsul(builder.Configuration);
 builder.Services.ConfigureCors(builder.Configuration);
 

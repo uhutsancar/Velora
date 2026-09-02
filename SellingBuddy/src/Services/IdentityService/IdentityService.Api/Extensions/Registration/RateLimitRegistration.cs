@@ -11,8 +11,21 @@ namespace IdentityService.Api.Extensions.Registration
 
     public static class RateLimitRegistration
     {
-        public static IServiceCollection ConfigureRateLimiting(this IServiceCollection services)
+        /// <summary>
+        /// Brute force koruması. Sinirlar yapilandirmadan okunur
+        /// (RateLimit:Auth:PermitLimit / :WindowSeconds), cunku sabit bir deger
+        /// uctan uca testleri engelliyordu: iki dogrulama scripti arka arkaya
+        /// kayit ve giris yapinca dakikalik pencere doluyor ve testler
+        /// uygulamada bir sorun yokken 429 aliyordu. Varsayilanlar degismedi,
+        /// yalnizca CI kendi degerini verebiliyor.
+        /// </summary>
+        public static IServiceCollection ConfigureRateLimiting(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
+            var permitLimit = configuration.GetValue("RateLimit:Auth:PermitLimit", 10);
+            var windowSeconds = configuration.GetValue("RateLimit:Auth:WindowSeconds", 60);
+
             services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -24,8 +37,8 @@ namespace IdentityService.Api.Extensions.Registration
 
                     return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 10,
-                        Window = TimeSpan.FromMinutes(1),
+                        PermitLimit = permitLimit,
+                        Window = TimeSpan.FromSeconds(windowSeconds),
                         QueueLimit = 0,
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst
                     });

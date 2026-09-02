@@ -11,3 +11,12 @@ services:
   rabbitmq:
     ports:
       - '15672:15672'
+
+  identity:
+    environment:
+      # Uctan uca dogrulama iki tam senaryo kosuyor ve her biri kayit, giris,
+      # yanlis parola denemesi ve token yenileme yapiyor. Dakikada on istekle
+      # ikinci script duzenli olarak 429 aliyor - uygulamada bir sorun yokken.
+      # Brute force korumasi prod'da oldugu gibi kaliyor, yalnizca CI gevsiyor.
+      RateLimit__Auth__PermitLimit: '1000'
+      RateLimit__Auth__WindowSeconds: '60'
