@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import {
   endpoints,
-  isNormalizedApiError,
+  apiErrorMessage,
   VELORA_ROLES,
   type AuthResponse,
   type LoginRequest,
@@ -50,7 +50,7 @@ export const login = createAsyncThunk<UserProfile, LoginRequest, { rejectValue: 
       return response.user;
     } catch (error) {
       return rejectWithValue(
-        isNormalizedApiError(error) ? error.message : i18n.t('auth.loginFailed'),
+        apiErrorMessage(error, i18n.t('auth.loginFailed')),
       );
     }
   },

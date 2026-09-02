@@ -6,12 +6,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
-  MenuItem,
   Stack,
-  Switch,
-  TextField,
 } from '@mui/material';
 import { Form, Formik } from 'formik';
 import { ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -20,7 +16,6 @@ import { useTranslation } from 'react-i18next';
 import {
   brandSchema,
   categorySchema,
-  isNormalizedApiError,
   slugify,
   zodValidator,
   type Brand,
@@ -30,6 +25,7 @@ import {
   type CategoryFormValues,
   type CategoryRequest,
 } from '@velora/shared';
+import { FormNumber, FormSelect, FormSwitch, FormText } from '@/components/form/fields';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingScreen } from '@/components/ui/Feedback';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -91,10 +87,10 @@ export function CategoriesPage() {
       if (editing?.id) await updateCategory({ id: editing.id, body: toRequest(values) }).unwrap();
       else await createCategory(toRequest(values)).unwrap();
 
-      toast(t('admin.saved'), 'success');
+      toast.success(t('admin.saved'));
       setEditing(null);
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : 'Kategori kaydedilemedi', 'error');
+      toast.error(error, 'Kategori kaydedilemedi');
     }
   };
 
@@ -160,9 +156,9 @@ export function CategoriesPage() {
               onConfirm: async () => {
                 try {
                   await deleteCategory(category.id).unwrap();
-                  toast(t('admin.deleted'), 'success');
+                  toast.success(t('admin.deleted'));
                 } catch (error) {
-                  toast(isNormalizedApiError(error) ? error.message : 'Kategori silinemedi', 'error');
+                  toast.error(error, 'Kategori silinemedi');
                 }
               },
             })
@@ -209,101 +205,47 @@ export function CategoriesPage() {
             validate={zodValidator<CategoryFormValues>(categorySchema)}
             onSubmit={save}
           >
-            {({ values, errors, touched, handleChange, setFieldValue }) => (
-              <Form>
-                <DialogContent>
-                  <Stack spacing={2.5} sx={{ pt: 1 }}>
-                    <TextField
-                      name="name"
-                      label={t('admin.categoryName')}
-                      value={values.name}
-                      onChange={handleChange}
-                      error={Boolean(touched.name && errors.name)}
-                      helperText={touched.name ? errors.name : undefined}
-                      fullWidth
-                      required
-                    />
+            <Form>
+              <DialogContent>
+                <Stack spacing={2.5} sx={{ pt: 1 }}>
+                  <FormText name="name" label={t('admin.categoryName')} required />
+                  <FormText name="slug" label="Slug" hint={t('admin.slugHint')} />
 
-                    <TextField
-                      name="slug"
-                      label="Slug"
-                      value={values.slug ?? ''}
-                      onChange={handleChange}
-                      error={Boolean(touched.slug && errors.slug)}
-                      helperText={touched.slug ? errors.slug : t('admin.slugHint')}
-                      fullWidth
-                    />
-
-                    <TextField
-                      select
-                      name="parentId"
-                      label={t('admin.parentCategory')}
-                      value={values.parentId ?? ''}
-                      onChange={(event) =>
-                        void setFieldValue('parentId', event.target.value === '' ? null : Number(event.target.value))
-                      }
-                      fullWidth
-                    >
-                      <MenuItem value="">Ana kategori</MenuItem>
-                      {categories
+                  <FormSelect
+                    name="parentId"
+                    label={t('admin.parentCategory')}
+                    parse={(raw) => (raw === '' ? null : Number(raw))}
+                    options={[
+                      { value: '', label: 'Ana kategori' },
+                      ...categories
                         .filter((category) => category.id !== editing.id)
-                        .map((category) => (
-                          <MenuItem key={category.id} value={category.id}>
-                            {category.parentId ? `— ${category.name}` : category.name}
-                          </MenuItem>
-                        ))}
-                    </TextField>
+                        .map((category) => ({
+                          value: category.id,
+                          label: category.parentId ? `— ${category.name}` : category.name,
+                        })),
+                    ]}
+                  />
 
-                    <TextField
-                      name="description"
-                      label={t('admin.description')}
-                      value={values.description ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                      multiline
-                      rows={2}
-                    />
+                  <FormText name="description" label={t('admin.description')} multiline rows={2} />
+                  <FormText name="imageUrl" label={t('admin.imageUrl')} />
+                  <FormNumber name="displayOrder" label={t('admin.sortOrder')} integer />
 
-                    <TextField
-                      name="imageUrl"
-                      label={t('admin.imageUrl')}
-                      value={values.imageUrl ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                    />
-
-                    <TextField
-                      name="displayOrder"
-                      label={t('admin.sortOrder')}
-                      type="number"
-                      value={values.displayOrder}
-                      onChange={(event) => void setFieldValue('displayOrder', Number(event.target.value))}
-                      fullWidth
-                    />
-
-                    <Stack direction="row" spacing={2}>
-                      <FormControlLabel
-                        control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                        label={t('common.active')}
-                      />
-                      <FormControlLabel
-                        control={<Switch name="isFeatured" checked={values.isFeatured} onChange={handleChange} />}
-                        label={t('admin.featured')}
-                      />
-                    </Stack>
+                  <Stack direction="row" spacing={2}>
+                    <FormSwitch name="isActive" label={t('common.active')} />
+                    <FormSwitch name="isFeatured" label={t('admin.featured')} />
                   </Stack>
-                </DialogContent>
+                </Stack>
+              </DialogContent>
 
-                <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                  <Button color="inherit" onClick={() => setEditing(null)}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" variant="contained" disabled={creating || updating}>
-                    {t('common.save')}
-                  </Button>
-                </DialogActions>
-              </Form>
-            )}
+              <DialogActions sx={{ px: 3, pb: 2.5 }}>
+                <Button color="inherit" onClick={() => setEditing(null)}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" variant="contained" disabled={creating || updating}>
+                  {t('common.save')}
+                </Button>
+              </DialogActions>
+            </Form>
           </Formik>
         )}
       </Dialog>
@@ -350,10 +292,10 @@ export function BrandsPage() {
       if (editing?.id) await updateBrand({ id: editing.id, body: toRequest(values) }).unwrap();
       else await createBrand(toRequest(values)).unwrap();
 
-      toast(t('admin.saved'), 'success');
+      toast.success(t('admin.saved'));
       setEditing(null);
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : 'Marka kaydedilemedi', 'error');
+      toast.error(error, 'Marka kaydedilemedi');
     }
   };
 
@@ -432,9 +374,9 @@ export function BrandsPage() {
                         onConfirm: async () => {
                           try {
                             await deleteBrand(brand.id).unwrap();
-                            toast(t('admin.deleted'), 'success');
+                            toast.success(t('admin.deleted'));
                           } catch (error) {
-                            toast(isNormalizedApiError(error) ? error.message : 'Marka silinemedi', 'error');
+                            toast.error(error, 'Marka silinemedi');
                           }
                         },
                       })
@@ -458,76 +400,31 @@ export function BrandsPage() {
             validate={zodValidator<BrandFormValues>(brandSchema)}
             onSubmit={save}
           >
-            {({ values, errors, touched, handleChange, setFieldValue }) => (
-              <Form>
-                <DialogContent>
-                  <Stack spacing={2.5} sx={{ pt: 1 }}>
-                    <TextField
-                      name="name"
-                      label={t('admin.brandName')}
-                      value={values.name}
-                      onChange={handleChange}
-                      error={Boolean(touched.name && errors.name)}
-                      helperText={touched.name ? errors.name : undefined}
-                      fullWidth
-                      required
-                    />
-                    <TextField
-                      name="slug"
-                      label="Slug"
-                      value={values.slug ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                      helperText={t('admin.slugHint')}
-                    />
-                    <TextField
-                      name="description"
-                      label={t('admin.description')}
-                      value={values.description ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                      multiline
-                      rows={2}
-                    />
-                    <TextField
-                      name="logoUrl"
-                      label={t('admin.logoUrl')}
-                      value={values.logoUrl ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                    />
-                    <TextField
-                      name="displayOrder"
-                      label={t('admin.sortOrder')}
-                      type="number"
-                      value={values.displayOrder}
-                      onChange={(event) => void setFieldValue('displayOrder', Number(event.target.value))}
-                      fullWidth
-                    />
+            <Form>
+              <DialogContent>
+                <Stack spacing={2.5} sx={{ pt: 1 }}>
+                  <FormText name="name" label={t('admin.brandName')} required />
+                  <FormText name="slug" label="Slug" hint={t('admin.slugHint')} />
+                  <FormText name="description" label={t('admin.description')} multiline rows={2} />
+                  <FormText name="logoUrl" label={t('admin.logoUrl')} />
+                  <FormNumber name="displayOrder" label={t('admin.sortOrder')} integer />
 
-                    <Stack direction="row" spacing={2}>
-                      <FormControlLabel
-                        control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                        label={t('common.active')}
-                      />
-                      <FormControlLabel
-                        control={<Switch name="isFeatured" checked={values.isFeatured} onChange={handleChange} />}
-                        label={t('admin.featured')}
-                      />
-                    </Stack>
+                  <Stack direction="row" spacing={2}>
+                    <FormSwitch name="isActive" label={t('common.active')} />
+                    <FormSwitch name="isFeatured" label={t('admin.featured')} />
                   </Stack>
-                </DialogContent>
+                </Stack>
+              </DialogContent>
 
-                <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                  <Button color="inherit" onClick={() => setEditing(null)}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" variant="contained" disabled={creating || updating}>
-                    {t('common.save')}
-                  </Button>
-                </DialogActions>
-              </Form>
-            )}
+              <DialogActions sx={{ px: 3, pb: 2.5 }}>
+                <Button color="inherit" onClick={() => setEditing(null)}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" variant="contained" disabled={creating || updating}>
+                  {t('common.save')}
+                </Button>
+              </DialogActions>
+            </Form>
           </Formik>
         )}
       </Dialog>

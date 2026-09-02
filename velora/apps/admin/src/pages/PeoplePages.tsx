@@ -8,7 +8,6 @@ import {
   DialogTitle,
   FormControlLabel,
   IconButton,
-  InputAdornment,
   MenuItem,
   Rating as MuiRating,
   Stack,
@@ -18,18 +17,18 @@ import {
   Typography,
 } from '@mui/material';
 import { DataGrid, type GridColDef, type GridPaginationModel } from '@mui/x-data-grid';
-import { Check, KeyRound, Search, ShieldCheck, Trash2, X } from 'lucide-react';
+import { Check, KeyRound, ShieldCheck, Trash2, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   formatDate,
-  isNormalizedApiError,
   localeFor,
   PERMISSIONS,
   VELORA_ROLES,
   type AdminUserListItem,
   type Review,
 } from '@velora/shared';
+import { FilterBar, FilterSelect, SearchField } from '@/components/ui/Filters';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState } from '@/components/ui/Feedback';
 import { StatCard } from '@/components/ui/StatCard';
@@ -199,12 +198,9 @@ export function CustomersPage() {
                         onConfirm: async () => {
                           try {
                             await setUserStatus({ id: params.row.id, isActive: !params.row.isActive }).unwrap();
-                            toast(t('admin.saved'), 'success');
+                            toast.success(t('admin.saved'));
                           } catch (error) {
-                            toast(
-                              isNormalizedApiError(error) ? error.message : t('admin.statusChangeFailed'),
-                              'error',
-                            );
+                            toast.error(error, t('admin.statusChangeFailed'));
                           }
                         },
                       })
@@ -230,9 +226,9 @@ export function CustomersPage() {
                         onConfirm: async () => {
                           try {
                             await deleteUser(params.row.id).unwrap();
-                            toast(t('admin.deleted'), 'success');
+                            toast.success(t('admin.deleted'));
                           } catch (error) {
-                            toast(isNormalizedApiError(error) ? error.message : 'Silinemedi', 'error');
+                            toast.error(error, 'Silinemedi');
                           }
                         },
                       })
@@ -261,39 +257,23 @@ export function CustomersPage() {
         <StatCard label={t('admin.admins')} value={String(stats?.adminUsers ?? '—')} accent="warning" />
       </div>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t('admin.customerSearchPlaceholder')}
-          sx={{ minWidth: { md: 320 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={16} />
-              </InputAdornment>
-            ),
-          }}
-        />
+      <FilterBar>
+        <SearchField value={search} onChange={setSearch} placeholder={t('admin.customerSearchPlaceholder')} />
 
-        <TextField
-          select
+        <FilterSelect
           label={t('admin.role')}
           value={roleFilter}
           onChange={(event) => {
             setRoleFilter(event.target.value);
             setPagination((current) => ({ ...current, page: 0 }));
           }}
-          sx={{ minWidth: 180 }}
-        >
-          <MenuItem value="">{t('common.all')}</MenuItem>
-          {roles.map((role) => (
-            <MenuItem key={role.id} value={role.name}>
-              {role.name}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Stack>
+          minWidth={180}
+          options={[
+            { value: '', label: t('common.all') },
+            ...roles.map((role) => ({ value: role.name, label: role.name })),
+          ]}
+        />
+      </FilterBar>
 
       {isError ? (
         <ErrorState onRetry={() => void refetch()} />
@@ -368,10 +348,10 @@ export function CustomersPage() {
 
               try {
                 await setUserRoles({ id: roleEditor.user.id, roles: roleEditor.roles }).unwrap();
-                toast(t('admin.saved'), 'success');
+                toast.success(t('admin.saved'));
                 setRoleEditor(null);
               } catch (error) {
-                toast(isNormalizedApiError(error) ? error.message : t('admin.rolesUpdateFailed'), 'error');
+                toast.error(error, t('admin.rolesUpdateFailed'));
               }
             }}
           >
@@ -416,10 +396,10 @@ export function CustomersPage() {
                   newPassword: passwordEditor.password,
                 }).unwrap();
 
-                toast(t('admin.passwordReset'), 'success');
+                toast.success(t('admin.passwordReset'));
                 setPasswordEditor(null);
               } catch (error) {
-                toast(isNormalizedApiError(error) ? error.message : t('admin.passwordResetFailed'), 'error');
+                toast.error(error, t('admin.passwordResetFailed'));
               }
             }}
           >
@@ -527,7 +507,7 @@ export function ReviewsPage() {
                 onClick={async () => {
                   try {
                     await setApproval({ id: params.row.id, isApproved: !params.row.isApproved }).unwrap();
-                    toast(t('admin.saved'), 'success');
+                    toast.success(t('admin.saved'));
                   } catch {
                     toast(t('admin.reviewUpdateFailed'), 'error');
                   }
@@ -549,7 +529,7 @@ export function ReviewsPage() {
                   onConfirm: async () => {
                     try {
                       await deleteReview(params.row.id).unwrap();
-                      toast(t('admin.deleted'), 'success');
+                      toast.success(t('admin.deleted'));
                     } catch {
                       toast(t('admin.deleteFailed'), 'error');
                     }

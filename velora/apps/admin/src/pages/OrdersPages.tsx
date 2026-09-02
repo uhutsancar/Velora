@@ -5,14 +5,11 @@ import {
   CardHeader,
   Chip,
   Divider,
-  InputAdornment,
-  MenuItem,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import { DataGrid, type GridColDef, type GridPaginationModel } from '@mui/x-data-grid';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -20,13 +17,13 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
-  isNormalizedApiError,
   localeFor,
   ORDER_STATUS,
   PERMISSIONS,
   type OrderSummary,
 } from '@velora/shared';
 import { ORDER_STATUS_COLORS } from '@/components/charts/chartTheme';
+import { FilterBar, FilterSelect, SearchField } from '@/components/ui/Filters';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, LoadingScreen } from '@/components/ui/Feedback';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -142,39 +139,23 @@ export function OrdersPage() {
     <>
       <PageHeader title={t('admin.orders')} description={t('admin.ordersSubtitle')} />
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t('admin.orderSearchPlaceholder')}
-          sx={{ minWidth: { md: 320 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={16} />
-              </InputAdornment>
-            ),
-          }}
-        />
+      <FilterBar>
+        <SearchField value={search} onChange={setSearch} placeholder={t('admin.orderSearchPlaceholder')} />
 
-        <TextField
-          select
+        <FilterSelect
           label={t('order.status')}
           value={statusId}
           onChange={(event) => {
             setStatusId(event.target.value === '' ? '' : Number(event.target.value));
             setPagination((current) => ({ ...current, page: 0 }));
           }}
-          sx={{ minWidth: 200 }}
-        >
-          <MenuItem value="">{t('common.all')}</MenuItem>
-          {statuses.map((status) => (
-            <MenuItem key={status.id} value={status.id}>
-              {status.name}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Stack>
+          minWidth={200}
+          options={[
+            { value: '', label: t('common.all') },
+            ...statuses.map((status) => ({ value: status.id, label: status.name })),
+          ]}
+        />
+      </FilterBar>
 
       {isError ? (
         <ErrorState onRetry={() => void refetch()} />
@@ -244,9 +225,9 @@ export function OrderDetailPage() {
       onConfirm: async () => {
         try {
           await updateStatus({ id: order.id, statusId: targetId }).unwrap();
-          toast(t('admin.orderStatusUpdated'), 'success');
+          toast.success(t('admin.orderStatusUpdated'));
         } catch (error) {
-          toast(isNormalizedApiError(error) ? error.message : t('admin.statusChangeFailed'), 'error');
+          toast.error(error, t('admin.statusChangeFailed'));
         }
       },
     });
@@ -268,7 +249,7 @@ export function OrderDetailPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <Card>
-            <CardHeader title={t('order.items')} titleTypographyProps={{ variant: 'h5' }} />
+            <CardHeader title={t('order.items')} />
             <CardContent sx={{ pt: 0 }}>
               <ul className="divide-y divide-ink-100">
                 {order.orderitems.map((item, index) => (
@@ -327,7 +308,7 @@ export function OrderDetailPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader title={t('order.status')} titleTypographyProps={{ variant: 'h5' }} />
+            <CardHeader title={t('order.status')} />
             <CardContent>
               <StatusChip statusId={order.statusId} label={order.status} />
 
@@ -380,7 +361,7 @@ export function OrderDetailPage() {
           </Card>
 
           <Card>
-            <CardHeader title={t('order.customer')} titleTypographyProps={{ variant: 'h5' }} />
+            <CardHeader title={t('order.customer')} />
             <CardContent>
               <Typography variant="body2">{order.userName ?? 'Misafir'}</Typography>
               {order.userId && (
@@ -392,7 +373,7 @@ export function OrderDetailPage() {
           </Card>
 
           <Card>
-            <CardHeader title={t('order.address')} titleTypographyProps={{ variant: 'h5' }} />
+            <CardHeader title={t('order.address')} />
             <CardContent>
               <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
                 {[order.street, `${order.state ?? ''} / ${order.city ?? ''} ${order.zipcode ?? ''}`, order.country]

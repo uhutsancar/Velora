@@ -2,15 +2,12 @@ import {
   Button,
   Chip,
   IconButton,
-  InputAdornment,
-  MenuItem,
   Stack,
   Switch,
-  TextField,
   Tooltip,
 } from '@mui/material';
 import { DataGrid, type GridColDef, type GridPaginationModel } from '@mui/x-data-grid';
-import { ExternalLink, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { ExternalLink, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +18,7 @@ import {
   PRODUCT_SORT,
   type ProductListItem,
 } from '@velora/shared';
+import { FilterBar, FilterSelect, SearchField } from '@/components/ui/Filters';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState } from '@/components/ui/Feedback';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -204,7 +202,7 @@ export default function ProductsPage() {
                       onConfirm: async () => {
                         try {
                           await deleteProduct(params.row.id).unwrap();
-                          toast(t('admin.deleted'), 'success');
+                          toast.success(t('admin.deleted'));
                         } catch {
                           toast(t('admin.productDeleteFailed'), 'error');
                         }
@@ -237,32 +235,19 @@ export default function ProductsPage() {
         }
       />
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t('admin.productSearchPlaceholder')}
-          sx={{ minWidth: { md: 320 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={16} />
-              </InputAdornment>
-            ),
-          }}
-        />
+      <FilterBar>
+        <SearchField value={search} onChange={setSearch} placeholder={t('admin.productSearchPlaceholder')} />
 
-        <TextField
-          select
+        <FilterSelect
           label={t('order.status')}
           value={publishedFilter ?? 'all'}
           onChange={(event) => setFilter('published', event.target.value === 'all' ? null : event.target.value)}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="all">{t('common.all')}</MenuItem>
-          <MenuItem value="true">{t('admin.published')}</MenuItem>
-          <MenuItem value="false">{t('admin.draft')}</MenuItem>
-        </TextField>
+          options={[
+            { value: 'all', label: t('common.all') },
+            { value: 'true', label: t('admin.published') },
+            { value: 'false', label: t('admin.draft') },
+          ]}
+        />
 
         <Stack direction="row" alignItems="center" spacing={1}>
           <Switch
@@ -272,7 +257,7 @@ export default function ProductsPage() {
           />
           <span className="text-sm text-ink-600">{t('admin.lowStock')}</span>
         </Stack>
-      </Stack>
+      </FilterBar>
 
       {isError ? (
         <ErrorState onRetry={() => void refetch()} />
