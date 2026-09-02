@@ -12,8 +12,7 @@ namespace OrderService.Infrastructure
     public static class ServiceRegistration
     {
         /// <summary>Local default so a fresh clone runs against the compose SQL Server with no setup.</summary>
-        private const string DevelopmentConnection =
-            "Data Source=localhost,1444;Initial Catalog=velora_order;Persist Security Info=True;User ID=sa;Password=UhutSancar123!;TrustServerCertificate=True;";
+        private static string DevelopmentConnection => LocalDevSecrets.SqlConnection("velora_order");
 
         public static IServiceCollection AddPersistenceRegistration(
             this IServiceCollection services,
@@ -23,7 +22,7 @@ namespace OrderService.Infrastructure
             // Historically a flat key rather than a ConnectionStrings entry; RequireConnectionString
             // accepts both, so OrderDbConnectionString and ConnectionStrings:OrderDbConnectionString work.
             var connectionString = VeloraSecrets.RequireConnectionString(
-                configuration, environment, "OrderDbConnectionString", DevelopmentConnection);
+                configuration, environment, "OrderDbConnectionString", () => DevelopmentConnection);
 
             services.AddDbContext<OrderDbContext>(options =>
             {

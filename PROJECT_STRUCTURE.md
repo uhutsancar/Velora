@@ -247,10 +247,10 @@ Her bileşen **ayrı bir compose dosyasında** — hepsi tek tek ayağa kaldır�
 | `docker-compose-files/consul/` | `hashicorp/consul:latest` | `local-consul` | `8500:8500`, `8600:8600/udp` | `agent -dev -ui -client=0.0.0.0 -node=localhost` |
 | `docker-compose-files/rabbitmq/` | `rabbitmq:3-management` | `local-rabbitmq` | `5672:5672`, `15672:15672` | Yönetim UI dahil, guest/guest |
 | `docker-compose-files/redis/` | `redis:latest` | `local-redis` | `6379:6379` | Persistence yapılandırması yok |
-| `docker-compose-files/sqlserver/` | `mcr.microsoft.com/mssql/server:2022-latest` | `local-sqlserver` | **`1444:1433`** | `SA_PASSWORD=UhutSancar123!` |
+| `docker-compose-files/sqlserver/` | `mcr.microsoft.com/mssql/server:2022-latest` | `local-sqlserver` | **`1444:1433`** | `SA_PASSWORD=${SQL_SA_PASSWORD}` |
 | `./docker-compose.yml` (kök) | `hashicorp/consul:latest` | `local-consul` | `8500`, `8600/udp` | `-node` parametresi **yok** (eski sürüm) |
 
-> 📌 **SQL Server portu 1433 değil 1444'tür.** Bu, working tree'de yapılmış (henüz commit edilmemiş) bir değişikliktir — parola da `SellingBuddyStrongP@ssw0rd!` → `UhutSancar123!` olarak değiştirilmiş.
+> 📌 **SQL Server portu 1433 değil 1444'tür.** Bu, working tree'de yapılmış (henüz commit edilmemiş) bir değişikliktir — parola artik kodda tutulmuyor; `.env` dosyasindaki `SQL_SA_PASSWORD` degiskeninden gelir.
 >
 > 📌 **Uygulamalar için Docker imajı yoktur.** Servisler Visual Studio / `dotnet run` ile host makinede çalışır; sadece bağımlılıklar konteynerdedir. Bu yüzden tüm adresler `localhost`'tur.
 
@@ -274,7 +274,7 @@ Her bileşen **ayrı bir compose dosyasında** — hepsi tek tek ayağa kaldır�
 | RabbitMQ UI | `http://localhost:15672` (guest/guest) |
 | RabbitMQ AMQP | `localhost:5672` |
 | Redis | `localhost:6379` |
-| SQL Server | `localhost,1444` (sa / `UhutSancar123!`) |
+| SQL Server | `localhost,1444` (sa / `.env: SQL_SA_PASSWORD`) |
 
 ---
 
@@ -1307,7 +1307,7 @@ Gateway `ServiceName` ile Consul'a sorar, dönen `Address:Port` ile downstream i
 
 | Dosya | Değişiklik |
 |---|---|
-| `docker-compose-files/sqlserver/docker-compose.yml` | Port `1433:1433` → **`1444:1433`**, parola `SellingBuddyStrongP@ssw0rd!` → **`UhutSancar123!`** |
+| `docker-compose-files/sqlserver/docker-compose.yml` | Port `1433:1433` → **`1444:1433`**, parola **`${SQL_SA_PASSWORD}`** (.env) |
 | Çok sayıda `bin/` ve `obj/` dosyası | ⚠️ `.gitignore`'a rağmen **takip ediliyor** (ignore kuralı eklenmeden önce commit'lendikleri için). `git rm -r --cached` ile temizlenmeli |
 
 ---
@@ -1399,7 +1399,7 @@ docker compose -f sqlserver/docker-compose.yml up -d
 
 - Consul UI → http://localhost:8500
 - RabbitMQ UI → http://localhost:15672 (guest / guest)
-- SQL Server → `localhost,1444` (sa / `UhutSancar123!`)
+- SQL Server → `localhost,1444` (sa / `.env: SQL_SA_PASSWORD`)
 - Redis → `localhost:6379`
 
 ### Adım 2 — Servisleri başlat (sıra önemli)

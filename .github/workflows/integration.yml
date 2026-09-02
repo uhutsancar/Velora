@@ -1,0 +1,81 @@
+name: Integration
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Her gece 02:00 UTC — gecikmeli kirilmalar (bagimlilik, imaj guncellemesi)
+    # bir sonraki PR'i beklemeden gorunur olsun.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test ortami icin .env uret
+        run: |
+          # Parolalar her kosuda yeniden uretilir; repoya hicbir sir girmez.
+          {
+            echo "AUTH_SIGNING_KEY=$(openssl rand -base64 48)"
+            echo "SQL_SA_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')Aa1!"
+            echo "REDIS_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')"
+            echo "RABBITMQ_USER=velora"
+            echo "RABBITMQ_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')"
+            echo "SEED_ADMIN_EMAIL=ci-admin@velora.local"
+            echo "SEED_ADMIN_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')Aa1!"
+            echo "API_PUBLIC_URL=http://localhost:5000"
+            echo "MEDIA_PUBLIC_URL=http://localhost:5000/media"
+            echo "STOREFRONT_ORIGIN=http://localhost:8080"
+            echo "ADMIN_ORIGIN=http://localhost:8081"
+            echo "SITE_NAME=Velora"
+            echo "ADMIN_APP_NAME=Velora Admin"
+            echo "CURRENCY=TRY"
+            echo "GATEWAY_PORT=5000"
+            echo "STOREFRONT_PORT=8080"
+            echo "ADMIN_PORT=8081"
+            echo "VELORA_TAG=ci-${GITHUB_SHA::7}"
+            echo "EVENTBUS_TYPE=RabbitMQ"
+            echo "EVENTBUS_CONNECTION_STRING="
+            echo "PAYMENT_SUCCESS=true"
+          } > .env
+
+      - name: Stack'i ayaga kaldir
+        run: docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml up -d --build
+
+      # Uygulama servislerinde compose healthcheck'i yok (.NET imajlarinda curl
+      # bulunmuyor), bu yuzden hazir olusu disaridan yokluyoruz. --wait tek
+      # basina yalnizca altyapiyi bekler, uygulamayi beklemez.
+      - name: Gateway hazir olana kadar bekle
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:5000/health >/dev/null 2>&1; then
+              echo "gateway hazir ($i. deneme)"; exit 0
+            fi
+            sleep 5
+          done
+          echo "gateway 5 dakikada hazir olmadi"; exit 1
+
+      - name: HTTP yuzeyi dogrulamasi
+        run: python scripts/verify-stack.py
+
+      - name: Event bus dogrulamasi
+        run: |
+          set -a && . ./.env && set +a
+          VELORA_RABBITMQ=http://localhost:15672           VELORA_RABBITMQ_USER="$RABBITMQ_USER"           VELORA_RABBITMQ_PASSWORD="$RABBITMQ_PASSWORD"           VELORA_ADMIN_EMAIL="$SEED_ADMIN_EMAIL"           VELORA_ADMIN_PASSWORD="$SEED_ADMIN_PASSWORD"           python scripts/verify-eventbus.py
+
+      - name: Hata durumunda loglar
+        if: failure()
+        run: |
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml ps
+          docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml logs --tail 200
+
+      - name: Stack'i indir
+        if: always()
+        run: docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml down -v

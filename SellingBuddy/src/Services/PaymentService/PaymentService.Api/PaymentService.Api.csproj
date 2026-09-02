@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Base\EventBus.Base.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\EventBus\EventBus.Factory\EventBus.Factory.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Common\Velora.Shared\Velora.Shared.csproj" />
   </ItemGroup>
 
 </Project>

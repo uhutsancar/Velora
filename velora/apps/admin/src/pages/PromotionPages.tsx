@@ -6,12 +6,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   IconButton,
-  MenuItem,
   Stack,
-  Switch,
-  TextField,
 } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { Form, Formik } from 'formik';
@@ -24,7 +20,6 @@ import {
   DISCOUNT_TYPE,
   formatCurrency,
   formatDate,
-  isNormalizedApiError,
   localeFor,
   campaignSchema,
   slugify,
@@ -38,6 +33,7 @@ import {
   type CouponRequest,
   type DiscountType,
 } from '@velora/shared';
+import { FormNumber, FormSelect, FormSwitch, FormText } from '@/components/form/fields';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState, ErrorState, LoadingScreen } from '@/components/ui/Feedback';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -205,7 +201,7 @@ export function CouponsPage() {
                   onConfirm: async () => {
                     try {
                       await deleteCoupon(params.row.id).unwrap();
-                      toast(t('admin.deleted'), 'success');
+                      toast.success(t('admin.deleted'));
                     } catch {
                       toast('Kupon silinemedi', 'error');
                     }
@@ -239,10 +235,10 @@ export function CouponsPage() {
       if (editing?.id) await updateCoupon({ id: editing.id, body }).unwrap();
       else await createCoupon(body).unwrap();
 
-      toast(t('admin.saved'), 'success');
+      toast.success(t('admin.saved'));
       setEditing(null);
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : 'Kupon kaydedilemedi', 'error');
+      toast.error(error, 'Kupon kaydedilemedi');
     }
   };
 
@@ -281,135 +277,76 @@ export function CouponsPage() {
             validate={zodValidator<AdminCouponFormValues>(adminCouponSchema)}
             onSubmit={save}
           >
-            {({ values, errors, touched, handleChange, setFieldValue }) => (
+            {({ values }) => (
               <Form>
                 <DialogContent>
                   <Stack spacing={2.5} sx={{ pt: 1 }}>
-                    <TextField
+                    <FormText
                       name="code"
                       label={t('admin.couponCode')}
-                      value={values.code}
-                      onChange={(event) => void setFieldValue('code', event.target.value.toUpperCase())}
-                      error={Boolean(touched.code && errors.code)}
-                      helperText={touched.code ? errors.code : undefined}
-                      fullWidth
+                      transform={(raw) => raw.toUpperCase()}
                       required
                     />
-
-                    <TextField
-                      name="description"
-                      label={t('admin.description')}
-                      value={values.description ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                    />
+                    <FormText name="description" label={t('admin.description')} />
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
-                        select
+                      <FormSelect
                         name="discountType"
                         label={t('admin.discountType')}
-                        value={values.discountType}
-                        onChange={(event) => void setFieldValue('discountType', Number(event.target.value))}
-                        fullWidth
-                      >
-                        {Object.entries(DISCOUNT_LABEL_KEYS).map(([value, labelKey]) => (
-                          <MenuItem key={value} value={Number(value)}>
-                            {t(labelKey)}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-
-                      <TextField
+                        parse={Number}
+                        options={Object.entries(DISCOUNT_LABEL_KEYS).map(([value, labelKey]) => ({
+                          value: Number(value),
+                          label: t(labelKey),
+                        }))}
+                      />
+                      <FormNumber
                         name="discountValue"
-                        label={values.discountType === DISCOUNT_TYPE.Percentage ? t('admin.typePercentage') : t('admin.typeAmount')}
-                        type="number"
-                        value={values.discountValue}
-                        onChange={(event) => void setFieldValue('discountValue', Number(event.target.value))}
-                        error={Boolean(touched.discountValue && errors.discountValue)}
-                        helperText={touched.discountValue ? errors.discountValue : undefined}
+                        label={
+                          values.discountType === DISCOUNT_TYPE.Percentage
+                            ? t('admin.typePercentage')
+                            : t('admin.typeAmount')
+                        }
                         disabled={values.discountType === DISCOUNT_TYPE.FreeShipping}
-                        fullWidth
                       />
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
-                        name="minimumOrderAmount"
-                        label={t('admin.minBasketAmount')}
-                        type="number"
-                        value={values.minimumOrderAmount}
-                        onChange={(event) => void setFieldValue('minimumOrderAmount', Number(event.target.value))}
-                        fullWidth
-                      />
-
-                      <TextField
+                      <FormNumber name="minimumOrderAmount" label={t('admin.minBasketAmount')} />
+                      <FormNumber
                         name="maxDiscountAmount"
                         label={t('admin.maxDiscount')}
-                        type="number"
-                        value={values.maxDiscountAmount ?? ''}
-                        onChange={(event) =>
-                          void setFieldValue(
-                            'maxDiscountAmount',
-                            event.target.value === '' ? null : Number(event.target.value),
-                          )
-                        }
-                        helperText={t('admin.maxDiscountHint')}
-                        fullWidth
+                        hint={t('admin.maxDiscountHint')}
+                        nullable
                       />
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
+                      <FormNumber
                         name="usageLimit"
                         label={t('admin.totalUsageLimit')}
-                        type="number"
-                        value={values.usageLimit ?? ''}
-                        onChange={(event) =>
-                          void setFieldValue('usageLimit', event.target.value === '' ? null : Number(event.target.value))
-                        }
-                        helperText={t('admin.unlimitedHint')}
-                        fullWidth
+                        hint={t('admin.unlimitedHint')}
+                        nullable
+                        integer
                       />
-
-                      <TextField
-                        name="perUserLimit"
-                        label={t('admin.perUser')}
-                        type="number"
-                        value={values.perUserLimit}
-                        onChange={(event) => void setFieldValue('perUserLimit', Number(event.target.value))}
-                        fullWidth
-                      />
+                      <FormNumber name="perUserLimit" label={t('admin.perUser')} integer />
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
+                      <FormText
                         name="startsAtUtc"
                         label={t('admin.startDate')}
                         type="datetime-local"
-                        value={values.startsAtUtc}
-                        onChange={handleChange}
                         InputLabelProps={{ shrink: true }}
-                        fullWidth
                       />
-
-                      <TextField
+                      <FormText
                         name="endsAtUtc"
                         label={t('admin.endDate')}
                         type="datetime-local"
-                        value={values.endsAtUtc}
-                        onChange={handleChange}
-                        error={Boolean(touched.endsAtUtc && errors.endsAtUtc)}
-                        helperText={touched.endsAtUtc ? errors.endsAtUtc : undefined}
                         InputLabelProps={{ shrink: true }}
-                        fullWidth
                       />
                     </div>
 
-                    <FormControlLabel
-                      control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                      label={t('common.active')}
-                    />
+                    <FormSwitch name="isActive" label={t('common.active')} />
                   </Stack>
                 </DialogContent>
 
@@ -491,10 +428,10 @@ export function CampaignsPage() {
       if (editing?.id) await updateCampaign({ id: editing.id, body }).unwrap();
       else await createCampaign(body).unwrap();
 
-      toast(t('admin.saved'), 'success');
+      toast.success(t('admin.saved'));
       setEditing(null);
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : 'Kampanya kaydedilemedi', 'error');
+      toast.error(error, 'Kampanya kaydedilemedi');
     }
   };
 
@@ -589,7 +526,7 @@ export function CampaignsPage() {
                             onConfirm: async () => {
                               try {
                                 await deleteCampaign(campaign.id).unwrap();
-                                toast(t('admin.deleted'), 'success');
+                                toast.success(t('admin.deleted'));
                               } catch {
                                 toast('Kampanya silinemedi', 'error');
                               }
@@ -621,159 +558,74 @@ export function CampaignsPage() {
             validate={zodValidator<CampaignFormValues>(campaignSchema)}
             onSubmit={save}
           >
-            {({ values, errors, touched, handleChange, setFieldValue }) => (
-              <Form>
-                <DialogContent>
-                  <Stack spacing={2.5} sx={{ pt: 1 }}>
-                    <TextField
-                      name="name"
-                      label={t('admin.campaignName')}
-                      value={values.name}
-                      onChange={handleChange}
-                      error={Boolean(touched.name && errors.name)}
-                      helperText={touched.name ? errors.name : undefined}
-                      fullWidth
-                      required
+            <Form>
+              <DialogContent>
+                <Stack spacing={2.5} sx={{ pt: 1 }}>
+                  <FormText name="name" label={t('admin.campaignName')} required />
+                  <FormText name="description" label={t('admin.description')} multiline rows={2} />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormSelect
+                      name="placement"
+                      label={t('admin.placement')}
+                      parse={Number}
+                      options={Object.entries(PLACEMENT_LABEL_KEYS).map(([value, labelKey]) => ({
+                        value: Number(value),
+                        label: t(labelKey),
+                      }))}
                     />
-
-                    <TextField
-                      name="description"
-                      label={t('admin.description')}
-                      value={values.description ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                      multiline
-                      rows={2}
+                    <FormSelect
+                      name="categoryId"
+                      label={t('admin.category')}
+                      parse={(raw) => (raw === '' ? null : Number(raw))}
+                      options={[
+                        { value: '', label: 'Yok' },
+                        ...categories.map((category) => ({ value: category.id, label: category.name })),
+                      ]}
                     />
+                  </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
-                        select
-                        name="placement"
-                        label={t('admin.placement')}
-                        value={values.placement}
-                        onChange={(event) => void setFieldValue('placement', Number(event.target.value))}
-                        fullWidth
-                      >
-                        {Object.entries(PLACEMENT_LABEL_KEYS).map(([value, labelKey]) => (
-                          <MenuItem key={value} value={Number(value)}>
-                            {t(labelKey)}
-                          </MenuItem>
-                        ))}
-                      </TextField>
+                  <FormText name="bannerUrl" label={t('admin.bannerImage')} />
+                  <FormText name="imageUrl" label={t('admin.squareImage')} />
 
-                      <TextField
-                        select
-                        name="categoryId"
-                        label={t('admin.category')}
-                        value={values.categoryId ?? ''}
-                        onChange={(event) =>
-                          void setFieldValue('categoryId', event.target.value === '' ? null : Number(event.target.value))
-                        }
-                        fullWidth
-                      >
-                        <MenuItem value="">Yok</MenuItem>
-                        {categories.map((category) => (
-                          <MenuItem key={category.id} value={category.id}>
-                            {category.name}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormText name="ctaLabel" label={t('admin.ctaLabel')} />
+                    <FormText name="ctaUrl" label={t('admin.ctaUrl')} placeholder="/kategori/kadin" />
+                  </div>
 
-                    <TextField
-                      name="bannerUrl"
-                      label={t('admin.bannerImage')}
-                      value={values.bannerUrl ?? ''}
-                      onChange={handleChange}
-                      fullWidth
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormNumber name="discountPercentage" label={t('admin.discountPercentage')} />
+                    <FormNumber name="displayOrder" label={t('admin.sortOrder')} integer />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormText
+                      name="startsAtUtc"
+                      label={t('admin.startDate')}
+                      type="datetime-local"
+                      InputLabelProps={{ shrink: true }}
                     />
-
-                    <TextField
-                      name="imageUrl"
-                      label={t('admin.squareImage')}
-                      value={values.imageUrl ?? ''}
-                      onChange={handleChange}
-                      fullWidth
+                    <FormText
+                      name="endsAtUtc"
+                      label={t('admin.endDate')}
+                      type="datetime-local"
+                      InputLabelProps={{ shrink: true }}
                     />
+                  </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
-                        name="ctaLabel"
-                        label={t('admin.ctaLabel')}
-                        value={values.ctaLabel ?? ''}
-                        onChange={handleChange}
-                        fullWidth
-                      />
-                      <TextField
-                        name="ctaUrl"
-                        label={t('admin.ctaUrl')}
-                        value={values.ctaUrl ?? ''}
-                        onChange={handleChange}
-                        placeholder="/kategori/kadin"
-                        fullWidth
-                      />
-                    </div>
+                  <FormSwitch name="isActive" label={t('common.active')} />
+                </Stack>
+              </DialogContent>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
-                        name="discountPercentage"
-                        label={t('admin.discountPercentage')}
-                        type="number"
-                        value={values.discountPercentage}
-                        onChange={(event) => void setFieldValue('discountPercentage', Number(event.target.value))}
-                        fullWidth
-                      />
-                      <TextField
-                        name="displayOrder"
-                        label={t('admin.sortOrder')}
-                        type="number"
-                        value={values.displayOrder}
-                        onChange={(event) => void setFieldValue('displayOrder', Number(event.target.value))}
-                        fullWidth
-                      />
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
-                        name="startsAtUtc"
-                        label={t('admin.startDate')}
-                        type="datetime-local"
-                        value={values.startsAtUtc}
-                        onChange={handleChange}
-                        InputLabelProps={{ shrink: true }}
-                        fullWidth
-                      />
-                      <TextField
-                        name="endsAtUtc"
-                        label={t('admin.endDate')}
-                        type="datetime-local"
-                        value={values.endsAtUtc}
-                        onChange={handleChange}
-                        error={Boolean(touched.endsAtUtc && errors.endsAtUtc)}
-                        helperText={touched.endsAtUtc ? errors.endsAtUtc : undefined}
-                        InputLabelProps={{ shrink: true }}
-                        fullWidth
-                      />
-                    </div>
-
-                    <FormControlLabel
-                      control={<Switch name="isActive" checked={values.isActive} onChange={handleChange} />}
-                      label={t('common.active')}
-                    />
-                  </Stack>
-                </DialogContent>
-
-                <DialogActions sx={{ px: 3, pb: 2.5 }}>
-                  <Button color="inherit" onClick={() => setEditing(null)}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button type="submit" variant="contained" disabled={creating || updating}>
-                    {t('common.save')}
-                  </Button>
-                </DialogActions>
-              </Form>
-            )}
+              <DialogActions sx={{ px: 3, pb: 2.5 }}>
+                <Button color="inherit" onClick={() => setEditing(null)}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" variant="contained" disabled={creating || updating}>
+                  {t('common.save')}
+                </Button>
+              </DialogActions>
+            </Form>
           </Formik>
         )}
       </Dialog>

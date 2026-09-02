@@ -38,7 +38,7 @@ function ChartCard({
       <CardHeader
         title={title}
         subheader={subheader}
-        titleTypographyProps={{ variant: 'h5' }}
+       
         subheaderTypographyProps={{ variant: 'caption' }}
         sx={{ pb: 0 }}
       />

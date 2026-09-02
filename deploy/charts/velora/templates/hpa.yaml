@@ -1,0 +1,29 @@
+{{- range $slug, $svc := .Values.services }}
+{{- if $svc.autoscaling }}
+{{- $ctx := dict "slug" $slug "svc" $svc "root" $ }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "velora.fullname" $ctx }}
+  labels: {{- include "velora.labels" $ctx | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "velora.fullname" $ctx }}
+  minReplicas: {{ $svc.autoscaling.min }}
+  maxReplicas: {{ $svc.autoscaling.max }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.autoscaling.cpu | default 70 }}
+  behavior:
+    scaleDown:
+      # Yuk dalgalandiginda surekli asagi/yukari gidip gelmeyi engeller.
+      stabilizationWindowSeconds: 300
+{{- end }}
+{{- end }}

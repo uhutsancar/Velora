@@ -18,7 +18,7 @@
 param(
     [string]$GatewayUrl = 'http://localhost:5000',
     [string]$AdminEmail = 'admin@velora.com',
-    [string]$AdminPassword = 'Velora!Admin2024'
+    [string]$AdminPassword = $(if ($env:VELORA_ADMIN_PASSWORD) { $env:VELORA_ADMIN_PASSWORD } else { throw 'VELORA_ADMIN_PASSWORD tanimli degil. Once ./scripts/load-env.ps1 calistirin.' })
 )
 
 $ErrorActionPreference = 'Stop'

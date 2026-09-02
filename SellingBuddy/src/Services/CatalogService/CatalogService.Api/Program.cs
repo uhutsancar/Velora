@@ -1,3 +1,4 @@
+using Velora.Shared.Health;
 using CatalogService.Api.Core.Application.Services;
 using CatalogService.Api.Extensions;
 using CatalogService.Api.Infastructure;
@@ -56,6 +57,8 @@ builder.Services.AddTransient<OrderPaidIntegrationEventHandler>();
 builder.Services.AddVeloraEventBus(builder.Configuration, "CatalogService");
 builder.Services.AddResponseCaching();
 
+builder.Services.AddVeloraHealthChecks(builder.Configuration, builder.Configuration.GetConnectionString("CatalogConnection"));
+
 var app = builder.Build();
 
 app.UseVeloraExceptionHandling();
@@ -76,15 +79,33 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "CatalogService" })).AllowAnonymous();
+app.MapVeloraHealthChecks("CatalogService");
 
-app.MigrateDbContext<CatalogContext>((context, services) =>
+// Migration/seed on boot is a convenience for local development only.
+// In Kubernetes this is switched off (Database__MigrateOnStartup=false) and the
+// schema is applied once by a pre-upgrade Job: N replicas starting together
+// would otherwise race on __EFMigrationsHistory, and pod readiness would be
+// gated on how long the migration takes.
+//
+// --migrate-only is what that Job runs: apply the schema, then exit. Without the
+// exit the container would go on to serve HTTP and the Job would never complete.
+var migrateOnly = args.Contains("--migrate-only");
+
+if (migrateOnly || builder.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
-    var env = services.GetRequiredService<IWebHostEnvironment>();
-    var logger = services.GetRequiredService<ILogger<CatalogContextSeed>>();
+    app.MigrateDbContext<CatalogContext>((context, services) =>
+    {
+        var env = services.GetRequiredService<IWebHostEnvironment>();
+        var logger = services.GetRequiredService<ILogger<CatalogContextSeed>>();
 
-    new CatalogContextSeed().SeedAsync(context, env, logger).GetAwaiter().GetResult();
-});
+        new CatalogContextSeed().SeedAsync(context, env, logger).GetAwaiter().GetResult();
+    });
+}
+
+if (migrateOnly)
+{
+    return;
+}
 
 app.RegisterWithConsul(app.Lifetime);
 

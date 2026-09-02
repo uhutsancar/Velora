@@ -159,7 +159,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader
                 title={t('admin.recentOrders')}
-                titleTypographyProps={{ variant: 'h5' }}
+               
                 action={
                   <Link to="/orders" className="text-sm text-ink-500 underline-offset-4 hover:underline">
                     {t('common.all')}
@@ -209,7 +209,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader
                 title={t('admin.lowStock')}
-                titleTypographyProps={{ variant: 'h5' }}
+               
                 action={
                   <Link
                     to="/products?lowStock=true"

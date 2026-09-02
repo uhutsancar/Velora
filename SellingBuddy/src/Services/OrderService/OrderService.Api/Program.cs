@@ -1,3 +1,4 @@
+using Velora.Shared.Health;
 using EventBus.Base.Abstraction;
 using EventBus.Factory;
 using Microsoft.OpenApi.Models;
@@ -59,6 +60,8 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(CreateOrderCommand).Assembly);
 });
 
+builder.Services.AddVeloraHealthChecks(builder.Configuration, builder.Configuration["OrderDbConnectionString"]);
+
 var app = builder.Build();
 
 app.UseVeloraExceptionHandling();
@@ -75,14 +78,32 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "OrderService" })).AllowAnonymous();
+app.MapVeloraHealthChecks("OrderService");
 
-app.MigrateDbContext<OrderDbContext>((context, services) =>
+// Migration/seed on boot is a convenience for local development only.
+// In Kubernetes this is switched off (Database__MigrateOnStartup=false) and the
+// schema is applied once by a pre-upgrade Job: N replicas starting together
+// would otherwise race on __EFMigrationsHistory, and pod readiness would be
+// gated on how long the migration takes.
+//
+// --migrate-only is what that Job runs: apply the schema, then exit. Without the
+// exit the container would go on to serve HTTP and the Job would never complete.
+var migrateOnly = args.Contains("--migrate-only");
+
+if (migrateOnly || builder.Configuration.GetValue("Database:MigrateOnStartup", true))
 {
-    var logger = services.GetRequiredService<ILogger<OrderDbContext>>();
+    app.MigrateDbContext<OrderDbContext>((context, services) =>
+    {
+        var logger = services.GetRequiredService<ILogger<OrderDbContext>>();
 
-    new OrderDbContextSeed().SeedAsync(context, logger).GetAwaiter().GetResult();
-});
+        new OrderDbContextSeed().SeedAsync(context, logger).GetAwaiter().GetResult();
+    });
+}
+
+if (migrateOnly)
+{
+    return;
+}
 
 app.RegisterWithConsul(app.Lifetime);
 

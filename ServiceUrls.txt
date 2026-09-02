@@ -18,12 +18,12 @@ Altyapi
   Consul UI                 http://localhost:8500
   RabbitMQ UI               http://localhost:15672   (guest / guest)
   Redis                     localhost:6379
-  SQL Server                localhost,1444           (sa / UhutSancar123!)
+  SQL Server                localhost,1444           (sa / .env: SQL_SA_PASSWORD)
 
 Veritabanlari
   velora_identity  ·  velora_catalog  ·  velora_order
 
 Tohumlanan yonetici hesabi
-  admin@velora.com / Velora!Admin2024   (canliya almadan once degistirin)
+  admin@velora.com / .env: SEED_ADMIN_PASSWORD
 
 Ayrintilar icin README.md

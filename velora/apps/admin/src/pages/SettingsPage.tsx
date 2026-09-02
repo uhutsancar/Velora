@@ -26,7 +26,7 @@ export default function SettingsPage() {
 
       <Stack spacing={3}>
         <Card>
-          <CardHeader title={t('admin.session')} titleTypographyProps={{ variant: 'h5' }} />
+          <CardHeader title={t('admin.session')} />
           <CardContent>
             <Stack spacing={1.5}>
               <Row label={t('admin.user')} value={user?.fullName ?? '—'} />
@@ -50,7 +50,7 @@ export default function SettingsPage() {
           <CardHeader
             title={t('admin.serviceEndpoints')}
             subheader={t('admin.serviceEndpointsHint')}
-            titleTypographyProps={{ variant: 'h5' }}
+           
           />
           <CardContent>
             <Stack spacing={1.5}>
@@ -70,7 +70,7 @@ export default function SettingsPage() {
           <CardHeader
             title={t('admin.roleMatrix')}
             subheader={t('admin.roleMatrixHint')}
-            titleTypographyProps={{ variant: 'h5' }}
+           
           />
           <CardContent>
             <Stack spacing={2.5} divider={<Divider />}>
@@ -108,7 +108,7 @@ export default function SettingsPage() {
           <CardHeader
             title={t('admin.definedPermissions')}
             subheader={t('admin.permissionsCount', { count: permissions.length })}
-            titleTypographyProps={{ variant: 'h5' }}
+           
           />
           <CardContent>
             <Stack spacing={1}>

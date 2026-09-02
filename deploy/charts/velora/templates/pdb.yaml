@@ -1,0 +1,23 @@
+{{/*
+PodDisruptionBudget yalnizca birden fazla replikasi olan servisler icin.
+
+Tek replikali bir is yuku icin PDB yazmak node drain'ini kalici olarak
+bloklar — bakim yapilamaz hale gelir.
+*/}}
+{{- range $slug, $svc := .Values.services }}
+{{- $min := $svc.replicas | default 2 }}
+{{- if $svc.autoscaling }}{{- $min = $svc.autoscaling.min }}{{- end }}
+{{- if gt (int $min) 1 }}
+{{- $ctx := dict "slug" $slug "svc" $svc "root" $ }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "velora.fullname" $ctx }}
+  labels: {{- include "velora.labels" $ctx | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {{- include "velora.selectorLabels" $ctx | nindent 6 }}
+{{- end }}
+{{- end }}

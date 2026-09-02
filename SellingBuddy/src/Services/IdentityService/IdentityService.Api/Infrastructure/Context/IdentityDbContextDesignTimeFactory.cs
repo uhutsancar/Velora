@@ -1,3 +1,4 @@
+using Velora.Shared.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -13,8 +14,7 @@ namespace IdentityService.Api.Infrastructure.Context
     /// </summary>
     public sealed class IdentityDbContextDesignTimeFactory : IDesignTimeDbContextFactory<IdentityDbContext>
     {
-        private const string DefaultConnection =
-            "Data Source=localhost,1444;Initial Catalog=velora_identity;Persist Security Info=True;User ID=sa;Password=UhutSancar123!;TrustServerCertificate=True;";
+        private static string DefaultConnection => LocalDevSecrets.SqlConnection("velora_identity");
 
         public IdentityDbContext CreateDbContext(string[] args)
         {

@@ -1,0 +1,15 @@
+# prod.
+#
+# values.yaml zaten prod'u varsayilan kabul eder, bu yuzden burada cok az sey
+# vardir. Imaj digest'leri buraya elle YAZILMAZ: GitOps deposu (Velora-gitops)
+# staging'de dogrulanmis digest'i buraya isler, boylece prod'a giden artefakt
+# test edilenin tam olarak aynisidir.
+
+image:
+  registry: ghcr.io/uhutsancar
+
+config:
+  environment: Production
+
+ingress:
+  clusterIssuer: letsencrypt-prod

@@ -1,0 +1,13 @@
+# CI dogrulamasi icin ek katman.
+#
+# docker-compose.prod.yml yonetim uclarini bilerek disari acmaz. Ancak
+# scripts/verify-eventbus.py kuyruk topolojisini ve tuketici sayaclarini
+# RabbitMQ yonetim API'sinden okur, dolayisiyla CI kosucusundan erisilebilir
+# olmalidir. Bu dosya yalnizca o portu yayinlar; prod dosyasi degismez.
+#
+# Kullanim:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml up -d
+services:
+  rabbitmq:
+    ports:
+      - '15672:15672'

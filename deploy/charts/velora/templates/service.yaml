@@ -1,0 +1,36 @@
+{{/*
+Service yalnizca HTTP alan servisler icin uretilir.
+
+payment ve notification birer kuyruk tuketicisidir: kimse onlara HTTP ile
+baglanmaz, dolayisiyla Service nesneleri de yoktur. Prob uclarina kubelet
+dogrudan pod IP'sinden ulasir.
+*/}}
+{{- range $slug, $svc := .Values.services }}
+{{- if $svc.service }}
+{{- $ctx := dict "slug" $slug "svc" $svc "root" $ }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $slug }}
+  labels: {{- include "velora.labels" $ctx | nindent 4 }}
+spec:
+  # Varsayilan ClusterIP: servisler yalnizca kume icinden erisilebilir ve disari
+  # acilan tek kapi Ingress'tir. Yerelde Ingress controller kurulu olmadigi icin
+  # NodePort verilir; boylece tarayicidan localhost:<nodePort> ile ulasilir ve
+  # her seferinde kubectl port-forward acmak gerekmez.
+  type: {{ $svc.serviceType | default "ClusterIP" }}
+  selector: {{- include "velora.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: http
+      # Kap portuyla ayni: ocelot.k8s.json downstream'leri "<slug>:8080" diyor
+      # ve Service 80'de dinlerse gateway baglanamaz. Tek bir numara tutmak,
+      # iki yerde iki farkli sayi tutmaktan daha az hata uretir.
+      port: {{ $.Values.containerPort }}
+      targetPort: http
+      protocol: TCP
+      {{- if and $svc.nodePort (eq ($svc.serviceType | default "ClusterIP") "NodePort") }}
+      nodePort: {{ $svc.nodePort }}
+      {{- end }}
+{{- end }}
+{{- end }}

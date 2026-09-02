@@ -1,0 +1,35 @@
+# dev — paylasimli kume, kume ici veri katmani.
+#
+# Bilerek kisa: yalnizca varsayilanlardan FARKLI olani listeler, boylece
+# ortamlar arasi fark tek bakista gorunur.
+
+config:
+  environment: Development
+  corsOrigins:
+    - https://store.dev.velora.com
+    - https://admin.dev.velora.com
+
+ingress:
+  clusterIssuer: letsencrypt-staging
+  tlsSecret: velora-dev-tls
+  hosts:
+    api: { host: api.dev.velora.com, service: gateway }
+    store: { host: store.dev.velora.com, service: storefront }
+    admin: { host: admin.dev.velora.com, service: admin }
+
+networkPolicy:
+  # Veri katmani dev'de kume icinde (velora-data) durdugu icin CIDR tabanli
+  # cikis kurali burada gecerli degil.
+  enabled: false
+
+# Tek replika yeter; dev'de amac dogrulama, dayaniklilik degil.
+services:
+  gateway: { replicas: 1, autoscaling: null }
+  identity: { replicas: 1, autoscaling: null }
+  catalog: { replicas: 1 }
+  basket: { replicas: 1, autoscaling: null }
+  order: { replicas: 1, autoscaling: null }
+  payment: { replicas: 1 }
+  notification: { replicas: 1 }
+  storefront: { replicas: 1, autoscaling: null }
+  admin: { replicas: 1 }

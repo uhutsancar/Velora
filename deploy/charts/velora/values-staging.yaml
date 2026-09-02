@@ -1,0 +1,25 @@
+# staging — prod'un aynasi, daha kucuk.
+#
+# Amaci prod ile ayni kod yollarini calistirmaktir; bu yuzden NetworkPolicy ve
+# autoscaling burada aciktir. Prod'da patlayan bir sey once burada patlamalidir.
+
+config:
+  environment: Production
+  corsOrigins:
+    - https://store.staging.velora.com
+    - https://admin.staging.velora.com
+
+ingress:
+  clusterIssuer: letsencrypt-staging
+  tlsSecret: velora-staging-tls
+  hosts:
+    api: { host: api.staging.velora.com, service: gateway }
+    store: { host: store.staging.velora.com, service: storefront }
+    admin: { host: admin.staging.velora.com, service: admin }
+
+services:
+  gateway: { autoscaling: { min: 2, max: 3, cpu: 70 } }
+  identity: { autoscaling: { min: 2, max: 3, cpu: 70 } }
+  basket: { autoscaling: { min: 2, max: 3, cpu: 70 } }
+  order: { autoscaling: { min: 2, max: 3, cpu: 70 } }
+  storefront: { autoscaling: { min: 2, max: 3, cpu: 70 } }

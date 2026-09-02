@@ -1,8 +1,10 @@
+import { runtimeValue } from '@velora/shared';
+
 /** Runtime configuration for the admin app. */
 export const env = {
-  apiUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:5000',
-  mediaOrigin: import.meta.env.VITE_MEDIA_ORIGIN ?? 'http://localhost:5004',
-  storefrontUrl: import.meta.env.VITE_STOREFRONT_URL ?? 'http://localhost:5173',
+  apiUrl: runtimeValue('apiUrl') ?? import.meta.env.VITE_API_URL ?? 'http://localhost:5000',
+  mediaOrigin: runtimeValue('mediaOrigin') ?? import.meta.env.VITE_MEDIA_ORIGIN ?? 'http://localhost:5004',
+  storefrontUrl: runtimeValue('storefrontUrl') ?? import.meta.env.VITE_STOREFRONT_URL ?? 'http://localhost:5173',
   appName: import.meta.env.VITE_APP_NAME ?? 'Velora Admin',
   currency: import.meta.env.VITE_CURRENCY ?? 'TRY',
   isProduction: import.meta.env.PROD,

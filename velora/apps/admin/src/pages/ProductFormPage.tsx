@@ -5,10 +5,8 @@ import {
   CardHeader,
   Chip,
   Divider,
-  FormControlLabel,
   IconButton,
   InputAdornment,
-  MenuItem,
   Stack,
   Switch,
   Tab,
@@ -23,13 +21,13 @@ import { useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  isNormalizedApiError,
   productSchema,
   slugify,
   zodValidator,
   type ProductFormValues,
   type ProductRequest,
 } from '@velora/shared';
+import { FormNumber, FormSelect, FormSwitch, FormText } from '@/components/form/fields';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState, LoadingScreen } from '@/components/ui/Feedback';
 import { env } from '@/config/env';
@@ -177,15 +175,15 @@ export default function ProductFormPage() {
     try {
       if (isNew) {
         const created = await createProduct(body).unwrap();
-        toast(t('admin.saved'), 'success');
+        toast.success(t('admin.saved'));
         navigate(`/products/${created.id}`, { replace: true });
       } else {
         await updateProduct({ id: productId, body }).unwrap();
-        toast(t('admin.saved'), 'success');
+        toast.success(t('admin.saved'));
         helpers.resetForm({ values });
       }
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : t('admin.productSaveFailed'), 'error');
+      toast.error(error, t('admin.productSaveFailed'));
     }
   };
 
@@ -199,13 +197,7 @@ export default function ProductFormPage() {
       validate={zodValidator<ProductFormValues>(productSchema)}
       onSubmit={submit}
     >
-      {({ values, errors, touched, handleChange, handleBlur, setFieldValue, dirty }) => {
-        // Formik errors for arrays/objects are not strings; only surface leaf messages.
-        const fieldError = (name: keyof ProductFormValues): string | undefined => {
-          const error = errors[name];
-          return touched[name] && typeof error === 'string' ? error : undefined;
-        };
-
+      {({ values, handleChange, setFieldValue, dirty }) => {
         const handleUpload = async (files: FileList | null) => {
           if (!files || files.length === 0) return;
 
@@ -224,9 +216,9 @@ export default function ProductFormPage() {
               })),
             ]);
 
-            toast(t('admin.imagesUploaded', { count: uploaded.length }), 'success');
+            toast.success(t('admin.imagesUploaded', { count: uploaded.length }));
           } catch (error) {
-            toast(isNormalizedApiError(error) ? error.message : t('admin.imageUploadFailed'), 'error');
+            toast.error(error, t('admin.imageUploadFailed'));
           } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -268,40 +260,19 @@ export default function ProductFormPage() {
               <div className="grid gap-4 lg:grid-cols-3">
                 <div className="space-y-4 lg:col-span-2">
                   <Card>
-                    <CardHeader title={t('admin.productInfo')} titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.productInfo')} />
                     <CardContent>
                       <Stack spacing={2.5}>
-                        <TextField
-                          name="name"
-                          label={t('admin.productName')}
-                          value={values.name}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={Boolean(fieldError('name'))}
-                          helperText={fieldError('name')}
-                          fullWidth
-                          required
-                        />
+                        <FormText name="name" label={t('admin.productName')} required />
 
-                        <TextField
+                        <FormText
                           name="slug"
                           label={t('admin.urlSlug')}
-                          value={values.slug ?? ''}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={Boolean(fieldError('slug'))}
-                          helperText={
-                            fieldError('slug') ??
-                            `${env.storefrontUrl}/urun/${values.slug || slugify(values.name) || '...'}`
-                          }
-                          fullWidth
+                          hint={`${env.storefrontUrl}/urun/${values.slug || slugify(values.name) || '...'}`}
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position="end">
-                                <Button
-                                  size="small"
-                                  onClick={() => void setFieldValue('slug', slugify(values.name))}
-                                >
+                                <Button size="small" onClick={() => void setFieldValue('slug', slugify(values.name))}>
                                   {t('admin.generate')}
                                 </Button>
                               </InputAdornment>
@@ -309,28 +280,17 @@ export default function ProductFormPage() {
                           }}
                         />
 
-                        <TextField
+                        <FormText
                           name="shortDescription"
                           label={t('admin.shortDescription')}
-                          value={values.shortDescription ?? ''}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={Boolean(fieldError('shortDescription'))}
-                          helperText={fieldError('shortDescription') ?? t('admin.shortDescriptionHint')}
-                          fullWidth
+                          hint={t('admin.shortDescriptionHint')}
                           multiline
                           rows={2}
                         />
 
-                        <TextField
+                        <FormText
                           name="description"
                           label={t('admin.description')}
-                          value={values.description}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          error={Boolean(fieldError('description'))}
-                          helperText={fieldError('description')}
-                          fullWidth
                           multiline
                           rows={7}
                           required
@@ -340,36 +300,24 @@ export default function ProductFormPage() {
                   </Card>
 
                   <Card>
-                    <CardHeader title={t('admin.pricing')} titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.pricing')} />
                     <CardContent>
                       <div className="grid gap-4 sm:grid-cols-3">
-                        <NumberField
+                        <FormNumber
                           name="price"
                           label={t('admin.listPrice')}
-                          value={values.price}
-                          onChange={setFieldValue}
-                          onBlur={handleBlur}
-                          error={fieldError('price')}
                           required
                         />
-                        <NumberField
+                        <FormNumber
                           name="discountPrice"
                           label={t('admin.salePrice')}
-                          value={values.discountPrice ?? null}
-                          onChange={setFieldValue}
-                          onBlur={handleBlur}
-                          error={fieldError('discountPrice')}
                           nullable
                         />
-                        <NumberField
+                        <FormNumber
                           name="costPrice"
                           label={t('admin.cost')}
-                          value={values.costPrice ?? null}
-                          onChange={setFieldValue}
-                          onBlur={handleBlur}
-                          error={fieldError('costPrice')}
                           nullable
-                          helperText={t('admin.costHint')}
+                          hint={t('admin.costHint')}
                         />
                       </div>
 
@@ -392,79 +340,43 @@ export default function ProductFormPage() {
 
                 <div className="space-y-4">
                   <Card>
-                    <CardHeader title={t('admin.publishing')} titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.publishing')} />
                     <CardContent>
                       <Stack spacing={1}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              name="isPublished"
-                              checked={values.isPublished}
-                              onChange={handleChange}
-                            />
-                          }
+                        <FormSwitch
+                          name="isPublished"
                           label={values.isPublished ? t('admin.published') : t('admin.draft')}
                         />
-                        <FormControlLabel
-                          control={
-                            <Switch name="isFeatured" checked={values.isFeatured} onChange={handleChange} />
-                          }
-                          label={t('admin.featureOnHome')}
-                        />
+                        <FormSwitch name="isFeatured" label={t('admin.featureOnHome')} />
                       </Stack>
                     </CardContent>
                   </Card>
 
                   <Card>
-                    <CardHeader title={t('admin.classification')} titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.classification')} />
                     <CardContent>
                       <Stack spacing={2.5}>
-                        <TextField
-                          select
+                        <FormSelect
                           name="catalogBrandId"
                           label={t('admin.brand')}
-                          value={values.catalogBrandId || ''}
-                          onChange={handleChange}
-                          error={Boolean(fieldError('catalogBrandId'))}
-                          helperText={fieldError('catalogBrandId')}
-                          fullWidth
                           required
-                        >
-                          {brands.map((brand) => (
-                            <MenuItem key={brand.id} value={brand.id}>
-                              {brand.name}
-                            </MenuItem>
-                          ))}
-                        </TextField>
+                          options={brands.map((brand) => ({ value: brand.id, label: brand.name }))}
+                        />
 
-                        <TextField
-                          select
+                        <FormSelect
                           name="categoryId"
                           label={t('admin.category')}
-                          value={values.categoryId ?? ''}
-                          onChange={(event) =>
-                            void setFieldValue(
-                              'categoryId',
-                              event.target.value === '' ? null : Number(event.target.value),
-                            )
-                          }
-                          fullWidth
-                        >
-                          <MenuItem value="">Kategorisiz</MenuItem>
-                          {categories.map((category) => (
-                            <MenuItem key={category.id} value={category.id}>
-                              {category.parentId ? `— ${category.name}` : category.name}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-
-                        <TextField
-                          name="sku"
-                          label="SKU"
-                          value={values.sku ?? ''}
-                          onChange={handleChange}
-                          fullWidth
+                          parse={(raw) => (raw === '' ? null : Number(raw))}
+                          options={[
+                            { value: '', label: 'Kategorisiz' },
+                            ...categories.map((category) => ({
+                              value: category.id,
+                              label: category.parentId ? `— ${category.name}` : category.name,
+                            })),
+                          ]}
                         />
+
+                        <FormText name="sku" label="SKU" />
 
                         <TagsField
                           tags={values.tags}
@@ -475,30 +387,22 @@ export default function ProductFormPage() {
                   </Card>
 
                   <Card>
-                    <CardHeader title={t('admin.stock')} titleTypographyProps={{ variant: 'h5' }} />
+                    <CardHeader title={t('admin.stock')} />
                     <CardContent>
                       <Stack spacing={2.5}>
-                        <NumberField
+                        <FormNumber
                           name="availableStock"
                           label={t('admin.mainStock')}
-                          value={values.availableStock}
-                          onChange={setFieldValue}
-                          onBlur={handleBlur}
-                          error={fieldError('availableStock')}
                           integer
-                          helperText={
+                          hint={
                             values.variants.length > 0
                               ? t('admin.variantStockHint')
                               : undefined
                           }
                         />
-                        <NumberField
+                        <FormNumber
                           name="restockThreshold"
                           label={t('admin.lowStockThreshold')}
-                          value={values.restockThreshold}
-                          onChange={setFieldValue}
-                          onBlur={handleBlur}
-                          error={fieldError('restockThreshold')}
                           integer
                         />
                       </Stack>
@@ -513,7 +417,7 @@ export default function ProductFormPage() {
                 <CardHeader
                   title={t('admin.images')}
                   subheader={t('admin.imagesHint')}
-                  titleTypographyProps={{ variant: 'h5' }}
+                 
                   action={
                     <Button
                       variant="outlined"
@@ -626,7 +530,7 @@ export default function ProductFormPage() {
                 <CardHeader
                   title={t('admin.variants')}
                   subheader={t('admin.variantsHint')}
-                  titleTypographyProps={{ variant: 'h5' }}
+                 
                 />
                 <CardContent>
                   <FieldArray name="variants">
@@ -748,27 +652,20 @@ export default function ProductFormPage() {
                 <CardHeader
                   title={t('admin.seoSection')}
                   subheader={t('admin.seoHint')}
-                  titleTypographyProps={{ variant: 'h5' }}
                 />
                 <CardContent>
                   <Stack spacing={2.5}>
-                    <TextField
+                    <FormText
                       name="metaTitle"
                       label={t('admin.metaTitle')}
-                      value={values.metaTitle ?? ''}
-                      onChange={handleChange}
-                      fullWidth
-                      helperText={t('admin.metaTitleHint', { count: (values.metaTitle ?? '').length })}
+                      hint={t('admin.metaTitleHint', { count: (values.metaTitle ?? '').length })}
                     />
-                    <TextField
+                    <FormText
                       name="metaDescription"
                       label={t('admin.metaDescription')}
-                      value={values.metaDescription ?? ''}
-                      onChange={handleChange}
-                      fullWidth
                       multiline
                       rows={3}
-                      helperText={t('admin.metaDescriptionHint', { count: (values.metaDescription ?? '').length })}
+                      hint={t('admin.metaDescriptionHint', { count: (values.metaDescription ?? '').length })}
                     />
 
                     {/* Live SERP preview: the fastest way to catch a truncated title. */}
@@ -795,54 +692,6 @@ export default function ProductFormPage() {
 }
 
 /** Numeric input that keeps Formik's value a number (or null) rather than a string. */
-function NumberField({
-  name,
-  label,
-  value,
-  onChange,
-  onBlur,
-  error,
-  helperText,
-  required,
-  nullable,
-  integer,
-}: {
-  name: string;
-  label: string;
-  value: number | null;
-  onChange: (field: string, value: number | null) => void;
-  onBlur: React.FocusEventHandler;
-  error?: string | undefined;
-  helperText?: string;
-  required?: boolean;
-  nullable?: boolean;
-  integer?: boolean;
-}) {
-  return (
-    <TextField
-      name={name}
-      label={label}
-      type="number"
-      value={value ?? ''}
-      onChange={(event) => {
-        const raw = event.target.value;
-
-        if (raw === '') {
-          onChange(name, nullable ? null : 0);
-          return;
-        }
-
-        onChange(name, integer ? Math.trunc(Number(raw)) : Number(raw));
-      }}
-      onBlur={onBlur}
-      error={Boolean(error)}
-      helperText={error ?? helperText}
-      required={required}
-      fullWidth
-      inputProps={{ min: 0, step: integer ? 1 : 0.01 }}
-    />
-  );
-}
 
 function TagsField({ tags, onChange }: { tags: string[]; onChange: (next: string[]) => void }) {
   const { t } = useTranslation();

@@ -1,0 +1,36 @@
+{{/*
+Tum servislerin paylastigi, hassas olmayan yapilandirma.
+
+.NET'in cift alt cizgi hiyerarsisi korunur (EventBus__HostName), boylece ayni
+anahtar isimleri appsettings.json, docker-compose ve burada ayni anlama gelir.
+Parolalar ve imza anahtari buraya DEGIL, Secret'a girer.
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-common-config
+  labels:
+    app.kubernetes.io/part-of: velora
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  ASPNETCORE_ENVIRONMENT: {{ .Values.config.environment | quote }}
+  ASPNETCORE_HTTP_PORTS: {{ .Values.containerPort | quote }}
+
+  # Kubernetes Service + Endpoints zaten kesif ve saglikli-instance filtrelemesi
+  # yapiyor; ikinci bir kesif sistemi yalnizca senkronizasyon yuku olur (ADR-01).
+  ConsulConfig__Enabled: "false"
+
+  # Sema, dagitimdan once tek bir Job tarafindan uygulanir; N replika ayni anda
+  # Database.Migrate() cagirirsa __EFMigrationsHistory uzerinde yarisirlar.
+  Database__MigrateOnStartup: "false"
+
+  # Gateway'in Consul'suz rota tablosu (scripts/generate-ocelot-k8s.py uretir).
+  Ocelot__ConfigFile: "Configurations/ocelot.k8s.json"
+
+  EventBus__Type: {{ .Values.config.eventBus.type | quote }}
+  EventBus__HostName: {{ .Values.config.eventBus.host | quote }}
+  EventBus__Port: {{ .Values.config.eventBus.port | quote }}
+
+  {{- range $index, $origin := .Values.config.corsOrigins }}
+  Cors__AllowedOrigins__{{ $index }}: {{ $origin | quote }}
+  {{- end }}

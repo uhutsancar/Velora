@@ -78,7 +78,9 @@ coverage*.info
 # ------------------------------------------------------------
 *.nupkg
 *.snupkg
-packages/
+# NuGet'in restore ettigi paket klasoru yalnizca .NET agacinda; kural
+# capasiz birakilirsa pnpm workspace'indeki velora/packages/ de yutulur.
+/SellingBuddy/**/packages/
 !packages/build/
 *.nuget.props
 *.nuget.targets

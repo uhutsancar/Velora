@@ -109,7 +109,7 @@ pnpm test:e2e       # Playwright, needs the backend running
 | Surface | URL | Sign in |
 |---|---|---|
 | Storefront | http://localhost:5173 | register a new account |
-| Admin | http://localhost:5174 | `admin@velora.com` / `Velora!Admin2024` |
+| Admin | http://localhost:5174 | `admin@velora.com` / `.env: SEED_ADMIN_PASSWORD` |
 | API Gateway | http://localhost:5000 | — |
 | Swagger (per service) | http://localhost:5005/swagger, `:5004`, `:5003`, `:5002` | — |
 | Consul UI | http://localhost:8500 | — |
@@ -480,7 +480,7 @@ A nested key maps to an environment variable by replacing `:` with `__`, so
 |---|---|---|
 | `AuthConfig:Secret` | falls back to a known placeholder | **required**, ≥32 chars, and the placeholder is rejected |
 | `ConnectionStrings:*` / `OrderDbConnectionString` | falls back to the compose SQL Server | **required** |
-| `SeedAdmin:Password` | falls back to `Velora!Admin2024` | no default — unset means no admin is created |
+| `SeedAdmin:Password` | falls back to `VELORA_SEED_ADMIN_PASSWORD` (ortam degiskeni) | no default — unset means no admin is created |
 | `EventBus:*` | defaults to `localhost` RabbitMQ with guest/guest | set per environment |
 
 A service that would otherwise start with a blank signing key refuses to boot and says which

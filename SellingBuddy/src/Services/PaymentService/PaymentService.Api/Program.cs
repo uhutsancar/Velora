@@ -1,3 +1,4 @@
+using Velora.Shared.Health;
 using EventBus.Base.Abstraction;
 using EventBus.Factory;
 using PaymentService.Api.IntegrationEvents.EventHandlers;
@@ -14,6 +15,8 @@ builder.Services.AddLogging(configure => configure.AddConsole());
 builder.Services.AddTransient<OrderStartedIntegrationEventHandler>();
 
 builder.Services.AddVeloraEventBus(builder.Configuration, "PaymentService");
+builder.Services.AddVeloraHealthChecks(builder.Configuration);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -23,7 +26,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "PaymentService" }));
+app.MapVeloraHealthChecks("PaymentService");
 
 var eventBus = app.Services.GetRequiredService<IEventBus>();
 eventBus.Subscribe<OrderStartedIntegrationEvent, OrderStartedIntegrationEventHandler>();
