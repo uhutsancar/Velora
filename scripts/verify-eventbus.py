@@ -195,7 +195,35 @@ dlq_names = [q for q in stats if q.endswith(".dlx")]
 check("her abone kuyrugunun dlx esi var", len(dlq_names) >= len(EXPECTED_QUEUES),
       "(%s dlx kuyrugu)" % len(dlq_names))
 
-before = stats
+def wait_until_idle(attempts=30, delay=2):
+    """
+    Waits until no subscriber queue holds an unprocessed message.
+
+    The baseline below is compared against counters taken after this script's
+    own checkout. If an earlier run - verify-stack.py performs a checkout of
+    its own - still has messages in flight, its stock decrement lands between
+    the two snapshots and shows up here as this checkout being processed twice.
+    That is a race between the scripts, not a fault in the bus, and sleeping a
+    fixed number of seconds would only make it less likely. Waiting for the
+    queues to actually drain settles it.
+    """
+    for _ in range(attempts):
+        current = queue_stats()
+        busy = {
+            q: s["ready"]
+            for q, s in current.items()
+            if q in EXPECTED_QUEUES and s["ready"] > 0
+        }
+        if not busy:
+            return current
+        time.sleep(delay)
+
+    print("  [WARN] kuyruklar bosalmadi, olcume yine de baslaniyor: %s" % busy)
+    return queue_stats()
+
+
+before = wait_until_idle()
+stats = before
 stale_dlq = {q: s["ready"] for q, s in before.items() if q.endswith(".dlx") and s["ready"] > 0}
 if stale_dlq:
     print("  [not]  onceden kalan dlx mesajlari (bu kosuda artmamali): %s" % stale_dlq)
