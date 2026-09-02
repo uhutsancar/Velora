@@ -1,0 +1,205 @@
+# Velora — ortak varsayilanlar.
+#
+# Bu dosya "her ortamda dogru olan" degerleri tutar. Ortama gore degisenler
+# values-<ortam>.yaml icinde ezilir; oradaki dosyalar kasten kisadir, cunku
+# aradaki farki gormek kolay olmalidir.
+#
+# YENI SERVIS EKLEMEK: services altina bir blok yazmak yeterlidir. Deployment,
+# Service, ServiceAccount, HPA, PDB ve gerekiyorsa migration Job'i ayni
+# sablonlardan uretilir; hicbir manifest kopyalanmaz.
+
+owner: backend-team
+
+image:
+  registry: ghcr.io/uhutsancar
+  # Depo adi <registry>/<prefix><slug> olarak kurulur.
+  prefix: velora-
+
+# Digest'e sabitlenmis imajlarda yeniden cekmenin anlami yok.
+imagePullPolicy: IfNotPresent
+
+# Tum servisler ayni portu dinler; Dockerfile'lar da 8080 EXPOSE eder.
+containerPort: 8080
+
+security:
+  # .NET imajlarinin ($APP_UID) varsayilan kullanicisi.
+  runAsUser: 64198
+
+secrets:
+  # Ham Secret manifesti Git'e KONMAZ. Bu isim, External Secrets Operator ya da
+  # Sealed Secrets tarafindan kumede uretilen Secret'i gosterir.
+  commonName: velora-common-secrets
+
+config:
+  environment: Production
+  eventBus:
+    type: RabbitMQ
+    # ExternalName Service sayesinde bu deger tum ortamlarda ayni kalir;
+    # degisen tek sey Service'in isaret ettigi adrestir.
+    host: rabbitmq
+    port: 5672
+  corsOrigins:
+    - https://store.velora.com
+    - https://admin.velora.com
+
+ingress:
+  enabled: true
+  className: nginx
+  clusterIssuer: letsencrypt-prod
+  tlsSecret: velora-tls
+  hosts:
+    api:
+      host: api.velora.com
+      service: gateway
+    store:
+      host: store.velora.com
+      service: storefront
+    admin:
+      host: admin.velora.com
+      service: admin
+
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx
+  dataEgress:
+    - cidr: 10.0.0.0/8
+      ports: [1433, 6379, 5672]
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+services:
+  gateway:
+    component: gateway
+    tier: edge
+    service: true
+    replicas: 2
+    autoscaling: { min: 2, max: 6, cpu: 70 }
+    resources:
+      requests: { cpu: 200m, memory: 256Mi }
+      limits: { memory: 512Mi }
+
+  identity:
+    component: backend
+    tier: api
+    service: true
+    replicas: 2
+    autoscaling: { min: 2, max: 4, cpu: 70 }
+    secretName: velora-identity-secrets
+    migrate:
+      command: ["dotnet", "IdentityService.Api.dll", "--migrate-only"]
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { memory: 512Mi }
+
+  catalog:
+    component: backend
+    tier: api
+    service: true
+    # B6 cozulene kadar 1: gorseller kap ici diske yaziliyor ve RWO PVC ile
+    # ikinci replika ayni diski mount edemez. Nesne depolamaya gecince
+    # autoscaling acilacak.
+    replicas: 1
+    secretName: velora-catalog-secrets
+    migrate:
+      command: ["dotnet", "CatalogService.Api.dll", "--migrate-only"]
+    resources:
+      requests: { cpu: 200m, memory: 384Mi }
+      limits: { memory: 768Mi }
+
+  basket:
+    component: backend
+    tier: api
+    service: true
+    replicas: 2
+    autoscaling: { min: 2, max: 6, cpu: 70 }
+    secretName: velora-basket-secrets
+    resources:
+      requests: { cpu: 100m, memory: 256Mi }
+      limits: { memory: 512Mi }
+
+  order:
+    component: backend
+    tier: api
+    service: true
+    replicas: 2
+    autoscaling: { min: 2, max: 6, cpu: 70 }
+    secretName: velora-order-secrets
+    migrate:
+      command: ["dotnet", "OrderService.Api.dll", "--migrate-only"]
+    resources:
+      requests: { cpu: 150m, memory: 320Mi }
+      limits: { memory: 640Mi }
+
+  # payment ve notification yalnizca kuyruk tuketir: Service nesnesi yok.
+  # Olceklemeleri CPU'ya degil kuyruk derinligine bagli olmali (KEDA), cunku
+  # bir tuketici CPU'yu degil mesaji bekler.
+  payment:
+    component: worker
+    tier: worker
+    service: false
+    replicas: 2
+    secretName: velora-payment-secrets
+    resources:
+      requests: { cpu: 100m, memory: 192Mi }
+      limits: { memory: 384Mi }
+
+  notification:
+    component: worker
+    tier: worker
+    service: false
+    replicas: 1
+    resources:
+      requests: { cpu: 50m, memory: 160Mi }
+      limits: { memory: 320Mi }
+
+  storefront:
+    component: frontend
+    tier: web
+    service: true
+    replicas: 2
+    autoscaling: { min: 2, max: 4, cpu: 70 }
+    # nginx-unprivileged imaji uid 101 ile calisir.
+    runAsUser: 101
+    # nginx tek bir saglik ucu sunar; statik dosya sunucusunda "acildi mi",
+    # "kilitlendi mi" ve "trafik alabilir mi" gercekten ayni sorudur.
+    probes: { live: /healthz, ready: /healthz, startup: /healthz }
+    # Adresler imaja gomulu DEGIL; container acilisinda /config.js'e yazilir
+    # (bkz. packages/shared/src/runtime.ts). Ayni imaj her ortamda calisir.
+    env:
+      - { name: API_URL, value: "https://api.velora.com" }
+      - { name: MEDIA_ORIGIN, value: "https://media.velora.com" }
+      - { name: SITE_URL, value: "https://store.velora.com" }
+    # readOnlyRootFilesystem ile nginx'in yazabilmesi gereken dizinler.
+    extraVolumeMounts:
+      - { name: nginx-cache, mountPath: /var/cache/nginx }
+      - { name: nginx-run, mountPath: /var/run }
+    extraVolumes:
+      - { name: nginx-cache, emptyDir: {} }
+      - { name: nginx-run, emptyDir: {} }
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { memory: 128Mi }
+
+  admin:
+    component: frontend
+    tier: web
+    service: true
+    replicas: 2
+    runAsUser: 101
+    probes: { live: /healthz, ready: /healthz, startup: /healthz }
+    env:
+      - { name: API_URL, value: "https://api.velora.com" }
+      - { name: MEDIA_ORIGIN, value: "https://media.velora.com" }
+      - { name: STOREFRONT_URL, value: "https://store.velora.com" }
+    extraVolumeMounts:
+      - { name: nginx-cache, mountPath: /var/cache/nginx }
+      - { name: nginx-run, mountPath: /var/run }
+    extraVolumes:
+      - { name: nginx-cache, emptyDir: {} }
+      - { name: nginx-run, emptyDir: {} }
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits: { memory: 128Mi }

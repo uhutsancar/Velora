@@ -1,0 +1,107 @@
+{{- if .Values.networkPolicy.enabled }}
+{{/*
+Sifir guven: once her seyi kapat, sonra yalnizca gereken yollari ac.
+
+Kubernetes'te varsayilan olarak her pod her poda erisebilir. Asagidaki
+default-deny bunu tersine cevirir; ardindan her servis kendi ihtiyaci kadar
+izin alir.
+
+UNUTULMAMASI GEREKEN: DNS'e (kube-dns, 53) izin verilmezse hicbir sey isim
+cozemez ve her sey kirilir. Bu yuzden DNS kurali default-deny ile ayni dosyada,
+hemen yanindadir.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-default-deny
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-dns
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+{{/* Ingress controller -> disariya acik olan uc servis. */}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-ingress-edge
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [gateway, storefront, admin]
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace }}
+      ports:
+        - port: {{ .Values.containerPort }}
+          protocol: TCP
+---
+{{/* Gateway -> yalnizca HTTP alan is servisleri. */}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-gateway-to-services
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: [identity, catalog, basket, order]
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: gateway
+      ports:
+        - port: {{ .Values.containerPort }}
+          protocol: TCP
+---
+{{/*
+Veri katmanina cikis.
+
+Prod'da SQL/Redis/RabbitMQ kume disindadir (ADR-04), bu yuzden hedef bir pod
+degil bir CIDR'dir. Kubelet'in prob'lari bu politikalardan etkilenmez.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-data-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: velora
+  policyTypes: [Egress]
+  egress:
+    {{- range .Values.networkPolicy.dataEgress }}
+    - to:
+        - ipBlock:
+            cidr: {{ .cidr }}
+      ports:
+        {{- range .ports }}
+        - port: {{ . }}
+          protocol: TCP
+        {{- end }}
+    {{- end }}
+{{- end }}

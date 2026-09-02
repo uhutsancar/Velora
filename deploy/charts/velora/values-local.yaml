@@ -1,0 +1,72 @@
+# Docker Desktop Kubernetes — yerel deneme.
+#
+# Amaci prod'u taklit etmek degil, tum zinciri tek makinede ayakta gormek.
+# Prod'dan farklari bilincli:
+#   * imajlar yerel daemon'dan gelir (registry yok, imagePullPolicy: Never)
+#   * tek replika, HPA ve PDB yok  -> 7 GB'lik bir VM'e sigsin
+#   * NetworkPolicy kapali          -> Docker Desktop'ta CNI politikayi uygulamaz,
+#                                      acik birakmak yanlis guven hissi verir
+#   * Ingress kapali                -> erisim kubectl port-forward ile
+#
+# Veri katmani deploy/local/infrastructure.yaml ile ayni namespace'e kurulur.
+
+image:
+  # Yerel imajlar "velora/<slug>:local" adiyla derlenir; ek onek yok.
+  registry: velora
+  prefix: ""
+
+imagePullPolicy: Never
+
+config:
+  environment: Development
+  eventBus:
+    type: RabbitMQ
+    host: rabbitmq
+    port: 5672
+  # Tarayicinin kullandigi ADRESLER olmali, kume ici isimler degil. NodePort'a
+  # gecince origin localhost:30080/30081 oldu; eski 8080/8081 degerleriyle
+  # gateway Access-Control-Allow-Origin basligini hic gondermiyor ve tarayici
+  # her API cagrisini sessizce engelliyordu.
+  corsOrigins:
+    - http://localhost:30080
+    - http://localhost:30081
+
+ingress:
+  enabled: false
+
+networkPolicy:
+  enabled: false
+
+# NodePort verilen ucler tarayicidan dogrudan acilir:
+#   storefront -> http://localhost:30080
+#   admin      -> http://localhost:30081
+#   API        -> http://localhost:30000
+services:
+  gateway:      { replicas: 1, autoscaling: null, tag: local, serviceType: NodePort, nodePort: 30000 }
+  identity:     { replicas: 1, autoscaling: null, tag: local }
+  catalog:      { replicas: 1, tag: local }
+  basket:       { replicas: 1, autoscaling: null, tag: local }
+  order:        { replicas: 1, autoscaling: null, tag: local }
+  payment:      { replicas: 1, tag: local }
+  notification: { replicas: 1, tag: local }
+  storefront:
+    replicas: 1
+    autoscaling: null
+    tag: local
+    serviceType: NodePort
+    nodePort: 30080
+    # Bu adresleri TARAYICI cozer, kume ici DNS degil: sayfa host'ta calisiyor.
+    # Bu yuzden "gateway:8080" degil, NodePort'un host adresi verilir.
+    env:
+      - { name: API_URL, value: "http://localhost:30000" }
+      - { name: MEDIA_ORIGIN, value: "http://localhost:30000/media" }
+      - { name: SITE_URL, value: "http://localhost:30080" }
+  admin:
+    replicas: 1
+    tag: local
+    serviceType: NodePort
+    nodePort: 30081
+    env:
+      - { name: API_URL, value: "http://localhost:30000" }
+      - { name: MEDIA_ORIGIN, value: "http://localhost:30000/media" }
+      - { name: STOREFRONT_URL, value: "http://localhost:30080" }

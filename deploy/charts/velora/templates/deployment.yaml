@@ -1,0 +1,149 @@
+{{/*
+Tek Deployment sablonu, dokuz servis icin dongu ile render edilir.
+
+Servislerin sekli neredeyse aynidir; farklari (replika, port, prob yolu, kaynak)
+values.yaml'da veri olarak durur. Yeni bir servis eklemek = values.yaml'a bir
+blok yazmak. Bir guvenlik ayarini degistirmek = burada tek satiri degistirmek.
+*/}}
+{{- range $slug, $svc := .Values.services }}
+{{- $ctx := dict "slug" $slug "svc" $svc "root" $ }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "velora.fullname" $ctx }}
+  labels: {{- include "velora.labels" $ctx | nindent 4 }}
+spec:
+  {{- if not $svc.autoscaling }}
+  replicas: {{ $svc.replicas | default 2 }}
+  {{- end }}
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      # 0: dagitim sirasinda kapasite hic dusmez, dolayisiyla 5xx gorulmez.
+      maxUnavailable: 0
+  selector:
+    matchLabels: {{- include "velora.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "velora.labels" $ctx | nindent 8 }}
+      annotations:
+        # ConfigMap degisikligi tek basina yeni pod yaratmaz. Bu ozet, icerik
+        # degistiginde pod sablonunu degistirir ve rolling update tetikler.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        {{- with $.Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "velora.fullname" $ctx }}
+      # Hicbir servis Kubernetes API'sine konusmuyor; token'i mount etmek
+      # gereksiz bir yetki yuzeyi acar.
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ $svc.runAsUser | default $.Values.security.runAsUser }}
+        fsGroup: {{ $svc.runAsUser | default $.Values.security.runAsUser }}
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          # ScheduleAnyway: tek node'lu kumelerde pod'lari Pending'de birakmaz.
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: {{- include "velora.selectorLabels" $ctx | nindent 14 }}
+      containers:
+        - name: {{ $slug }}
+          image: {{ include "velora.image" $ctx }}
+          # Digest kullanildiginda Always gereksiz ag trafigidir. Yerelde
+          # Never verilir: imaj zaten daemon'da, registry'e gidilmemeli.
+          imagePullPolicy: {{ $.Values.imagePullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: {{ $.Values.containerPort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ $.Release.Name }}-common-config
+            - secretRef:
+                name: {{ $.Values.secrets.commonName }}
+                optional: true
+            {{- if $svc.secretName }}
+            - secretRef:
+                name: {{ $svc.secretName }}
+                optional: true
+            {{- end }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- with $svc.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              # Statik dosya sunan on yuzlerde .NET'in uc ayri ucu yok; nginx
+              # tek bir /healthz veriyor ve orada uc soru da ayni cevaba sahip.
+              path: {{ (default dict $svc.probes).startup | default "/health/startup" }}
+              port: http
+            periodSeconds: 5
+            # 30 x 5s = 150 saniyelik acilis butcesi; asilirsa pod yeniden baslar.
+            failureThreshold: 30
+          livenessProbe:
+            # DIKKAT: bu uc hicbir dis bagimliligi yoklamaz. SQL yavasladiginda
+            # liveness'in dusmesi tum replikalari ayni anda restart eder ve
+            # gecici bir aksakligi kume capinda kesintiye cevirir (ADR-08).
+            httpGet:
+              path: {{ (default dict $svc.probes).live | default "/health/live" }}
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            # Bagimliliklar burada yoklanir: pod havuzdan cikar ama oldurulmez.
+            httpGet:
+              path: {{ (default dict $svc.probes).ready | default "/health/ready" }}
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                # Endpoints guncellemesi ile kube-proxy kural guncellemesi ayni
+                # anda olmaz; bu bekleme, silinmekte olan pod'a gelen son
+                # isteklerin 5xx'e donmesini engeller.
+                command: ["sleep", "5"]
+          resources:
+            requests:
+              cpu: {{ $svc.resources.requests.cpu | default "100m" }}
+              memory: {{ $svc.resources.requests.memory | default "256Mi" }}
+            limits:
+              # CPU limiti BILEREK yok: CFS quota .NET'in GC ve thread pool
+              # sicramalarini throttle eder ve p99 gecikmeyi bozar. Bellek
+              # limiti ise zorunlu, yoksa tek pod node'u OOM'a surukler (ADR-06).
+              memory: {{ $svc.resources.limits.memory | default "512Mi" }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # .NET DataProtection ve gecici dosyalar /tmp'ye yazar; koku
+            # salt-okunur tutup yalnizca burayi yazilabilir birakiyoruz.
+            - name: tmp
+              mountPath: /tmp
+            {{- with $svc.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- with $svc.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}

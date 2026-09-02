@@ -1,0 +1,7 @@
+apiVersion: v2
+name: velora
+description: Velora e-ticaret platformu — gateway, alti mikroservis ve iki on yuz
+type: application
+version: 0.1.0
+# Tum bilesenler birlikte surumlenir (ADR-05): tek surum numarasi, tek etiket.
+appVersion: "1.0.0"

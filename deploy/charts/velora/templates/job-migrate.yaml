@@ -1,0 +1,107 @@
+{{- if .Values.services }}
+{{- $needsMigration := false }}
+{{- range $slug, $svc := .Values.services }}{{- if $svc.migrate }}{{- $needsMigration = true }}{{- end }}{{- end }}
+{{- if $needsMigration }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-migrate
+  labels:
+    app.kubernetes.io/part-of: velora
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    # Job'lardan (-5) daha dusuk agirlik: hesap once yaratilir. Servislerin
+    # kendi ServiceAccount'lari normal kaynaklardir ve hook asamasinda
+    # henuz mevcut degildir - Job'in onlara baglanmasi bu yuzden calismaz.
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation
+automountServiceAccountToken: false
+{{- end }}
+{{- end }}
+{{/*
+Sema gocleri — servislerden ONCE, tek seferde.
+
+helm.sh/hook: pre-install,pre-upgrade sayesinde bu Job dagitimdan once calisir
+ve basarisiz olursa dagitim hic baslamaz. Uygulama pod'lari
+Database__MigrateOnStartup=false ile acildigi icin sema ile ilgilenen tek yer
+burasidir.
+
+DIKKAT — expand/contract: maxUnavailable=0 ile eski ve yeni pod'lar bir sure
+AYNI veritabanina birlikte baglanir. Bu yuzden bir goc eski kodu kirmamalidir:
+kolon yeniden adlandirma ve default'suz NOT NULL ekleme tek adimda yapilamaz
+(ADR-10).
+*/}}
+{{- range $slug, $svc := .Values.services }}
+{{- if $svc.migrate }}
+{{- $ctx := dict "slug" $slug "svc" $svc "root" $ }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "velora.fullname" $ctx }}-migrate-{{ $.Release.Revision }}
+  labels: {{- include "velora.labels" $ctx | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    # Negatif agirlik: gocler diger hook'lardan once calisir.
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 600
+  # Job adina surum numarasi eklendigi icin her dagitim YENI bir Job yaratir ve
+  # hook'un before-hook-creation politikasi eskileri silmez; tamamlanmis Job'lar
+  # birikir. TTL, Kubernetes'in bitmis Job'i kendiliginden toplamasini saglar;
+  # bir saat, gerekirse loglara bakmaya yeter.
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels: {{- include "velora.selectorLabels" $ctx | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ $.Release.Name }}-migrate
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: {{ $svc.runAsUser | default $.Values.security.runAsUser }}
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: {{ include "velora.image" $ctx }}
+          imagePullPolicy: {{ $.Values.imagePullPolicy | default "IfNotPresent" }}
+          command: {{ toYaml $svc.migrate.command | nindent 12 }}
+          # Girdiler BILEREK minimal ve acik.
+          #
+          # Ortak ConfigMap'ten envFrom yapmak cazip ama yanlis: bu Job bir
+          # pre-install hook'udur ve normal kaynaklardan once calisir, dolayisiyla
+          # o ConfigMap henuz yoktur. Goc icin gereken tek sey baglanti dizesi;
+          # geri kalanini burada acikca veriyoruz. Boylece Job'in hazir olusu
+          # sureme sirasina bagli olmaktan cikiyor.
+          envFrom:
+            {{- if $svc.secretName }}
+            - secretRef:
+                name: {{ $svc.secretName }}
+            {{- end }}
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: {{ $.Values.config.environment | quote }}
+            # Bu pod'un tek isi goc uygulamak; bayrak burada acilir.
+            - name: Database__MigrateOnStartup
+              value: "true"
+            # Kumede kesif Kubernetes'in isi; goc pod'unun Consul aramasi gerekmez.
+            - name: ConsulConfig__Enabled
+              value: "false"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}
+{{- end }}
