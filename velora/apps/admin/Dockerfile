@@ -33,10 +33,15 @@ ENV VITE_CURRENCY=$VITE_CURRENCY
 
 RUN pnpm --filter @velora/shared build && pnpm --filter @velora/admin build
 
-FROM nginx:1.27-alpine AS final
+# nginx'in resmi imaji root olarak baslar ve worker'lari dusurur; Kubernetes'te
+# runAsNonRoot: true ile bu imaj hic ayaga kalkmaz. Unprivileged varyant en
+# bastan uid 101 ile calisir.
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS final
 
 COPY velora/apps/admin/security-headers.conf /etc/nginx/velora-security-headers.conf
 COPY velora/apps/admin/nginx.conf /etc/nginx/conf.d/default.conf
+# Acilista /config.js icindeki yer tutuculari ortam degiskenleriyle doldurur.
+COPY velora/apps/admin/docker-entrypoint.d/ /docker-entrypoint.d/
 COPY --from=build /repo/apps/admin/dist /usr/share/nginx/html
 
-EXPOSE 80
+EXPOSE 8080
