@@ -1,0 +1,156 @@
+name: Build & Push
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write # cosign keyless imzalama OIDC ile calisir
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: uhutsancar
+
+jobs:
+  # Hangi imajlarin yeniden uretilmesi gerektigini secer.
+  #
+  # Kritik nokta: BuildingBlocks (Velora.Shared, EventBus.*) degistiginde yedi
+  # backend servisinin tamami etkilenir — her biri o projelere referans verir.
+  # Ayni sekilde velora/packages/shared iki frontend'i birden tetikler.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.pick.outputs.services }}
+      any: ${{ steps.pick.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared_backend:
+              - 'SellingBuddy/src/BuildingBlocks/**'
+              - 'SellingBuddy.sln'
+            shared_frontend:
+              - 'velora/packages/**'
+              - 'velora/pnpm-lock.yaml'
+              - 'velora/pnpm-workspace.yaml'
+            gateway:
+              - 'SellingBuddy/src/ApiGateways/**'
+            identity:
+              - 'SellingBuddy/src/Services/IdentityService/**'
+            catalog:
+              - 'SellingBuddy/src/Services/CatalogService/**'
+            basket:
+              - 'SellingBuddy/src/Services/BasketService/**'
+            order:
+              - 'SellingBuddy/src/Services/OrderService/**'
+            payment:
+              - 'SellingBuddy/src/Services/PaymentService/**'
+            notification:
+              - 'SellingBuddy/src/Services/NotificationService/**'
+            storefront:
+              - 'velora/apps/storefront/**'
+            admin:
+              - 'velora/apps/admin/**'
+
+      - id: pick
+        env:
+          F: ${{ toJson(steps.filter.outputs) }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+
+          changed = json.loads(os.environ["F"])
+          is_tag  = os.environ["IS_TAG"] == "true"
+
+          BACKEND = {
+            "gateway":      "SellingBuddy/src/ApiGateways/WebApiGateway/Web.ApiGateway/Dockerfile",
+            "identity":     "SellingBuddy/src/Services/IdentityService/IdentityService.Api/Dockerfile",
+            "catalog":      "SellingBuddy/src/Services/CatalogService/CatalogService.Api/Dockerfile",
+            "basket":       "SellingBuddy/src/Services/BasketService/BasketService.Api/Dockerfile",
+            "order":        "SellingBuddy/src/Services/OrderService/OrderService.Api/Dockerfile",
+            "payment":      "SellingBuddy/src/Services/PaymentService/PaymentService.Api/Dockerfile",
+            "notification": "SellingBuddy/src/Services/NotificationService/NotificationService/Dockerfile",
+          }
+          FRONTEND = {
+            "storefront": "velora/apps/storefront/Dockerfile",
+            "admin":      "velora/apps/admin/Dockerfile",
+          }
+
+          def on(key): return changed.get(key) == "true"
+
+          picked = {}
+          for slug, dockerfile in BACKEND.items():
+              if is_tag or on("shared_backend") or on(slug):
+                  picked[slug] = dockerfile
+          for slug, dockerfile in FRONTEND.items():
+              if is_tag or on("shared_frontend") or on(slug):
+                  picked[slug] = dockerfile
+
+          matrix = [{"slug": s, "dockerfile": d} for s, d in sorted(picked.items())]
+          print("services=" + json.dumps(matrix))
+          print("any=" + ("true" if matrix else "false"))
+          PY
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.plan.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/velora-${{ matrix.service.slug }}
+          # `latest` bilincli olarak uretilmiyor: degismeyen bir etiket,
+          # hangi surumun calistigini belirsizlestirir.
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.service.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # scope servis basina ayrilir; yoksa dokuz build birbirinin
+          # katmanlarini ezer ve cache hicbir zaman isabet etmez.
+          cache-from: type=gha,scope=${{ matrix.service.slug }}
+          cache-to: type=gha,scope=${{ matrix.service.slug }},mode=max
+          provenance: true
+          sbom: true
+
+      - name: Imaj zafiyet taramasi
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/velora-${{ matrix.service.slug }}@${{ steps.build.outputs.digest }}
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - uses: sigstore/cosign-installer@v3
+      - name: Imajı imzala (keyless)
+        run: |
+          cosign sign --yes \
+            "${REGISTRY}/${OWNER}/velora-${{ matrix.service.slug }}@${{ steps.build.outputs.digest }}"

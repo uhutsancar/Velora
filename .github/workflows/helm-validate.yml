@@ -1,0 +1,49 @@
+name: Helm Validate
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/**'
+      - '.github/workflows/helm-validate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/**'
+
+permissions:
+  contents: read
+
+jobs:
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+
+      - name: helm lint (her ortam icin)
+        run: |
+          for env in dev staging prod; do
+            echo "--- $env ---"
+            helm lint deploy/charts/velora -f "deploy/charts/velora/values-$env.yaml"
+          done
+
+      - name: Kubernetes semasina karsi dogrula
+        run: |
+          curl -sSL -o kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar xzf kubeconform.tar.gz kubeconform
+          for env in dev staging prod; do
+            echo "--- $env ---"
+            helm template velora-$env deploy/charts/velora \
+              -f "deploy/charts/velora/values-$env.yaml" \
+              | ./kubeconform -strict -summary -
+          done
+
+      # Sablonlar dogru YAML uretebilir ama yine de yanlis olabilir. Bu adim
+      # gozden kacmasi kolay, sonucu agir olan kurallari dogrular: liveness'a
+      # bagimlilik sizmasi, degistirilemez selector'a version girmesi, tek
+      # replikali is yukune PDB yazilmasi gibi.
+      - name: Mimari degismezleri dogrula
+        run: python scripts/verify-chart.py
