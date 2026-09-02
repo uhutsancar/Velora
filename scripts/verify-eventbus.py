@@ -151,6 +151,10 @@ def queue_stats():
             # even when the queue is drained faster than we can poll it.
             "delivered": q.get("message_stats", {}).get("deliver_get", 0),
             "ready": q.get("messages", 0),
+            # Bir tuketiciye teslim edilmis ama henuz ack'lenmemis mesaj
+            # "ready" sayilmaz. Yalnizca ready'ye bakmak, hala islenmekte olan
+            # bir sagayi "bitti" sanmaya yol acar.
+            "unacked": q.get("messages_unacknowledged", 0),
             "consumers": q.get("consumers", 0),
         }
     return stats
@@ -204,15 +208,19 @@ def wait_until_idle(attempts=30, delay=2):
     its own - still has messages in flight, its stock decrement lands between
     the two snapshots and shows up here as this checkout being processed twice.
     That is a race between the scripts, not a fault in the bus, and sleeping a
-    fixed number of seconds would only make it less likely. Waiting for the
-    queues to actually drain settles it.
+    fixed number of seconds would only make it less likely.
+
+    Both counters matter. A message already handed to a consumer but not yet
+    acknowledged is not "ready", so waiting on ready alone declares a saga
+    finished while a handler is still running - which is exactly how a stock
+    decrement from the previous checkout lands inside this measurement.
     """
     for _ in range(attempts):
         current = queue_stats()
         busy = {
-            q: s["ready"]
+            q: (s["ready"], s["unacked"])
             for q, s in current.items()
-            if q in EXPECTED_QUEUES and s["ready"] > 0
+            if q in EXPECTED_QUEUES and (s["ready"] > 0 or s["unacked"] > 0)
         }
         if not busy:
             return current
@@ -240,7 +248,20 @@ if not check("katalogda urun var", status == 200 and products["totalCount"] > 0)
     raise SystemExit(1)
 
 product = products["items"][0]
-stock_before = product["totalStock"]
+
+# Stok, listeden DEGIL urun detayindan okunur.
+#
+# GET /products tasiyor: [ResponseCache(Duration = 30)]. Bu olcumun "sonra"
+# degeri detay ucundan geliyor ve o onbelleklenmiyor, dolayisiyla ikisini
+# karistirmak otuz saniyeye kadar bayat bir baslangic degeri demek. Onceki
+# senaryonun stok dusumu o pencereye denk geldiginde fark iki yerine dort
+# gorunuyor ve olay iki kez islenmis gibi okunuyor - oysa mesaj sayaci bir
+# tek teslimat gosteriyor. Iki ucu da ayni yerden okumak sorunu bitiriyor.
+status, product_detail = call("/products/%s" % product["slug"])
+if not check("urun detayi okunabiliyor", status == 200, "(%s)" % status):
+    raise SystemExit(1)
+
+stock_before = product_detail["totalStock"]
 
 email = "bus-%d@velora.test" % int(time.time())
 status, reg = call("/auth/register", "POST",
