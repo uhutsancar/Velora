@@ -96,13 +96,16 @@ services:
       # broker saglikliya donmeden "unhealthy" damgasini yiyor ve
       # depends_on: service_healthy olan dokuz servis hic baslamiyor.
       test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
-      # Artik hicbir servisin acilisini engellemiyor (bkz. depends_on), yalnizca
-      # broker'in durumunu bildirir. Prob bir Erlang dugumu baslattigi icin
-      # timeout genis tutulur.
-      start_period: 60s
+      # Tuketiciler abonelikleri acilista kurdugu ve baglanti yoksa sessizce
+      # kurulmadan kaldigi icin bu kapi gerekli. start_period kritik: broker
+      # soguk baslangicta dakikalar surebiliyor ve o sure boyunca basarisiz
+      # denemeler sayilmazsa "unhealthy" damgasi yemiyor.
+      #
+      # Prob bir Erlang dugumu baslattigi icin timeout genis tutuldu.
+      start_period: 90s
       interval: 10s
       timeout: 15s
-      retries: 12
+      retries: 24
     networks: [velora]
 
   identity:
@@ -138,7 +141,7 @@ services:
       - catalog-media:/app/wwwroot/media
     depends_on:
       sqlserver: {condition: service_healthy}
-      rabbitmq: {condition: service_started}
+      rabbitmq: {condition: service_healthy}
 
   basket:
     <<: *dotnet-common
@@ -153,7 +156,7 @@ services:
       ConsulConfig__HealthCheckHost: basket
     depends_on:
       redis: {condition: service_started}
-      rabbitmq: {condition: service_started}
+      rabbitmq: {condition: service_healthy}
 
   order:
     <<: *dotnet-common
@@ -168,7 +171,7 @@ services:
       ConsulConfig__HealthCheckHost: order
     depends_on:
       sqlserver: {condition: service_healthy}
-      rabbitmq: {condition: service_started}
+      rabbitmq: {condition: service_healthy}
 
   payment:
     <<: *dotnet-common
@@ -181,7 +184,7 @@ services:
       # Stand-in for a real PSP: flips every authorisation to success or failure.
       PaymentSuccess: ${PAYMENT_SUCCESS:-true}
     depends_on:
-      rabbitmq: {condition: service_started}
+      rabbitmq: {condition: service_healthy}
 
   notification:
     <<: *dotnet-common
@@ -193,7 +196,7 @@ services:
       <<: *dotnet-env
       DOTNET_ENVIRONMENT: Production
     depends_on:
-      rabbitmq: {condition: service_started}
+      rabbitmq: {condition: service_healthy}
 
   gateway:
     <<: *dotnet-common
