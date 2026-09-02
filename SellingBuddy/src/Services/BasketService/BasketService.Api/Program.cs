@@ -1,3 +1,4 @@
+using Velora.Shared.Health;
 using BasketService.Api.Core.Application.Repository;
 using BasketService.Api.Core.Application.Services;
 using BasketService.Api.Extensions;
@@ -51,6 +52,8 @@ builder.Services.AddTransient<IIdentityService, IdentityService>();
 builder.Services.AddTransient<OrderCreatedIntegrationEventHandler>();
 
 builder.Services.AddVeloraEventBus(builder.Configuration, "BasketService");
+builder.Services.AddVeloraHealthChecks(builder.Configuration);
+
 var app = builder.Build();
 
 app.UseVeloraExceptionHandling();
@@ -68,7 +71,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "BasketService" })).AllowAnonymous();
+app.MapVeloraHealthChecks("BasketService");
 
 app.RegisterWithConsul(app.Lifetime);
 
