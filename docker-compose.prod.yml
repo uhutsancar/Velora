@@ -34,7 +34,12 @@ x-dotnet-common: &dotnet-common
     EventBus__Port: 5672
     EventBus__UserName: ${RABBITMQ_USER:?RABBITMQ_USER is required}
     EventBus__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
-    ConsulConfig__Address: http://consul:8500
+    # Compose'un kendi DNS'i servis adlarini zaten cozuyor ("catalog",
+    # "identity", ...) ve bu adlar Kubernetes Service adlariyla ayni. Ikinci bir
+    # kesif sistemi burada hicbir sey kazandirmiyor, ustelik Ocelot'un Consul
+    # saglayicisi servis adresi yerine Consul dugumunun adresini cozup her
+    # istegi 502'ye dusuruyordu. Kesif isini platforma birakiyoruz.
+    ConsulConfig__Enabled: "false"
     Cors__AllowedOrigins__0: ${STOREFRONT_ORIGIN:?STOREFRONT_ORIGIN is required}
     Cors__AllowedOrigins__1: ${ADMIN_ORIGIN:?ADMIN_ORIGIN is required}
   networks: [velora]
@@ -91,32 +96,15 @@ services:
       # broker saglikliya donmeden "unhealthy" damgasini yiyor ve
       # depends_on: service_healthy olan dokuz servis hic baslamiyor.
       test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
-      # Toplam butce ~8 dakika. Yuklu bir makinede broker'in saglikliya donmesi
-      # olculdu: 8 dakikaya kadar cikabiliyor. Butce yetmedigi anda compose
-      # bagimliligi "failed" sayip up'in tamamini iptal ediyor ve gateway ile
-      # on yuzler hic baslamiyor - yani cimri bir deger, sessiz degil, gurultulu
-      # bir sekilde her seyi durduruyor.
-      start_period: 180s
+      # Artik hicbir servisin acilisini engellemiyor (bkz. depends_on), yalnizca
+      # broker'in durumunu bildirir. Prob bir Erlang dugumu baslattigi icin
+      # timeout genis tutulur.
+      start_period: 60s
       interval: 10s
       timeout: 15s
-      retries: 30
+      retries: 12
     networks: [velora]
 
-  consul:
-    image: hashicorp/consul:latest
-    restart: unless-stopped
-    command: 'agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=0.0.0.0'
-    volumes:
-      - consul-data:/consul/data
-    healthcheck:
-      test: ['CMD', 'consul', 'members']
-      start_period: 30s
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks: [velora]
-
-  # ------------------------------------------------------------ services ----
   identity:
     <<: *dotnet-common
     build:
@@ -133,7 +121,6 @@ services:
       SeedAdmin__Password: ${SEED_ADMIN_PASSWORD:-}
     depends_on:
       sqlserver: {condition: service_healthy}
-      consul: {condition: service_healthy}
 
   catalog:
     <<: *dotnet-common
@@ -151,8 +138,7 @@ services:
       - catalog-media:/app/wwwroot/media
     depends_on:
       sqlserver: {condition: service_healthy}
-      rabbitmq: {condition: service_healthy}
-      consul: {condition: service_healthy}
+      rabbitmq: {condition: service_started}
 
   basket:
     <<: *dotnet-common
@@ -166,9 +152,8 @@ services:
       ConsulConfig__ServiceHost: basket
       ConsulConfig__HealthCheckHost: basket
     depends_on:
-      redis: {condition: service_healthy}
-      rabbitmq: {condition: service_healthy}
-      consul: {condition: service_healthy}
+      redis: {condition: service_started}
+      rabbitmq: {condition: service_started}
 
   order:
     <<: *dotnet-common
@@ -183,8 +168,7 @@ services:
       ConsulConfig__HealthCheckHost: order
     depends_on:
       sqlserver: {condition: service_healthy}
-      rabbitmq: {condition: service_healthy}
-      consul: {condition: service_healthy}
+      rabbitmq: {condition: service_started}
 
   payment:
     <<: *dotnet-common
@@ -197,7 +181,7 @@ services:
       # Stand-in for a real PSP: flips every authorisation to success or failure.
       PaymentSuccess: ${PAYMENT_SUCCESS:-true}
     depends_on:
-      rabbitmq: {condition: service_healthy}
+      rabbitmq: {condition: service_started}
 
   notification:
     <<: *dotnet-common
@@ -209,7 +193,7 @@ services:
       <<: *dotnet-env
       DOTNET_ENVIRONMENT: Production
     depends_on:
-      rabbitmq: {condition: service_healthy}
+      rabbitmq: {condition: service_started}
 
   gateway:
     <<: *dotnet-common
@@ -219,13 +203,13 @@ services:
     image: velora/gateway:${VELORA_TAG:-latest}
     environment:
       <<: *dotnet-env
+      # Consul yerine dogrudan servis adlariyla yonlendiren rota tablosu.
+      # scripts/generate-ocelot-k8s.py tarafindan ocelot.json'dan uretilir.
+      Ocelot__ConfigFile: Configurations/ocelot.k8s.json
       GlobalConfiguration__BaseUrl: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
-      GlobalConfiguration__ServiceDiscoveryProvider__Host: consul
-      GlobalConfiguration__ServiceDiscoveryProvider__Port: 8500
     ports:
       - '${GATEWAY_PORT:-5000}:8080'
     depends_on:
-      consul: {condition: service_healthy}
       identity: {condition: service_started}
       catalog: {condition: service_started}
       basket: {condition: service_started}
@@ -276,5 +260,4 @@ volumes:
   sqlserver-data:
   redis-data:
   rabbitmq-data:
-  consul-data:
   catalog-media:

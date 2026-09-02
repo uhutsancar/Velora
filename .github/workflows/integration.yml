@@ -97,12 +97,34 @@ jobs:
             return 1
           }
 
-          wait_for "gateway" 60 curl -fsS "$VELORA_GATEWAY/health"
-          wait_for "katalog" 90 curl -fsS "$VELORA_GATEWAY/products?pageSize=1"
+          wait_for "gateway" 24 curl -fsS "$VELORA_GATEWAY/health"
+          wait_for "katalog" 60 curl -fsS "$VELORA_GATEWAY/products?pageSize=1"
 
           # Identity'nin seed'i bitmeden admin girisi 401 doner.
-          wait_for "kimlik" 90 sh -c '
+          wait_for "kimlik" 60 sh -c '
             curl -fsS -X POST "$VELORA_GATEWAY/auth/login"               -H "Content-Type: application/json"               -d "{\"userName\":\"$VELORA_ADMIN_EMAIL\",\"password\":\"$VELORA_ADMIN_PASSWORD\"}"'
+
+      # EF her sorgu yolunu ILK cagrida derler; sogukken tek bir istek 30
+      # saniyeyi asabiliyor ve dogrulama scriptinin istek zaman asimina takiliyor.
+      # Sistem yavas degil, isinmamis: bu turdan sonra ayni ucler milisaniyelerle
+      # olculuyor. Isitma ayri bir adim, cunku bir basarisizlik burada zaman
+      # asimi degil gercek bir hata olarak okunmali.
+      - name: Sorgu yollarini isit
+        run: |
+          login='{"userName":"'"$VELORA_ADMIN_EMAIL"'","password":"'"$VELORA_ADMIN_PASSWORD"'"}'
+          token=$(curl -s --max-time 120 -X POST "$VELORA_GATEWAY/auth/login" -H 'Content-Type: application/json' -d "$login" | python -c "import sys,json;print(json.load(sys.stdin).get('accessToken',''))")
+
+          if [ -z "$token" ]; then
+            echo "::error title=isitma::admin girisi token dondurmedi"
+            exit 1
+          fi
+
+          set -- "/products?pageSize=5" "/products/featured" "/categories" "/brands" "/admin/products?pageSize=5" "/admin/products/stats" "/admin/analytics/dashboard?days=30" "/admin/orders?pageSize=5" "/users?pageSize=5" "/users/stats" "/roles" "/admin/categories" "/admin/brands" "/admin/coupons" "/admin/campaigns"
+
+          for path in "$@"; do
+            code=$(curl -s --max-time 120 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $token" "$VELORA_GATEWAY$path")
+            printf '%-42s %s\n' "$path" "$code"
+          done
 
       # Hangi iddianin dustugunu annotation olarak yayinlar. Adim loglari yalnizca
       # depoya erisimi olanlarca okunabilir; annotation'lar herkese acik ve
