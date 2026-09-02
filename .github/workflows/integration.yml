@@ -72,23 +72,59 @@ jobs:
         run: docker compose -f docker-compose.prod.yml -f docker-compose.ci.yml up -d --build
 
       # Uygulama servislerinde compose healthcheck'i yok (.NET imajlarinda curl
-      # bulunmuyor), bu yuzden hazir olusu disaridan yokluyoruz. --wait tek
-      # basina yalnizca altyapiyi bekler, uygulamayi beklemez.
-      - name: Gateway hazir olana kadar bekle
+      # bulunmuyor), bu yuzden hazir olusu disaridan yokluyoruz.
+      #
+      # Gateway'in /health'ini beklemek YETMEZ: gateway hicbir alt servise
+      # bagli degildir ve saniyeler icinde 200 doner, oysa Catalog ve Identity
+      # o sirada hala goc uygulayip seed yaziyor olabilir. Ilk kosuda tam olarak
+      # bu oldu. Bu yuzden zincirin iki ucunu da yokluyoruz: katalog gercek veri
+      # donene ve kimlik dogrulama token uretene kadar bekliyoruz.
+      - name: Yigin gercekten hazir olana kadar bekle
         run: |
-          for i in $(seq 1 60); do
-            if curl -fsS http://localhost:5000/health >/dev/null 2>&1; then
-              echo "gateway hazir ($i. deneme)"; exit 0
-            fi
-            sleep 5
-          done
-          echo "gateway 5 dakikada hazir olmadi"; exit 1
+          wait_for() {
+            local name="$1" seconds="$2"; shift 2
+            for i in $(seq 1 "$seconds"); do
+              if "$@" >/dev/null 2>&1; then
+                echo "$name hazir (${i}. deneme)"; return 0
+              fi
+              sleep 5
+            done
+            echo "$name ${seconds} denemede hazir olmadi"; return 1
+          }
 
+          wait_for "gateway" 60 curl -fsS "$VELORA_GATEWAY/health"
+          wait_for "katalog" 90 curl -fsS "$VELORA_GATEWAY/products?pageSize=1"
+
+          # Identity'nin seed'i bitmeden admin girisi 401 doner.
+          wait_for "kimlik" 90 sh -c '
+            curl -fsS -X POST "$VELORA_GATEWAY/auth/login"               -H "Content-Type: application/json"               -d "{\"userName\":\"$VELORA_ADMIN_EMAIL\",\"password\":\"$VELORA_ADMIN_PASSWORD\"}"'
+
+      # Hangi iddianin dustugunu annotation olarak yayinlar. Adim loglari yalnizca
+      # depoya erisimi olanlarca okunabilir; annotation'lar herkese acik ve
+      # kosunun ozet ekraninda gorunur, yani hata log'a girmeden anlasilir.
       - name: HTTP yuzeyi dogrulamasi
-        run: python scripts/verify-stack.py
+        run: |
+          set +e
+          python scripts/verify-stack.py 2>&1 | tee stack.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            grep -E "FAIL|Traceback|Error" stack.log | head -20 | while read -r line; do
+              echo "::error title=verify-stack::${line}"
+            done
+          fi
+          exit "$status"
 
       - name: Event bus dogrulamasi
-        run: python scripts/verify-eventbus.py
+        run: |
+          set +e
+          python scripts/verify-eventbus.py 2>&1 | tee bus.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            grep -E "FAIL|Traceback|Error" bus.log | head -20 | while read -r line; do
+              echo "::error title=verify-eventbus::${line}"
+            done
+          fi
+          exit "$status"
 
       - name: Hata durumunda loglar
         if: failure()
