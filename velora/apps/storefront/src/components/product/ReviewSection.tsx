@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   formatDate,
-  isNormalizedApiError,
   localeFor,
   reviewSchema,
   zodValidator,
@@ -43,7 +42,7 @@ export function ReviewSection({ productId }: { productId: number }) {
       toast(t('product.reviewSubmitted'), 'success');
       setFormOpen(false);
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : t('product.reviewFailed'), 'error');
+      toast.error(error, t('product.reviewFailed'));
     }
   };
 

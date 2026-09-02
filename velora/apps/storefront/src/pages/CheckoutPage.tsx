@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import {
   addressSchema,
   formatCardNumber,
-  isNormalizedApiError,
   paymentSchema,
   zodValidator,
   type AddressFormValues,
@@ -109,7 +108,7 @@ export default function CheckoutPage() {
 
       navigate('/siparis-alindi', { replace: true });
     } catch (error) {
-      toast(isNormalizedApiError(error) ? error.message : t('checkout.orderFailed'), 'error');
+      toast.error(error, t('checkout.orderFailed'));
     }
   };
 

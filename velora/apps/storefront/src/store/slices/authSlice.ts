@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import {
   endpoints,
-  isNormalizedApiError,
+  apiErrorMessage,
   type AuthResponse,
   type LoginRequest,
   type RegisterRequest,
@@ -28,9 +28,6 @@ const initialState: AuthState = {
   initialized: false,
 };
 
-const toMessage = (error: unknown, fallback: string): string =>
-  isNormalizedApiError(error) ? error.message : fallback;
-
 export const login = createAsyncThunk<UserProfile, LoginRequest, { rejectValue: string }>(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
@@ -39,7 +36,7 @@ export const login = createAsyncThunk<UserProfile, LoginRequest, { rejectValue: 
       apiClient.setSession(response);
       return response.user;
     } catch (error) {
-      return rejectWithValue(toMessage(error, i18n.t('auth.loginFailed')));
+      return rejectWithValue(apiErrorMessage(error, i18n.t('auth.loginFailed')));
     }
   },
 );
@@ -52,7 +49,7 @@ export const register = createAsyncThunk<UserProfile, RegisterRequest, { rejectV
       apiClient.setSession(response);
       return response.user;
     } catch (error) {
-      return rejectWithValue(toMessage(error, i18n.t('auth.registerFailed')));
+      return rejectWithValue(apiErrorMessage(error, i18n.t('auth.registerFailed')));
     }
   },
 );

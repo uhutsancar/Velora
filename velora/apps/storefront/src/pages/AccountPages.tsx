@@ -7,7 +7,6 @@ import {
   addressSchema,
   changePasswordSchema,
   formatDate,
-  isNormalizedApiError,
   localeFor,
   profileSchema,
   zodValidator,
@@ -205,7 +204,7 @@ export function SecurityPage() {
             toast(t('account.passwordUpdated'), 'success');
             helpers.resetForm();
           } catch (error) {
-            toast(isNormalizedApiError(error) ? error.message : t('account.passwordFailed'), 'error');
+            toast.error(error, t('account.passwordFailed'));
           }
         }}
       >

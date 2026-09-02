@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { apiErrorMessage } from '@velora/shared';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { pushToast, type ToastVariant } from '@/store/slices/uiSlice';
 import { selectAuthUser, selectIsAuthenticated } from '@/store/slices/authSlice';
@@ -99,12 +100,18 @@ export function useScrollLock(locked: boolean): void {
 export function useToast() {
   const dispatch = useAppDispatch();
 
-  return useCallback(
-    (message: string, variant: ToastVariant = 'info') => {
+  return useMemo(() => {
+    const toast = (message: string, variant: ToastVariant = 'info') => {
       dispatch(pushToast(message, variant));
-    },
-    [dispatch],
-  );
+    };
+
+    toast.success = (message: string) => toast(message, 'success');
+    // Yakalanan hatadan gosterilecek mesaji cikarir: her catch blogunda
+    // isNormalizedApiError uclusunu yeniden yazmaya gerek kalmaz.
+    toast.error = (error: unknown, fallback: string) => toast(apiErrorMessage(error, fallback), 'error');
+
+    return toast;
+  }, [dispatch]);
 }
 
 export function useAuth() {
