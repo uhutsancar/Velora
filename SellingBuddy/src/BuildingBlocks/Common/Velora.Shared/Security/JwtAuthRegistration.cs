@@ -29,6 +29,12 @@ namespace Velora.Shared.Security
 
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
 
+            // Same defaults IdentityService's TokenService issues tokens with (AuthConfig
+            // section), so every already-valid token still validates - this only rejects a
+            // token that does not carry Velora's issuer/audience claims.
+            var issuer = configuration["AuthConfig:Issuer"] ?? "velora-identity";
+            var audience = configuration["AuthConfig:Audience"] ?? "velora-clients";
+
             services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -42,8 +48,10 @@ namespace Velora.Shared.Security
                     {
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = signingKey,
-                        ValidateIssuer = false,
-                        ValidateAudience = false,
+                        ValidateIssuer = true,
+                        ValidIssuer = issuer,
+                        ValidateAudience = true,
+                        ValidAudience = audience,
                         ValidateLifetime = true,
                         RequireExpirationTime = true,
                         ClockSkew = TimeSpan.FromSeconds(30),

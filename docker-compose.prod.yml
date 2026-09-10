@@ -34,6 +34,8 @@ x-dotnet-common: &dotnet-common
     EventBus__Port: 5672
     EventBus__UserName: ${RABBITMQ_USER:?RABBITMQ_USER is required}
     EventBus__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+    # Only read when EVENTBUS_TYPE=AzureServiceBus; RabbitMQ mode ignores it.
+    EventBus__ConnectionString: ${EventBus__ConnectionString:-}
     # Compose'un kendi DNS'i servis adlarini zaten cozuyor ("catalog",
     # "identity", ...) ve bu adlar Kubernetes Service adlariyla ayni. Ikinci bir
     # kesif sistemi burada hicbir sey kazandirmiyor, ustelik Ocelot'un Consul
