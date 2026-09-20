@@ -33,7 +33,11 @@ export default defineConfig(({ mode }) => ({
           'state-vendor': ['@reduxjs/toolkit', 'react-redux'],
           // ECharts is large and only the analytics routes need it.
           'chart-vendor': ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers'],
-          'mui-vendor': ['@mui/material', '@mui/x-data-grid', '@emotion/react', '@emotion/styled'],
+          'mui-vendor': ['@mui/material', '@emotion/react', '@emotion/styled'],
+          // The data grid is only on the list routes. Kept out of mui-vendor so
+          // the sign-in screen and the dashboard, which draw no grid, do not
+          // pay for it on the entry path.
+          'grid-vendor': ['@mui/x-data-grid'],
         },
       },
     },

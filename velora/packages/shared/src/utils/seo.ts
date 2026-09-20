@@ -118,6 +118,24 @@ export function buildBreadcrumbJsonLd(
   };
 }
 
+/**
+ * schema.org FAQPage. Google renders these as expandable questions under the
+ * result, which is the single highest-yield markup a help centre can carry.
+ */
+export function buildFaqJsonLd(
+  entries: Array<{ question: string; answer: string }>,
+): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org/',
+    '@type': 'FAQPage',
+    mainEntity: entries.map((entry) => ({
+      '@type': 'Question',
+      name: entry.question,
+      acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+    })),
+  };
+}
+
 export function buildOrganizationJsonLd(siteUrl: string, siteName: string): Record<string, unknown> {
   return {
     '@context': 'https://schema.org/',

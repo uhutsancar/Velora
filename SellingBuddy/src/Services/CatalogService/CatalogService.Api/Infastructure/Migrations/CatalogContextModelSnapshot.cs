@@ -283,6 +283,12 @@ namespace CatalogService.Api.Infastructure.Migrations
 
                     b.HasIndex("IsPublished", "CategoryId");
 
+                    b.HasIndex("IsPublished", "CreatedAtUtc")
+                        .HasDatabaseName("IX_Catalog_Published_CreatedAt");
+
+                    b.HasIndex("IsPublished", "SoldCount")
+                        .HasDatabaseName("IX_Catalog_Published_SoldCount");
+
                     b.ToTable("Catalog", "catalog");
                 });
 

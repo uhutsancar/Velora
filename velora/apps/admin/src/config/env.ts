@@ -1,4 +1,4 @@
-import { runtimeValue } from '@velora/shared';
+import { runtimeValue, STORAGE_KEYS } from '@velora/shared';
 
 /** Runtime configuration for the admin app. */
 export const env = {
@@ -12,8 +12,9 @@ export const env = {
 
 /**
  * Separate storage key from the storefront: signing into the shop must never
- * grant a session in the back office (and vice versa).
+ * grant a session in the back office (and vice versa). Both keys are declared
+ * together in the shared registry so that separation is visible in one place.
  */
-export const SESSION_STORAGE_KEY = 'velora.admin.session';
+export const SESSION_STORAGE_KEY = STORAGE_KEYS.adminSession;
 
 export const DEFAULT_PAGE_SIZE = 20;

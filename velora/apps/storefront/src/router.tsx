@@ -28,6 +28,21 @@ const OrdersPage = lazy(() => import('@/pages/AccountPages').then((m) => ({ defa
 const OrderDetailPage = lazy(() => import('@/pages/AccountPages').then((m) => ({ default: m.OrderDetailPage })));
 const WishlistPage = lazy(() => import('@/pages/AccountPages').then((m) => ({ default: m.WishlistPage })));
 
+const ContactPage = lazy(() => import('@/pages/ContactPage'));
+
+const AboutPage = lazy(() => import('@/pages/StoryPages').then((m) => ({ default: m.AboutPage })));
+const AteliePage = lazy(() => import('@/pages/StoryPages').then((m) => ({ default: m.AteliePage })));
+const SustainabilityPage = lazy(() =>
+  import('@/pages/StoryPages').then((m) => ({ default: m.SustainabilityPage })),
+);
+
+const HelpHubPage = lazy(() => import('@/pages/ContentPages').then((m) => ({ default: m.HelpHubPage })));
+const HelpArticlePage = lazy(() =>
+  import('@/pages/ContentPages').then((m) => ({ default: m.HelpArticlePage })),
+);
+const FaqPage = lazy(() => import('@/pages/ContentPages').then((m) => ({ default: m.FaqPage })));
+const LegalPage = lazy(() => import('@/pages/ContentPages').then((m) => ({ default: m.LegalPage })));
+
 const SearchPage = lazy(() => import('@/pages/MiscPages').then((m) => ({ default: m.SearchPage })));
 const CampaignsPage = lazy(() => import('@/pages/MiscPages').then((m) => ({ default: m.CampaignsPage })));
 const OrderSuccessPage = lazy(() => import('@/pages/MiscPages').then((m) => ({ default: m.OrderSuccessPage })));
@@ -62,6 +77,24 @@ export const routes: RouteObject[] = [
       { path: 'giris', element: <LoginPage /> },
       { path: 'kayit', element: <RegisterPage /> },
 
+      // Brand story. Editorial routes, each its own chunk.
+      { path: 'hakkimizda', element: <AboutPage /> },
+      { path: 'atolye', element: <AteliePage /> },
+      { path: 'surdurulebilirlik', element: <SustainabilityPage /> },
+      { path: 'iletisim', element: <ContactPage /> },
+
+      // Help centre. The FAQ is matched before the generic article route so
+      // 'sss' never falls through to a missing help document.
+      { path: 'yardim', element: <HelpHubPage /> },
+      { path: 'yardim/sss', element: <FaqPage /> },
+      { path: 'yardim/:slug', element: <HelpArticlePage /> },
+
+      // Legal. One component, four documents, four indexable URLs.
+      { path: 'gizlilik', element: <LegalPage slug="gizlilik" /> },
+      { path: 'kosullar', element: <LegalPage slug="kosullar" /> },
+      { path: 'kvkk', element: <LegalPage slug="kvkk" /> },
+      { path: 'cerez', element: <LegalPage slug="cerez" /> },
+
       {
         path: 'hesabim',
         element: (
@@ -83,6 +116,12 @@ export const routes: RouteObject[] = [
       { path: 'products', element: <Navigate to="/urunler" replace /> },
       { path: 'cart', element: <Navigate to="/sepet" replace /> },
       { path: 'login', element: <Navigate to="/giris" replace /> },
+      { path: 'about', element: <Navigate to="/hakkimizda" replace /> },
+      { path: 'contact', element: <Navigate to="/iletisim" replace /> },
+
+      // The legal pages render from a :slug param, so the 404 route needs a real
+      // path to redirect an unknown slug to.
+      { path: '404', element: <NotFoundPage /> },
 
       { path: '*', element: <NotFoundPage /> },
     ],

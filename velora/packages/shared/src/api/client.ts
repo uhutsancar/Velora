@@ -9,6 +9,7 @@ import axios, {
   type AxiosRequestConfig,
   type InternalAxiosRequestConfig,
 } from 'axios';
+import type { StorageKey } from '../storage';
 import { normalizeApiError, RETRYABLE_STATUSES } from './errors';
 import { createTokenStorage, type StoredSession, type TokenStorage } from './tokenStorage';
 import type { AuthResponse } from '../types/identity';
@@ -16,8 +17,11 @@ import type { NormalizedApiError } from '../types/common';
 
 export interface ApiClientOptions {
   baseUrl: string;
-  /** localStorage key the session is persisted under. Storefront and admin use different keys. */
-  storageKey: string;
+  /**
+   * Registry key the session is persisted under. Typed against STORAGE_KEYS so a
+   * client cannot invent a key that collides with another app on the origin.
+   */
+  storageKey: StorageKey;
   timeoutMs?: number;
   /** Called after every failed refresh so the app can send the user back to the login page. */
   onUnauthorized?: () => void;

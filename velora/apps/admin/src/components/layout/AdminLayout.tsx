@@ -8,6 +8,7 @@ import { env } from '@/config/env';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout, selectAuthUser } from '@/store/slices/authSlice';
 import { selectMobileSidebarOpen, setMobileSidebar } from '@/store/slices/uiSlice';
+import { AdminLogo } from '@/components/brand/Logo';
 import { LoadingScreen } from '@/components/ui/Feedback';
 import { ToastViewport } from '@/components/ui/ToastViewport';
 import { Sidebar } from './Sidebar';
@@ -49,7 +50,7 @@ export function AdminLayout() {
               <MenuIcon size={20} />
             </IconButton>
 
-            <span className="font-display text-lg tracking-[0.2em] text-ink-900 lg:hidden">VELORA</span>
+            <AdminLogo className="lg:hidden" />
           </div>
 
           <div className="flex items-center gap-2">

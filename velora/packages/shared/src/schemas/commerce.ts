@@ -81,3 +81,24 @@ export type PaymentFormValues = z.infer<typeof paymentSchema>;
 export type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 export type CouponFormValues = z.infer<typeof couponSchema>;
 export type ReviewFormValues = z.infer<typeof reviewSchema>;
+
+/**
+ * Contact form. Deliberately narrower than the free-text box it looks like:
+ * the subject is a closed list so support can route on it, and the message is
+ * capped at 2000 characters, the same ceiling a review has.
+ */
+export const CONTACT_SUBJECTS = ['order', 'return', 'repair', 'product', 'other'] as const;
+
+export const contactSchema = z.object({
+  name: z.string().min(2, 'Ad soyad en az 2 karakter olmalı').max(128),
+  email: z.string().min(1, 'E-posta gerekli').email('Geçerli bir e-posta girin').max(256),
+  orderNumber: z.string().max(64).optional().or(z.literal('')),
+  subject: z.enum(CONTACT_SUBJECTS, { errorMap: () => ({ message: 'Bir konu seçin' }) }),
+  message: z.string().min(20, 'Mesaj en az 20 karakter olmalı').max(2000),
+  consent: z.literal(true, {
+    errorMap: () => ({ message: 'Devam etmek için aydınlatma metnini onaylamalısınız' }),
+  }),
+});
+
+export type ContactSubject = (typeof CONTACT_SUBJECTS)[number];
+export type ContactFormValues = z.infer<typeof contactSchema>;

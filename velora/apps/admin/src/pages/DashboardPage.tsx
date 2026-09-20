@@ -16,7 +16,7 @@ import {
   OrderStatusChart,
   SalesTrendChart,
   TopProductsChart,
-} from '@/components/charts/DashboardCharts';
+} from '@/components/charts/LazyCharts';
 import { ORDER_STATUS_COLORS } from '@/components/charts/chartTheme';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
@@ -28,6 +28,16 @@ import { useGetUserStatsQuery } from '@/store/api/operationsApi';
 import { mediaUrl, PRODUCT_PLACEHOLDER } from '@/utils/media';
 
 const RANGE_OPTIONS = [7, 14, 30, 90] as const;
+
+/** Section rule above a group of cards, so the grid reads as grouped answers. */
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div className="flex items-center gap-4">
+      <span className="text-2xs font-medium uppercase tracking-label text-ink-400">{children}</span>
+      <span aria-hidden className="h-px flex-1 bg-ink-100" />
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -73,6 +83,8 @@ export default function DashboardPage() {
         <ErrorState onRetry={() => void refetchDashboard()} />
       ) : (
         <Stack spacing={3}>
+          <SectionLabel>{t('admin.salesSection')}</SectionLabel>
+
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label={t('admin.totalRevenue')}
@@ -93,7 +105,7 @@ export default function DashboardPage() {
             <StatCard
               label={t('admin.orderCount')}
               value={summary ? formatNumber(summary.totalOrders, locale) : '—'}
-              hint={summary ? `${summary.pendingOrders} bekleyen` : undefined}
+              hint={summary ? t('admin.pendingCount', { count: summary.pendingOrders }) : undefined}
               icon={<ShoppingCart size={17} />}
               accent={summary && summary.pendingOrders > 0 ? 'warning' : 'neutral'}
               loading={dashboardLoading}
@@ -113,6 +125,8 @@ export default function DashboardPage() {
             </div>
             <OrderStatusChart data={dashboard?.statusBreakdown ?? []} loading={dashboardLoading} />
           </div>
+
+          <SectionLabel>{t('admin.inventorySection')}</SectionLabel>
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
@@ -146,6 +160,8 @@ export default function DashboardPage() {
               loading={catalogLoading}
             />
           </div>
+
+          <SectionLabel>{t('admin.breakdownSection')}</SectionLabel>
 
           <div className="grid gap-4 lg:grid-cols-2">
             <TopProductsChart data={dashboard?.topProducts ?? []} loading={dashboardLoading} />

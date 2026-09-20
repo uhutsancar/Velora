@@ -21,6 +21,15 @@ services:
     image: rabbitmq:3-management
     container_name: velora-rabbitmq
     restart: unless-stopped
+    # Same dedicated user as production (docker-compose.prod.yml) rather than the
+    # built-in guest: .env already defines RABBITMQ_USER/RABBITMQ_PASSWORD and the
+    # verification scripts authenticate with them, so leaving the broker on guest
+    # made those credentials a dead letter locally.
+    # Only applied when the data volume is empty - RabbitMQ ignores these once its
+    # database exists, so changing them means recreating the rabbitmq-data volume.
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:?.env dosyasinda RABBITMQ_USER tanimlayin}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:?.env dosyasinda RABBITMQ_PASSWORD tanimlayin}
     ports:
       - '5672:5672'
       - '15672:15672'

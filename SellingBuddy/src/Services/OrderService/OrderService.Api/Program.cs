@@ -60,7 +60,9 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(CreateOrderCommand).Assembly);
 });
 
-builder.Services.AddVeloraHealthChecks(builder.Configuration, builder.Configuration["OrderDbConnectionString"]);
+builder.Services.AddVeloraHealthChecks(
+    builder.Configuration,
+    OrderService.Infrastructure.ServiceRegistration.ResolveConnectionString(builder.Configuration, builder.Environment));
 
 var app = builder.Build();
 

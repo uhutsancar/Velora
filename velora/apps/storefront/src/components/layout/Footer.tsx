@@ -3,12 +3,16 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Logo } from '@/components/brand/Logo';
+import { PaymentMethods } from './PaymentMethods';
 import { useToast } from '@/hooks';
+import { openCookieSettings } from '@/lib/cookieConsent';
 import { useGetCategoryTreeQuery } from '@/store/api/catalogApi';
 
 // Labels are resolved through i18n at render time so the footer follows the
 // active language like the rest of the shell.
 const HELP_LINKS = [
+  { labelKey: 'nav.help', to: '/yardim' },
   { labelKey: 'footer.shipping', to: '/yardim/kargo' },
   { labelKey: 'footer.returns', to: '/yardim/iade' },
   { labelKey: 'footer.orderTracking', to: '/hesabim/siparisler' },
@@ -80,7 +84,7 @@ export function Footer() {
 
       <div className="container-velora grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-5">
         <div className="lg:col-span-2">
-          <span className="font-display text-2xl tracking-[0.28em] text-sand-50">VELORA</span>
+          <Logo className="text-sand-50" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-sand-100/70">{t('common.tagline')}</p>
 
           <ul className="mt-6 space-y-2.5 text-sm text-sand-100/70">
@@ -130,10 +134,13 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="container-velora flex flex-col gap-4 py-6 text-xs text-sand-100/50 md:flex-row md:items-center md:justify-between">
-          <p>{t('footer.rights', { year: new Date().getFullYear() })}</p>
+        <div className="container-velora flex flex-col gap-5 py-6 text-xs text-sand-100/50 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <p>{t('footer.rights', { year: new Date().getFullYear() })}</p>
+            <PaymentMethods />
+          </div>
 
-          <ul className="flex flex-wrap gap-x-5 gap-y-2">
+          <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {LEGAL_LINKS.map((link) => (
               <li key={link.to}>
                 <Link to={link.to} className="transition-colors hover:text-sand-50">
@@ -141,6 +148,16 @@ export function Footer() {
                 </Link>
               </li>
             ))}
+
+            <li>
+              <button
+                type="button"
+                onClick={openCookieSettings}
+                className="transition-colors hover:text-sand-50"
+              >
+                {t('cookie.settings')}
+              </button>
+            </li>
           </ul>
         </div>
       </div>

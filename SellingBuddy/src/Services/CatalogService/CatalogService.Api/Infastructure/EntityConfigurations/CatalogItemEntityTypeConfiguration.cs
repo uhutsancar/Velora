@@ -58,6 +58,16 @@ namespace CatalogService.Api.Infrastructure.EntityConfigurations
             builder.HasIndex(ci => ci.IsFeatured);
             builder.HasIndex(ci => ci.CreatedAtUtc);
 
+            // The home page's rails are the hottest read path in the catalogue.
+            // Both the best-sellers and the featured rail filter on IsPublished
+            // and order by SoldCount; without these the server scans and sorts
+            // every published row on each visit.
+            builder.HasIndex(ci => new { ci.IsPublished, ci.SoldCount })
+                .HasDatabaseName("IX_Catalog_Published_SoldCount");
+
+            builder.HasIndex(ci => new { ci.IsPublished, ci.CreatedAtUtc })
+                .HasDatabaseName("IX_Catalog_Published_CreatedAt");
+
             builder.HasOne(ci => ci.CatalogBrand)
                 .WithMany()
                 .HasForeignKey(ci => ci.CatalogBrandId);

@@ -13,7 +13,10 @@
     "./types": "./src/types/index.ts",
     "./schemas": "./src/schemas/index.ts",
     "./utils": "./src/utils/index.ts",
-    "./i18n": "./src/i18n/index.ts"
+    "./i18n": "./src/i18n/index.ts",
+    "./storage": "./src/storage/index.ts",
+    "./config": "./src/config/index.ts",
+    "./brand": "./src/brand/index.ts"
   },
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.json",
@@ -32,14 +35,16 @@
     "@eslint/js": "^9.17.0",
     "@reduxjs/toolkit": "^2.5.0",
     "@types/node": "^22.10.2",
+    "@types/react": "^18.3.17",
     "eslint": "^9.17.0",
     "globals": "^15.14.0",
+    "jsdom": "^25.0.1",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1",
     "vitest": "^2.1.8"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "@reduxjs/toolkit": ">=2"
+    "@reduxjs/toolkit": ">=2",
+    "react": ">=18"
   }
 }

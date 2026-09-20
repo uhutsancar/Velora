@@ -1,4 +1,4 @@
-import { runtimeValue } from '@velora/shared';
+import { COMMERCE, runtimeValue, STORAGE_KEYS } from '@velora/shared';
 
 /**
  * Runtime configuration, read once from Vite env vars.
@@ -14,12 +14,18 @@ export const env = {
   isProduction: import.meta.env.PROD,
 } as const;
 
-/** localStorage key for the storefront session; the admin app uses a different one. */
-export const SESSION_STORAGE_KEY = 'velora.store.session';
+/**
+ * The storefront session key. Declared in the shared registry so the admin app,
+ * which shares this origin in production, cannot pick the same one.
+ */
+export const SESSION_STORAGE_KEY = STORAGE_KEYS.storefrontSession;
 
-/** Free shipping threshold, mirrored from the KARGO coupon in the catalogue seed. */
-export const FREE_SHIPPING_THRESHOLD = 500;
+/**
+ * Commercial terms are re-exported rather than redeclared: the basket, the
+ * checkout total and the help centre all have to quote the same numbers.
+ */
+export const FREE_SHIPPING_THRESHOLD = COMMERCE.freeShippingThreshold;
+export const SHIPPING_FEE = COMMERCE.shippingFee;
 
-export const SHIPPING_FEE = 49.9;
-
+/** Products per page in the catalogue grid. Tuned to the 4-column layout. */
 export const PAGE_SIZE = 12;

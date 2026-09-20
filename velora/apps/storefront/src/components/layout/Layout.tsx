@@ -1,6 +1,7 @@
 import { Suspense, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom';
+import { CookieConsent } from '@/components/consent/CookieConsent';
 import { Spinner, ToastViewport } from '@/components/ui/Feedback';
 import { useAppDispatch } from '@/store/hooks';
 import { closeAllOverlays } from '@/store/slices/uiSlice';
@@ -50,6 +51,7 @@ export function Layout() {
       <MobileMenu />
       <SearchOverlay />
       <ToastViewport />
+      <CookieConsent />
 
       <ScrollRestoration />
     </div>

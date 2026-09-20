@@ -14,6 +14,8 @@ import {
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { PERMISSIONS, type PermissionCode } from '@velora/shared';
+import { AdminLogo } from '@/components/brand/Logo';
+import { useGetCatalogStatsQuery } from '@/store/api/catalogAdminApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { selectHasPermission } from '@/store/slices/authSlice';
 import { selectSidebarCollapsed, toggleSidebar } from '@/store/slices/uiSlice';
@@ -26,6 +28,11 @@ interface NavItem {
   labelKey: string;
   /** Hidden when the signed-in user lacks this permission. */
   permission?: PermissionCode;
+  /**
+   * Names a counter the rail should badge. Only signals an operator is expected
+   * to act on belong here — a badge that never clears is decoration.
+   */
+  badge?: 'lowStock';
 }
 
 const NAV_GROUPS: Array<{ titleKey: string; items: NavItem[] }> = [
@@ -44,7 +51,13 @@ const NAV_GROUPS: Array<{ titleKey: string; items: NavItem[] }> = [
   {
     titleKey: 'admin.products',
     items: [
-      { to: '/products', icon: Package, labelKey: 'admin.products', permission: PERMISSIONS.ProductsRead },
+      {
+        to: '/products',
+        icon: Package,
+        labelKey: 'admin.products',
+        permission: PERMISSIONS.ProductsRead,
+        badge: 'lowStock',
+      },
       {
         to: '/categories',
         icon: FolderTree,
@@ -93,9 +106,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       )}
     >
       <div className="flex h-16 items-center justify-between border-b border-ink-100 px-4">
-        {!collapsed && (
-          <span className="font-display text-lg tracking-[0.24em] text-ink-900">VELORA</span>
-        )}
+        <AdminLogo variant={collapsed ? 'mark' : 'full'} className={collapsed ? 'mx-auto' : undefined} />
 
         <button
           type="button"
@@ -165,6 +176,11 @@ function NavItemLink({
     item.permission ? selectHasPermission(item.permission) : () => true,
   );
 
+  // Skipped unless this item actually asks for a count, so the rail adds no
+  // request to routes that do not show one.
+  const { data: stats } = useGetCatalogStatsQuery(undefined, { skip: item.badge !== 'lowStock' });
+  const count = item.badge === 'lowStock' ? (stats?.lowStockProducts ?? 0) : 0;
+
   if (!allowed) return null;
 
   const Icon = item.icon;
@@ -178,7 +194,7 @@ function NavItemLink({
         title={collapsed ? t(item.labelKey) : undefined}
         className={({ isActive }) =>
           cn(
-            'flex items-center gap-3 border-l-2 px-4 py-2.5 text-sm transition-colors',
+            'relative flex items-center gap-3 border-l-2 px-4 py-2.5 text-sm transition-colors',
             collapsed && 'justify-center px-0',
             isActive
               ? 'border-tan-500 bg-tan-100/40 font-medium text-ink-900'
@@ -187,7 +203,21 @@ function NavItemLink({
         }
       >
         <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden />
-        {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
+
+        {!collapsed && <span className="flex-1 truncate">{t(item.labelKey)}</span>}
+
+        {count > 0 && (
+          <span
+            title={t('admin.lowStock')}
+            className={cn(
+              'flex h-5 min-w-5 items-center justify-center rounded-full bg-tan-100 px-1.5',
+              'text-[10px] font-medium leading-none text-tan-700',
+              collapsed && 'absolute right-2 top-1.5 h-4 min-w-4',
+            )}
+          >
+            {count > 99 ? '99+' : count}
+          </span>
+        )}
       </NavLink>
     </li>
   );

@@ -38,7 +38,7 @@ RUN pnpm --filter @velora/shared build && pnpm --filter @velora/storefront build
 # bastan uid 101 ile calisir.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS final
 
-COPY velora/apps/storefront/security-headers.conf /etc/nginx/velora-security-headers.conf
+COPY velora/apps/storefront/security-headers.conf.template /etc/nginx/velora-security-headers.conf.template
 COPY velora/apps/storefront/nginx.conf /etc/nginx/conf.d/default.conf
 # Acilista /config.js icindeki yer tutuculari ortam degiskenleriyle doldurur.
 COPY velora/apps/storefront/docker-entrypoint.d/ /docker-entrypoint.d/

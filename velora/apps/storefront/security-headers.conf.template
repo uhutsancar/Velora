@@ -1,0 +1,41 @@
+# Response hardening, rendered at container start into /tmp by
+# docker-entrypoint.d/05-velora-security-headers.sh and included by nginx.conf.
+#
+# It is a template because Content-Security-Policy has to name the API and media
+# origins, and those are runtime configuration in this image (see runtime.ts):
+# one artefact is promoted from staging to production, so the hosts cannot be
+# baked in at build time.
+#
+# nginx does not merge add_header across levels: a location with any add_header
+# of its own drops everything inherited from the server block. Every location
+# that sets a header must therefore include this file again.
+
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;
+add_header Cross-Origin-Resource-Policy "same-site" always;
+
+# Content-Security-Policy.
+#
+# The session lives in localStorage, which is only defensible if injected script
+# cannot run: this header is the control that makes that trade-off acceptable,
+# and tokenStorage.ts names it as such.
+#
+#   script-src 'self'   - the build emits no inline script; config.js is a file.
+#   style-src            - 'unsafe-inline' is unavoidable: Emotion (MUI) and
+#                          framer-motion write style tags and attributes at
+#                          runtime. Drop it only alongside a nonce provider.
+#   img-src              - product media comes from a separate, runtime-set
+#                          origin. picsum.photos is the placeholder source used
+#                          by the catalogue seed; remove both entries once real
+#                          assets are uploaded.
+#   connect-src          - the gateway origin, and nothing else. This is the
+#                          line that stops an injected script from posting a
+#                          stolen token somewhere.
+#
+# upgrade-insecure-requests is deliberately absent: docker-compose serves the
+# gateway over plain http on localhost and the directive would break it. Add it
+# in the ingress, where TLS actually terminates, together with HSTS.
+add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: __MEDIA_ORIGIN__ https://picsum.photos https://fastly.picsum.photos; connect-src 'self' __API_URL__; manifest-src 'self'; worker-src 'self' blob:" always;

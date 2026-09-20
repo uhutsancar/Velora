@@ -1,3 +1,4 @@
+using Microsoft.Extensions.FileProviders;
 using Velora.Shared.Health;
 using CatalogService.Api.Core.Application.Services;
 using CatalogService.Api.Extensions;
@@ -57,9 +58,19 @@ builder.Services.AddTransient<OrderPaidIntegrationEventHandler>();
 builder.Services.AddVeloraEventBus(builder.Configuration, "CatalogService");
 builder.Services.AddResponseCaching();
 
-builder.Services.AddVeloraHealthChecks(builder.Configuration, builder.Configuration.GetConnectionString("CatalogConnection"));
+builder.Services.AddVeloraHealthChecks(
+    builder.Configuration,
+    DbContextRegistration.ResolveConnectionString(builder.Configuration, builder.Environment));
 
 var app = builder.Build();
+
+// Created up front: PhysicalFileProvider throws if the directory is missing,
+// and on a fresh volume nothing has been uploaded yet.
+var mediaRoot = Path.Combine(
+    app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"),
+    "media");
+
+Directory.CreateDirectory(mediaRoot);
 
 app.UseVeloraExceptionHandling();
 
@@ -69,8 +80,41 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Uploaded product images are served from wwwroot/media.
-app.UseStaticFiles();
+/*
+ * Uploaded product images.
+ *
+ * Scoped to /media rather than the whole of wwwroot, so a file that lands
+ * anywhere else in the content root is not automatically public.
+ *
+ * The headers are the point of the options object:
+ *
+ *   nosniff       MediaController allow-lists extension and content type, but
+ *                 neither proves the bytes. Without nosniff a browser may sniff
+ *                 a crafted "image" as HTML and execute it on the media origin,
+ *                 which by default is the API origin.
+ *   CSP           A second line behind nosniff: even served as a document,
+ *                 nothing in it may load or run.
+ *   Cache-Control Upload names carry a GUID and are never rewritten, so the
+ *                 content at a URL cannot change. Product imagery is the bulk
+ *                 of storefront bandwidth and this is what stops the browser
+ *                 re-requesting it on every page.
+ */
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(mediaRoot),
+    RequestPath = "/media",
+    // An unknown extension is not guessed at, it is refused.
+    ServeUnknownFileTypes = false,
+    OnPrepareResponse = context =>
+    {
+        var headers = context.Context.Response.Headers;
+
+        headers.Append("X-Content-Type-Options", "nosniff");
+        headers.Append("Content-Security-Policy", "default-src 'none'; sandbox");
+        headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
+        headers.CacheControl = "public, max-age=31536000, immutable";
+    }
+});
 
 app.UseCors(CorsRegistration.PolicyName);
 app.UseResponseCaching();

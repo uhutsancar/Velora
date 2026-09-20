@@ -1,4 +1,4 @@
-import { ChevronDown, Heart, LogOut, Package, User } from 'lucide-react';
+import { ChevronDown, Heart, LifeBuoy, LogOut, Mail, Package, Sparkles, User } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,18 @@ import { selectMobileMenuOpen, toggleMobileMenu } from '@/store/slices/uiSlice';
 import { logout } from '@/store/slices/authSlice';
 import { cn } from '@/utils/cn';
 import { LanguageSwitcher } from './LanguageSwitcher';
+
+/**
+ * Brand and help destinations, below the category list.
+ *
+ * The desktop header reaches these through the footer; on a phone the footer is
+ * a long scroll away, so the drawer carries them too.
+ */
+const SECONDARY_LINKS = [
+  { to: '/hakkimizda', labelKey: 'nav.about', icon: Sparkles },
+  { to: '/yardim', labelKey: 'nav.help', icon: LifeBuoy },
+  { to: '/iletisim', labelKey: 'nav.contact', icon: Mail },
+] as const;
 
 export function MobileMenu() {
   const { t } = useTranslation();
@@ -92,7 +104,22 @@ export function MobileMenu() {
           </li>
         </ul>
 
-        <div className="mt-6 border-t border-ink-100 px-6 py-6">
+        <ul className="mt-6 border-t border-ink-100">
+          {SECONDARY_LINKS.map(({ to, labelKey, icon: Icon }) => (
+            <li key={to}>
+              <Link
+                to={to}
+                onClick={close}
+                className="flex items-center gap-3 px-6 py-3.5 text-sm text-ink-600 transition-colors hover:text-ink-900"
+              >
+                <Icon className="h-4 w-4 shrink-0 text-ink-400" aria-hidden />
+                {t(labelKey)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-2 border-t border-ink-100 px-6 py-6">
           {isAuthenticated ? (
             <div className="space-y-1">
               <p className="label-caps mb-3 text-ink-400">{user?.fullName}</p>

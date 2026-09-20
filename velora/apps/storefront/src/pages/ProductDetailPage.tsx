@@ -1,4 +1,4 @@
-import { Heart, Minus, Plus, RotateCcw, ShieldCheck, Truck } from 'lucide-react';
+import { Heart, Minus, Plus, RotateCcw, ShieldCheck, Sparkles, Truck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import {
   buildBreadcrumbJsonLd,
   buildProductJsonLd,
   buildProductSeo,
+  COMMERCE,
 } from '@velora/shared';
 import { ProductGallery } from '@/components/product/ProductGallery';
 import { ReviewSection } from '@/components/product/ReviewSection';
@@ -13,7 +14,9 @@ import { ProductRail } from '@/components/home/ProductRail';
 import { resolveVariant } from '@/components/product/resolveVariant';
 import { VariantSelector } from '@/components/product/VariantSelector';
 import { Badge, PriceBlock, Rating } from '@/components/ui/Display';
+import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Button } from '@/components/ui/Button';
+import { Disclosure, DisclosureGroup } from '@/components/ui/Disclosure';
 import { ErrorState, Skeleton } from '@/components/ui/Feedback';
 import { Seo } from '@/components/seo/Seo';
 import { env } from '@/config/env';
@@ -146,20 +149,13 @@ export default function ProductDetailPage() {
       />
 
       <div className="container-velora py-8 md:py-12">
-        <nav aria-label={t('product.breadcrumb')} className="mb-8 flex flex-wrap items-center gap-2 text-xs text-ink-400">
-          {breadcrumbs.map((crumb, index) => (
-            <span key={crumb.url} className="flex items-center gap-2">
-              {index > 0 && <span aria-hidden>/</span>}
-              {index === breadcrumbs.length - 1 ? (
-                <span className="text-ink-700">{crumb.name}</span>
-              ) : (
-                <Link to={crumb.url} className="transition-colors hover:text-ink-900">
-                  {crumb.name}
-                </Link>
-              )}
-            </span>
-          ))}
-        </nav>
+        <Breadcrumbs
+          className="mb-8"
+          items={breadcrumbs.map((crumb, index) => ({
+            name: crumb.name,
+            href: index === breadcrumbs.length - 1 ? undefined : crumb.url,
+          }))}
+        />
 
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <ProductGallery images={product.images} productName={product.name} />
@@ -261,20 +257,67 @@ export default function ProductDetailPage() {
               <p className="mt-3 text-xs text-ink-500">{t('product.selectVariant')}</p>
             )}
 
-            <dl className="mt-8 space-y-3 border-t border-ink-100 pt-6 text-sm">
-              <div className="flex items-start gap-3 text-ink-600">
+            <ul className="mt-8 space-y-2.5 border-t border-ink-100 pt-6 text-sm">
+              <li className="flex items-start gap-3 text-ink-600">
                 <Truck className="mt-0.5 h-4 w-4 shrink-0 text-tan-600" aria-hidden />
-                <span>{t('product.shippingNote')}</span>
-              </div>
-              <div className="flex items-start gap-3 text-ink-600">
+                <span className="text-pretty">
+                  {t('product.shippingNote', {
+                    threshold: COMMERCE.freeShippingThreshold,
+                    min: COMMERCE.deliveryDays.min,
+                    max: COMMERCE.deliveryDays.max,
+                  })}
+                </span>
+              </li>
+              <li className="flex items-start gap-3 text-ink-600">
                 <RotateCcw className="mt-0.5 h-4 w-4 shrink-0 text-tan-600" aria-hidden />
-                <span>{t('product.returnNote')}</span>
-              </div>
-              <div className="flex items-start gap-3 text-ink-600">
+                <span className="text-pretty">{t('product.returnNote', { days: COMMERCE.returnDays })}</span>
+              </li>
+              <li className="flex items-start gap-3 text-ink-600">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-tan-600" aria-hidden />
-                <span>{t('product.warrantyNote')}</span>
-              </div>
-            </dl>
+                <span className="text-pretty">
+                  {t('product.warrantyNote', { years: COMMERCE.warrantyYears })}
+                </span>
+              </li>
+            </ul>
+
+            <DisclosureGroup className="mt-8">
+              <Disclosure title={t('footer.shipping')} meta={`${COMMERCE.deliveryDays.min}-${COMMERCE.deliveryDays.max} ${t('common.days')}`}>
+                <p>
+                  {t('product.shippingDetail', {
+                    cutoff: COMMERCE.sameDayCutoff,
+                    threshold: COMMERCE.freeShippingThreshold,
+                    fee: COMMERCE.shippingFee,
+                  })}
+                </p>
+                <Link to="/yardim/kargo" className="link-underline mt-3 inline-block text-ink-900">
+                  {t('product.readMore')}
+                </Link>
+              </Disclosure>
+
+              <Disclosure title={t('footer.returns')} meta={`${COMMERCE.returnDays} ${t('common.days')}`}>
+                <p>{t('product.returnDetail', { days: COMMERCE.returnDays })}</p>
+                <Link to="/yardim/iade" className="link-underline mt-3 inline-block text-ink-900">
+                  {t('product.readMore')}
+                </Link>
+              </Disclosure>
+
+              <Disclosure title={t('footer.leatherCare')}>
+                <p>{t('product.careDetail')}</p>
+                <Link to="/yardim/bakim" className="link-underline mt-3 inline-block text-ink-900">
+                  {t('product.readMore')}
+                </Link>
+              </Disclosure>
+
+              <Disclosure title={t('nav.atelier')}>
+                <p className="flex gap-3">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-tan-600" aria-hidden />
+                  <span>{t('product.warrantyDetail', { years: COMMERCE.warrantyYears })}</span>
+                </p>
+                <Link to="/atolye" className="link-underline mt-3 inline-block text-ink-900">
+                  {t('product.readMore')}
+                </Link>
+              </Disclosure>
+            </DisclosureGroup>
 
             {(product.sku || variant?.sku) && (
               <p className="mt-6 text-xs text-ink-400">

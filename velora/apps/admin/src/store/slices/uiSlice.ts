@@ -1,4 +1,5 @@
 import { createSlice, nanoid, type PayloadAction } from '@reduxjs/toolkit';
+import { createStorageItem, isBoolean, STORAGE_KEYS } from '@velora/shared';
 import type { RootState } from '../index';
 
 export type ToastVariant = 'success' | 'error' | 'info' | 'warning';
@@ -15,15 +16,14 @@ export interface UiState {
   toasts: Toast[];
 }
 
-const SIDEBAR_KEY = 'velora.admin.sidebarCollapsed';
-
-const readCollapsed = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(SIDEBAR_KEY) === 'true';
-};
+const sidebarCollapsedStore = createStorageItem<boolean>({
+  key: STORAGE_KEYS.adminSidebarCollapsed,
+  fallback: false,
+  validate: isBoolean,
+});
 
 const initialState: UiState = {
-  sidebarCollapsed: readCollapsed(),
+  sidebarCollapsed: sidebarCollapsedStore.read(),
   mobileSidebarOpen: false,
   toasts: [],
 };
@@ -36,9 +36,7 @@ const uiSlice = createSlice({
       state.sidebarCollapsed = !state.sidebarCollapsed;
 
       // Persisted so the layout preference survives a reload.
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(SIDEBAR_KEY, String(state.sidebarCollapsed));
-      }
+      sidebarCollapsedStore.write(state.sidebarCollapsed);
     },
     setMobileSidebar(state, action: PayloadAction<boolean>) {
       state.mobileSidebarOpen = action.payload;

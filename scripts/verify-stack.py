@@ -64,7 +64,12 @@ print("KATALOG")
 s, p = call("/products?pageSize=5")
 check("GET /products", s == 200 and p["totalCount"] > 0, "(%s urun)" % p["totalCount"] if s == 200 else s)
 s, c = call("/categories")
-check("GET /categories", s == 200 and len(c) == 4, "(%s kok)" % len(c) if s == 200 else s)
+# Kok kategoriler slug ile dogrulanir, sayiyla degil: seed'e yeni bir kok
+# eklendiginde sayi sessizce kayar ve tek basina hicbir sey ispatlamaz.
+EXPECTED_ROOTS = {"kadin", "erkek", "aksesuar", "seyahat", "ofis"}
+roots = {x["slug"] for x in c} if s == 200 else set()
+check("GET /categories", s == 200 and EXPECTED_ROOTS <= roots,
+      "(%s kok)" % len(c) if s == 200 else s)
 s, b = call("/brands")
 check("GET /brands", s == 200 and len(b) > 0, "(%s)" % len(b) if s == 200 else s)
 s, cm = call("/campaigns?placement=Hero")

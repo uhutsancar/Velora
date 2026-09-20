@@ -51,6 +51,12 @@ VELORA_ADMIN_EMAIL=admin@velora.com
 VELORA_ADMIN_PASSWORD=Admin.Parolasi123!
 VELORA_RABBITMQ_USER=velora
 VELORA_RABBITMQ_PASSWORD=bir-parola-daha
+
+# Servislerin RabbitMQ'ya baglanirken kullandigi kimlik.
+# RABBITMQ_USER / RABBITMQ_PASSWORD ile AYNI olmali: broker bu kullaniciyla
+# kurulur, servisler de appsettings.json'daki guest/guest varsayilanini bunlarla ezer.
+EventBus__UserName=velora
+EventBus__Password=bir-parola-daha
 ```
 
 Rastgele anahtar uretmek icin:

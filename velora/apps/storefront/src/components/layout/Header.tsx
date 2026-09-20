@@ -10,6 +10,7 @@ import { useGetBasketQuery } from '@/store/api/basketApi';
 import { useGetCategoryTreeQuery } from '@/store/api/catalogApi';
 import { openCartDrawer, toggleMobileMenu, toggleSearch } from '@/store/slices/uiSlice';
 import { cn } from '@/utils/cn';
+import { Logo } from '@/components/brand/Logo';
 import { MegaMenu } from './MegaMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -89,9 +90,7 @@ export function Header() {
             <Menu className="h-5 w-5" />
           </button>
 
-          <Link to="/" className="shrink-0" aria-label={t('common.brand')}>
-            <span className="font-display text-2xl tracking-[0.28em] text-ink-900">VELORA</span>
-          </Link>
+          <Logo to="/" ariaLabel={t('common.brand')} className="text-ink-900" />
 
           <nav aria-label={t('nav.mainMenu')} className="hidden flex-1 items-center justify-center gap-8 lg:flex">
             {categories.map((category) => (

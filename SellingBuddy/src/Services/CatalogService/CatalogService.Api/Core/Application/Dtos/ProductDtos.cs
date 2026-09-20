@@ -125,6 +125,7 @@ namespace CatalogService.Api.Core.Application.Dtos
     public class ProductQuery
     {
         private int pageSize = 12;
+        private int pageIndex;
 
         public string? Search { get; set; }
         public string? Category { get; set; }
@@ -139,8 +140,19 @@ namespace CatalogService.Api.Core.Application.Dtos
         public bool? Featured { get; set; }
         public int? MinRating { get; set; }
         public ProductSort Sort { get; set; } = ProductSort.Newest;
-        public int PageIndex { get; set; }
 
+        /// <summary>
+        /// Zero based. Clamped at zero: a negative value reaches Skip() and SQL
+        /// Server rejects a negative OFFSET, turning a malformed query string
+        /// into a 500 instead of an empty page.
+        /// </summary>
+        public int PageIndex
+        {
+            get => pageIndex;
+            set => pageIndex = value < 0 ? 0 : value;
+        }
+
+        /// <summary>Capped so one request cannot ask for the whole catalogue.</summary>
         public int PageSize
         {
             get => pageSize;

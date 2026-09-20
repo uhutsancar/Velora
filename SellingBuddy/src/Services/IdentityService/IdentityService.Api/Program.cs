@@ -45,7 +45,9 @@ builder.Services.AddScoped<IIdentityService, IdentityService.Api.Application.Ser
 builder.Services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 
-builder.Services.AddVeloraHealthChecks(builder.Configuration, builder.Configuration.GetConnectionString("IdentityConnection"));
+builder.Services.AddVeloraHealthChecks(
+    builder.Configuration,
+    DbContextRegistration.ResolveConnectionString(builder.Configuration, builder.Environment));
 
 var app = builder.Build();
 

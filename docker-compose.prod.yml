@@ -221,8 +221,11 @@ services:
       order: {condition: service_started}
 
   # ----------------------------------------------------------- frontends ----
-  # Vite inlines VITE_* at build time, so these are build args. Changing an
-  # origin means rebuilding the image, not restarting the container.
+  # Both apps read their origins twice. The VITE_* build args are the fallback
+  # Vite inlines into the bundle; the `environment` block below is what the
+  # container entrypoint renders at start-up into /config.js and the CSP, and it
+  # wins at runtime. Keeping both means one image can be promoted across
+  # environments while `pnpm dev` still works with no configuration at all.
   storefront:
     restart: unless-stopped
     build:
@@ -235,8 +238,19 @@ services:
         VITE_SITE_NAME: ${SITE_NAME:-Velora}
         VITE_CURRENCY: ${CURRENCY:-TRY}
     image: velora/storefront:${VELORA_TAG:-latest}
+    # Runtime configuration. The build args above bake defaults into the bundle;
+    # these are what the container entrypoint actually renders into /config.js
+    # and into the Content-Security-Policy, so the same image can be promoted
+    # between environments. connect-src is built from API_URL: if it is missing
+    # the policy falls back to 'self' and every API call is blocked.
+    environment:
+      API_URL: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
+      MEDIA_ORIGIN: ${MEDIA_PUBLIC_URL:-${API_PUBLIC_URL}}
+      SITE_URL: ${STOREFRONT_ORIGIN:?STOREFRONT_ORIGIN is required}
     ports:
-      - '${STOREFRONT_PORT:-8080}:80'
+      # The image runs nginx-unprivileged, which listens on 8080 because a
+      # non-root process cannot bind below 1024. Mapping to 80 reaches nothing.
+      - '${STOREFRONT_PORT:-8080}:8080'
     depends_on: [gateway]
     networks: [velora]
 
@@ -252,8 +266,12 @@ services:
         VITE_APP_NAME: ${ADMIN_APP_NAME:-Velora Admin}
         VITE_CURRENCY: ${CURRENCY:-TRY}
     image: velora/admin:${VELORA_TAG:-latest}
+    environment:
+      API_URL: ${API_PUBLIC_URL:?API_PUBLIC_URL is required}
+      MEDIA_ORIGIN: ${MEDIA_PUBLIC_URL:-${API_PUBLIC_URL}}
+      STOREFRONT_URL: ${STOREFRONT_ORIGIN:?STOREFRONT_ORIGIN is required}
     ports:
-      - '${ADMIN_PORT:-8081}:80'
+      - '${ADMIN_PORT:-8081}:8080'
     depends_on: [gateway]
     networks: [velora]
 

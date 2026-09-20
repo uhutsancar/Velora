@@ -1,4 +1,5 @@
 import { createSlice, nanoid, type PayloadAction } from '@reduxjs/toolkit';
+import { createStorageItem, isNumberArray, STORAGE_KEYS } from '@velora/shared';
 import type { RootState } from '../index';
 
 export type ToastVariant = 'success' | 'error' | 'info';
@@ -23,21 +24,13 @@ export interface UiState {
   recentlyViewed: number[];
 }
 
-const RECENTLY_VIEWED_KEY = 'velora.recentlyViewed';
 const RECENTLY_VIEWED_LIMIT = 12;
 
-const readRecentlyViewed = (): number[] => {
-  if (typeof window === 'undefined') return [];
-
-  try {
-    const raw = window.localStorage.getItem(RECENTLY_VIEWED_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-
-    return Array.isArray(parsed) ? parsed.filter((id): id is number => typeof id === 'number') : [];
-  } catch {
-    return [];
-  }
-};
+const recentlyViewedStore = createStorageItem<number[]>({
+  key: STORAGE_KEYS.recentlyViewed,
+  fallback: [],
+  validate: isNumberArray,
+});
 
 const initialState: UiState = {
   cartDrawerOpen: false,
@@ -45,7 +38,7 @@ const initialState: UiState = {
   mobileMenuOpen: false,
   filtersOpen: false,
   toasts: [],
-  recentlyViewed: readRecentlyViewed(),
+  recentlyViewed: recentlyViewedStore.read(),
 };
 
 const uiSlice = createSlice({
@@ -89,9 +82,7 @@ const uiSlice = createSlice({
       const next = [action.payload, ...state.recentlyViewed.filter((id) => id !== action.payload)];
       state.recentlyViewed = next.slice(0, RECENTLY_VIEWED_LIMIT);
 
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(state.recentlyViewed));
-      }
+      recentlyViewedStore.write(state.recentlyViewed);
     },
   },
 });

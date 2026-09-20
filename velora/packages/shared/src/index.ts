@@ -1,4 +1,6 @@
 export * from './api';
+export * from './config';
+export * from './storage';
 export * from './types';
 export * from './schemas';
 export * from './utils';

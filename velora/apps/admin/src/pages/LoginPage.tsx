@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { loginSchema, zodValidator, type LoginFormValues } from '@velora/shared';
+import { VeloraMark } from '@velora/shared/brand';
 import { env } from '@/config/env';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
@@ -35,8 +36,12 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-ink-900 px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <p className="font-display text-3xl tracking-[0.28em] text-sand-50 text-white">VELORA</p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <VeloraMark className="h-12 w-12 text-sand-50" title="Velora" />
+
+          <p className="mt-4 font-display text-3xl tracking-[0.28em] text-sand-50 [text-indent:0.28em]">
+            VELORA
+          </p>
           <p className="label-caps mt-2 text-tan-300">{env.appName}</p>
         </div>
 

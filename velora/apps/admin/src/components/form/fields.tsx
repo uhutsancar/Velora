@@ -22,9 +22,16 @@ import type { ReactNode } from 'react';
  * Yeni bir alan eklemek tek satirdir; kaldirmak da o tek satiri silmektir.
  */
 
-/** Formik hata nesneleri dizi/obje olabilir; ekrana yalnizca yaprak mesajlar cikar. */
+/**
+ * Formik hata nesneleri dizi/obje olabilir; ekrana yalnizca yaprak mesajlar cikar.
+ *
+ * useField jenerigi verilmezse `any` doner ve alan degeri tip denetiminden
+ * tamamen kacar. `unknown` dogru genislik: MUI'nin `value` prop'u zaten
+ * `unknown` kabul eder, dolayisiyla assertion gerekmeden gecer, ama yanlislikla
+ * uzerinde islem yapilamaz.
+ */
 function useLeafError(name: string) {
-  const [field, meta] = useField(name);
+  const [field, meta] = useField<unknown>(name);
   const error = meta.touched && typeof meta.error === 'string' ? meta.error : undefined;
   return { field, error };
 }

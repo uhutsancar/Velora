@@ -1,5 +1,6 @@
 import i18n, { type i18n as I18nInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { createStorageItem, STORAGE_KEYS } from '../storage';
 import { tr } from './locales/tr';
 import { en } from './locales/en';
 
@@ -8,7 +9,12 @@ export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const DEFAULT_LANGUAGE: SupportedLanguage = 'tr';
 
-const LANGUAGE_STORAGE_KEY = 'velora.language';
+const languagePreference = createStorageItem<SupportedLanguage | null>({
+  key: STORAGE_KEYS.language,
+  fallback: null,
+  validate: (value): value is SupportedLanguage | null =>
+    value === null || SUPPORTED_LANGUAGES.includes(value as SupportedLanguage),
+});
 
 export const resources = {
   tr: { translation: tr },
@@ -21,10 +27,8 @@ export const localeFor = (language: string): string => (language === 'en' ? 'en-
 export function detectLanguage(): SupportedLanguage {
   if (typeof window === 'undefined') return DEFAULT_LANGUAGE;
 
-  const stored = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (stored && SUPPORTED_LANGUAGES.includes(stored as SupportedLanguage)) {
-    return stored as SupportedLanguage;
-  }
+  const stored = languagePreference.read();
+  if (stored) return stored;
 
   const browser = window.navigator.language.slice(0, 2).toLowerCase();
   return SUPPORTED_LANGUAGES.includes(browser as SupportedLanguage)
@@ -35,7 +39,7 @@ export function detectLanguage(): SupportedLanguage {
 export function persistLanguage(language: SupportedLanguage): void {
   if (typeof window === 'undefined') return;
 
-  window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  languagePreference.write(language);
   document.documentElement.lang = language;
 }
 
