@@ -28,7 +28,10 @@ Kubernetes ortamlari, gercek SQL Server, Redis ve RabbitMQ uzerinde alinmistir.
 | Kubernetes RabbitMQ E2E | 34/34 gecti; 15/15 consumer bagli |
 | Kubernetes eszamanli checkout | 23/23 gecti |
 | Docker Compose HTTP E2E | 61/61 gecti |
-| Docker RabbitMQ son durum | Tum normal/DLQ kuyruklari 0 ready, 0 unacked |
+| Docker RabbitMQ E2E | 34/34 gecti; 15/15 consumer bagli; 0 DLQ |
+| Docker RabbitMQ son durum | Servis kuyruklari 0 birikme; izleme kuyrugunda 17 mesaj |
+| Azure Service Bus UI checkout | Gercek hesapla checkout gecti; siparis `paid` ve odeme basarili |
+| Azure Service Bus son durum | Topic ve tum subscription'lar silinmedi; `Disabled`; Docker kullanmiyor |
 | Son log taramasi | Docker ve Kubernetes uygulamalarinda kritik/fatal/unhandled hata yok |
 
 ## Canli satis zinciri
@@ -72,6 +75,9 @@ ve SLO taahhudu degildir.
   kilitleyebiliyordu; artik yalniz SQL/Redis/RabbitMQ rollout'unu bekliyor.
 - Yuk testi auth rate-limit kotasini checkout yukune karistiriyordu; test
   kullanicilari once hazirlaniyor ve sadece checkout eszamanli baslatiliyor.
+- Production Vite build'inde gorunmeyen `paymentProvider` alani bos kaldigi icin
+  checkout formu API'ye gitmeden sessizce duruyordu; sandbox adapter acikca
+  secildi ve gercek tarayici checkout testiyle dogrulandi.
 
 ## Bilinen yayin kapilari
 

@@ -75,7 +75,7 @@ export default function CheckoutPage() {
   );
 
   useEffect(() => {
-    if (!isAuthenticated) navigate('/giris?redirect=/odeme', { replace: true });
+    if (!isAuthenticated) void navigate('/giris?redirect=/odeme', { replace: true });
   }, [isAuthenticated, navigate]);
 
   const submitOrder = async (values: PaymentFormValues) => {
@@ -100,7 +100,7 @@ export default function CheckoutPage() {
       }).unwrap();
 
       sessionStorage.removeItem('velora-checkout-request-id');
-      navigate('/siparis-alindi', { replace: true });
+      void navigate('/siparis-alindi', { replace: true });
     } catch (error) {
       toast.error(error, t('checkout.orderFailed'));
     }
@@ -214,7 +214,11 @@ export default function CheckoutPage() {
             <Formik<PaymentFormValues>
               initialValues={{
                 paymentMethodToken: import.meta.env.DEV ? 'sandbox_approved_demo' : '',
-                paymentProvider: import.meta.env.DEV ? 'sandbox' : '',
+                // The provider is not an editable field: the hosted-payment/token
+                // adapter represented by this screen is the sandbox adapter. Leaving
+                // it empty in a production Vite build made Formik fail validation
+                // silently, so the checkout request never reached the API.
+                paymentProvider: 'sandbox',
               }}
               validate={zodValidator<PaymentFormValues>(paymentSchema)}
               onSubmit={submitOrder}

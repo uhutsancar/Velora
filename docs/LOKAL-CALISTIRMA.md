@@ -388,6 +388,24 @@ Azure Portal'da topic altindaki `velora-debug-monitor` subscription'ini secip
 Service Bus Explorer > Peek from start kullanin. Observer mesajlari bir saat TTL
 ile saklar; uygulama subscription'larinin mesajlarini cekmez.
 
+Test bittikten sonra Docker servislerini yeniden RabbitMQ'ya almak ve Azure
+topic'i **silmeden Disabled** durumuna getirmek icin:
+
+```powershell
+.\scripts\use-rabbitmq-eventbus.ps1
+```
+
+Kalici yerel ayar `.env` icinde `EVENTBUS_TYPE=RabbitMQ` ve
+`EVENTBUS_TOPIC=SellingBuddyEventBus` olmalidir. Azure connection string `.env`
+icinde kalabilir; RabbitMQ modunda okunmaz. Topic durumunu degistirmeden kontrol
+etmek icin `AZURE_TOPIC_ACTION=observe`, yeniden kullanmak icin
+`use-azure-eventbus.ps1` kullanilir.
+
+`Disabled` mesaj gonderme/alma isini durdurur fakat Azure Standard/Premium
+namespace icin olasi sabit ucreti durdurmaz. Sifir Azure maliyeti gerekiyorsa
+namespace'in Azure'dan silinmesi gerekir; bu script veri kaybina yol acabilecek
+silme islemini bilerek yapmaz.
+
 ---
 
 ## Sik karsilasilan sorunlar

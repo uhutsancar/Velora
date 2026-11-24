@@ -78,7 +78,7 @@ export function LoginPage() {
   const redirect = searchParams.get('redirect') ?? '/hesabim';
 
   useEffect(() => {
-    if (isAuthenticated) navigate(redirect, { replace: true });
+    if (isAuthenticated) void navigate(redirect, { replace: true });
   }, [isAuthenticated, navigate, redirect]);
 
   useEffect(() => () => void dispatch(clearAuthError()), [dispatch]);
@@ -162,7 +162,7 @@ export function RegisterPage() {
   const error = useAppSelector(selectAuthError);
 
   useEffect(() => {
-    if (isAuthenticated) navigate('/hesabim', { replace: true });
+    if (isAuthenticated) void navigate('/hesabim', { replace: true });
   }, [isAuthenticated, navigate]);
 
   useEffect(() => () => void dispatch(clearAuthError()), [dispatch]);

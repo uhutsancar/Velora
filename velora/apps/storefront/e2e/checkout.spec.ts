@@ -9,6 +9,26 @@ import { login, makeTestUser, openFirstProduct, register } from './fixtures';
  * Basket -> RabbitMQ -> Order -> Payment saga is broken, not just the UI.
  */
 test.describe('Checkout flow', () => {
+  test('completes checkout for an existing local account', async ({ page }) => {
+    const email = process.env.E2E_CUSTOMER_EMAIL;
+    const password = process.env.E2E_CUSTOMER_PASSWORD;
+    test.skip(!email || !password, 'Local customer credentials are not configured.');
+
+    await login(page, {
+      email: email!,
+      password: password!,
+      firstName: 'Local',
+      lastName: 'Customer',
+    });
+    await page.goto('/odeme');
+
+    await expect(page.locator('input[name="paymentMethodToken"]')).toBeVisible();
+    await page.locator('input[name="paymentMethodToken"]').fill('sandbox_approved_demo');
+    await page.getByRole('button', { name: 'Siparişi Tamamla' }).click();
+
+    await expect(page).toHaveURL(/\/siparis-alindi/, { timeout: 30_000 });
+  });
+
   test('a new customer can register, sign out and sign back in', async ({ page }) => {
     const user = makeTestUser();
 
@@ -115,12 +135,9 @@ test.describe('Checkout flow', () => {
 
     await expect(dialog).toBeHidden({ timeout: 15_000 });
 
-    const nextYear = String((new Date().getFullYear() + 2) % 100).padStart(2, '0');
-
-    await page.getByLabel('Kart Üzerindeki İsim').fill('TEST KULLANICI');
-    await page.getByLabel('Kart Numarası').fill('4242424242424242');
-    await page.getByLabel('Son Kullanma').fill(`12${nextYear}`);
-    await page.getByLabel('CVV').fill('123');
+    // Local Docker uses the sandbox payment adapter. The provider is fixed by
+    // the checkout page; only the opaque hosted-payment token is entered here.
+    await page.locator('input[name="paymentMethodToken"]').fill('sandbox_approved_demo');
 
     await page.getByRole('button', { name: 'Siparişi Tamamla' }).click();
 

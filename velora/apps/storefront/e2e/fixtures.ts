@@ -28,12 +28,15 @@ export function makeTestUser(): TestUser {
 export async function register(page: Page, user: TestUser): Promise<void> {
   await page.goto('/kayit');
 
-  await page.getByLabel('Ad', { exact: true }).fill(user.firstName);
-  await page.getByLabel('Soyad', { exact: true }).fill(user.lastName);
-  await page.getByLabel('E-posta', { exact: true }).fill(user.email);
-  await page.getByLabel('Şifre', { exact: true }).fill(user.password);
-  await page.getByLabel('Şifre tekrarı').fill(user.password);
-  await page.getByRole('checkbox').check();
+  const necessaryCookies = page.getByRole('button', { name: /ZORUNLU/i });
+  if (await necessaryCookies.isVisible()) await necessaryCookies.click();
+
+  await page.locator('input[name="firstName"]').fill(user.firstName);
+  await page.locator('input[name="lastName"]').fill(user.lastName);
+  await page.locator('input[name="email"]').fill(user.email);
+  await page.locator('input[name="password"]').fill(user.password);
+  await page.locator('input[name="confirmPassword"]').fill(user.password);
+  await page.locator('input[name="acceptTerms"]').check();
 
   await page.getByRole('button', { name: 'Hesap Oluştur' }).click();
 
@@ -44,8 +47,11 @@ export async function register(page: Page, user: TestUser): Promise<void> {
 export async function login(page: Page, user: TestUser): Promise<void> {
   await page.goto('/giris');
 
-  await page.getByLabel('E-posta', { exact: true }).fill(user.email);
-  await page.getByLabel('Şifre', { exact: true }).fill(user.password);
+  const necessaryCookies = page.getByRole('button', { name: /ZORUNLU/i });
+  if (await necessaryCookies.isVisible()) await necessaryCookies.click();
+
+  await page.locator('input[name="userName"]').fill(user.email);
+  await page.locator('input[name="password"]').fill(user.password);
   await page.getByRole('button', { name: 'Giriş Yap' }).click();
 
   await expect(page).toHaveURL(/\/hesabim/, { timeout: 20_000 });
@@ -62,6 +68,19 @@ export async function openFirstProduct(page: Page): Promise<string> {
   await firstCard.locator('h3 a').first().click();
 
   await expect(page).toHaveURL(/\/urun\//);
+
+  // Product variants are intentionally not preselected. Pick the first
+  // in-stock option from each group until the add-to-cart action is enabled.
+  const addToCart = page.getByRole('button', { name: 'Sepete Ekle' });
+  const variantGroups = page.locator('[role="radiogroup"]');
+  await expect(addToCart).toBeVisible();
+  if (!(await addToCart.isEnabled())) await expect(variantGroups.first()).toBeVisible();
+  for (let index = 0; index < (await variantGroups.count()); index += 1) {
+    if (await addToCart.isEnabled()) break;
+    const option = variantGroups.nth(index).locator('button:not([disabled])').first();
+    if (await option.isVisible()) await option.click();
+  }
+  await expect(addToCart).toBeEnabled();
 
   return name;
 }

@@ -66,7 +66,7 @@ export function SearchOverlay() {
     if (query.length === 0) return;
 
     dispatch(toggleSearch(false));
-    navigate(`/arama?q=${encodeURIComponent(query)}`);
+    void navigate(`/arama?q=${encodeURIComponent(query)}`);
   };
 
   const results = data?.items ?? [];
@@ -149,7 +149,7 @@ export function SearchOverlay() {
                             type="button"
                             onClick={() => {
                               dispatch(toggleSearch(false));
-                              navigate(`/urun/${product.slug}`);
+                              void navigate(`/urun/${product.slug}`);
                             }}
                             className="flex w-full items-center gap-4 py-3 text-left transition-colors hover:bg-sand-100"
                           >

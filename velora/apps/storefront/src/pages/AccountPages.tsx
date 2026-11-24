@@ -600,7 +600,7 @@ export function OrderDetailPage() {
                 try {
                   await cancelOrder({ id: order.id, reason: t('account.cancelReason') }).unwrap();
                   toast(t('account.orderCancelled'), 'success');
-                  navigate('/hesabim/siparisler');
+                  void navigate('/hesabim/siparisler');
                 } catch {
                   toast(t('account.orderCancelFailed'), 'error');
                 }

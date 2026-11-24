@@ -15,6 +15,7 @@ if ([string]::IsNullOrWhiteSpace($env:EventBus__ConnectionString)) {
 $env:EVENTBUS_TYPE = 'AzureServiceBus'
 $env:EVENTBUS_TOPIC = $TopicName
 $env:AZURE_DEBUG_SUBSCRIPTION = $ObserverSubscription
+$env:AZURE_TOPIC_ACTION = 'activate'
 
 Write-Host 'Azure observer subscription hazirlaniyor...' -ForegroundColor Cyan
 & dotnet run --project "$root/tools/Velora.AzureObserver/Velora.AzureObserver.csproj" -c Release
