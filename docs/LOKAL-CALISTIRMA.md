@@ -364,6 +364,30 @@ Komutun actigi `velora.debug.flow` kuyrugunda `Get messages` kullanmak uygulama
 consumer'larini etkilemez. Mesajlar bir saat sonra, kullanilmayan kuyruk ise iki
 saat sonra otomatik silinir.
 
+### Azure Service Bus mesajlarini izleme
+
+Azure topic icin namespace `RootManageSharedAccessKey` yerine yalniz gerekli
+topic'e ait `Manage, Send, Listen` yetkili uygulama policy'si kullanilir. Gizli
+connection string sadece Git tarafindan yok sayilan `.env` dosyasinda tutulur:
+
+```env
+EVENTBUS_TYPE=AzureServiceBus
+EVENTBUS_TOPIC=sellingbuddytopicname
+EventBus__ConnectionString=...gizli namespace connection string...
+```
+
+Topic'i ve subscription'lari `Active` yapip, mesajlari tuketmeden Peek etmeye
+yarayan `velora-debug-monitor` subscription'ini kurmak ve Docker event
+servislerini Azure'a almak icin:
+
+```powershell
+.\scripts\use-azure-eventbus.ps1
+```
+
+Azure Portal'da topic altindaki `velora-debug-monitor` subscription'ini secip
+Service Bus Explorer > Peek from start kullanin. Observer mesajlari bir saat TTL
+ile saklar; uygulama subscription'larinin mesajlarini cekmez.
+
 ---
 
 ## Sik karsilasilan sorunlar
