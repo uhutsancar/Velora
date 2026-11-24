@@ -349,6 +349,21 @@ python scripts\verify-live-load.py
 python scripts\verify-chart.py
 ```
 
+### Docker Compose RabbitMQ mesajlarini tarayicidan izleme
+
+Production benzeri Docker Compose broker'i `http://127.0.0.1:15673` adresine
+acilir. Kubernetes RabbitMQ port-forward'u `15672` olarak kalir. Servis
+kuyruklarina dokunmadan mesaj govdelerinin kopyasini tutan gecici izleme
+kuyrugunu kurup dogrudan tarayicida acmak icin:
+
+```powershell
+.\scripts\open-docker-rabbit.ps1
+```
+
+Komutun actigi `velora.debug.flow` kuyrugunda `Get messages` kullanmak uygulama
+consumer'larini etkilemez. Mesajlar bir saat sonra, kullanilmayan kuyruk ise iki
+saat sonra otomatik silinir.
+
 ---
 
 ## Sik karsilasilan sorunlar

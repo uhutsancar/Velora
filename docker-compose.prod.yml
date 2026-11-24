@@ -34,6 +34,7 @@ x-dotnet-common: &dotnet-common
     EventBus__Port: 5672
     EventBus__UserName: ${RABBITMQ_USER:?RABBITMQ_USER is required}
     EventBus__Password: ${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD is required}
+    EventBus__TopicName: ${EVENTBUS_TOPIC:-SellingBuddyEventBus}
     # Only read when EVENTBUS_TYPE=AzureServiceBus; RabbitMQ mode ignores it.
     EventBus__ConnectionString: ${EventBus__ConnectionString:-}
     # Compose'un kendi DNS'i servis adlarini zaten cozuyor ("catalog",
@@ -84,6 +85,10 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     restart: unless-stopped
+    # Docker broker'i Kubernetes port-forward'undan ayirmak icin yonetim
+    # arayuzu yalnizca localhost:15673 adresine acilir.
+    ports:
+      - "127.0.0.1:15673:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
