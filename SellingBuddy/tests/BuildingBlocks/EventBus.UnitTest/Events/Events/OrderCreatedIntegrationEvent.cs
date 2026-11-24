@@ -9,11 +9,11 @@ namespace EventBus.UnitTest.Events.Events
 {
     public class OrderCreatedIntegrationEvent: IntegrationEvent
     {
-        public int Id { get; set; }
+        public int TestMessageId { get; set; }
 
-        public OrderCreatedIntegrationEvent(int id)
+        public OrderCreatedIntegrationEvent(int testMessageId)
         {
-            Id = id;
+            TestMessageId = testMessageId;
         }
     }
 }

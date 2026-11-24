@@ -98,7 +98,7 @@ migration Job'i ayni sablonlardan uretilir; hicbir manifest kopyalanmaz.
 
 Ham `Secret` manifesti **Git'e girmez** (base64 sifreleme degildir).
 
-* **Yerel:** `.env` dosyasindan `scripts/create-local-secrets.sh` ile uretilir.
+* **Yerel:** `.env` dosyasindan `scripts/create-local-secrets.ps1` ile uretilir.
 * **dev/staging/prod:** External Secrets Operator bir vault'tan ceker; chart
   yalnizca Secret'in *adini* bilir, icerigini degil.
 
@@ -106,10 +106,14 @@ Ham `Secret` manifesti **Git'e girmez** (base64 sifreleme degildir).
 
 ## Dogrulama
 
+24 Kasim 2026 tarihli Docker ve Kubernetes canli test kanitlari:
+[`docs/CANLI-TEST-SONUCLARI-2026-11-24.md`](../docs/CANLI-TEST-SONUCLARI-2026-11-24.md).
+
 ```powershell
 python scripts/verify-chart.py                 # mimari degismezler (54 kontrol)
-python scripts/verify-stack.py                 # HTTP zinciri (60 kontrol)
-python scripts/verify-eventbus.py              # event bus (32 kontrol)
+python scripts/verify-stack.py                 # HTTP zinciri (61 kontrol)
+python scripts/verify-eventbus.py              # event bus (34 kontrol)
+python scripts/verify-live-load.py              # eszamanli checkout + p50/p95/p99
 ```
 
 `verify-chart.py`, `helm lint` ve `kubeconform`'un yakalayamadigi hatalari
@@ -126,6 +130,17 @@ $env:VELORA_GATEWAY = 'http://localhost:30000'
 python scripts/verify-stack.py
 ```
 
+RabbitMQ'yu tarayicidan izlemek icin servis disariya kalici acilmaz; yalnizca
+localhost'a gecici bir Kubernetes port-forward baslatilir:
+
+```powershell
+./scripts/velora-k8s.ps1 rabbit
+```
+
+Yonetim paneli `http://localhost:15672` adresindedir. Giris bilgileri `.env`
+icindeki `RABBITMQ_USER` ve `RABBITMQ_PASSWORD` degerleridir. AMQP servis portu
+kume icinde `5672` olarak kalir.
+
 ---
 
 ## Imajlar
@@ -133,7 +148,7 @@ python scripts/verify-stack.py
 Yerel imajlar `velora/<servis>:local` adiyla derlenir:
 
 ```powershell
-bash scripts/build-local-images.sh
+./scripts/build-local-images.ps1
 ```
 
 Docker Desktop'in Kubernetes'i ayni Docker daemon'ini kullandigi icin bu imajlar
@@ -150,7 +165,12 @@ onbellekten gelir (plan.md B12).
 | Konu | Durum |
 |---|---|
 | `catalog` tek replika | Gorseller kap ici diske yaziliyor; nesne depolamaya tasinmadan olceklenemez (B6) |
-| Metrik / iz kaydi yok | OpenTelemetry, Prometheus ve yapilandirilmis log henuz eklenmedi (B7) |
-| RabbitMQ prefetch yok | Tuketiciler arasi yuk dengesi ve idempotency eksik (B11) |
+| Gercek odeme saglayicisi yok | Sandbox yalnizca yerel dogrulama icindir; PSP, imzali webhook, iade ve mutabakat olmadan gercek satis acilmaz |
+| Telemetry backend'i disarida | OpenTelemetry trace/metrik uretir; OTLP collector, pano ve alarm hedef ortamda kurulmalidir |
+| Transactional inbox kismi | Is anahtari tekillestirmesi var; tum handler'lar icin ortak SQL inbox henuz yok |
+| DR ve SLO kaniti yok | Yerel canli yuk testi var; staging/prod restore tatbikati ve isletme esikleri ayrica onaylanmalidir |
 | Imaj boyutu ~350 MB | `chiseled` temel imaja gecilirse ~120 MB'a duser (plan 5.2) |
 | GitOps yok | Dagitim su an elle `helm upgrade`; Argo CD kurulmadi (Faz 4) |
+
+Denetim maddelerinin guncel ve durust durum matrisi:
+[docs/URETIME-HAZIRLIK-DURUMU.md](../docs/URETIME-HAZIRLIK-DURUMU.md).

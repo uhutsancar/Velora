@@ -14,10 +14,12 @@ namespace CatalogService.Api.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductQueryService products;
+        private readonly ILogger<ProductsController> logger;
 
-        public ProductsController(IProductQueryService products)
+        public ProductsController(IProductQueryService products, ILogger<ProductsController> logger)
         {
             this.products = products;
+            this.logger = logger;
         }
 
         [HttpGet]
@@ -63,8 +65,18 @@ namespace CatalogService.Api.Controllers
 
             if (product is null) return NotFound();
 
-            // Fire and forget: a failed counter must never break the product page.
-            _ = products.IncrementViewCount(product.Id, CancellationToken.None);
+            // The query service owns a request-scoped DbContext. Starting this update as
+            // fire-and-forget races that same context and can continue after it is disposed.
+            // Await it, but keep this non-critical analytics counter outside the customer
+            // response contract if SQL is temporarily unavailable.
+            try
+            {
+                await products.IncrementViewCount(product.Id, ct);
+            }
+            catch (Exception error)
+            {
+                logger.LogWarning(error, "Could not increment view count for product {ProductId}.", product.Id);
+            }
 
             return product;
         }

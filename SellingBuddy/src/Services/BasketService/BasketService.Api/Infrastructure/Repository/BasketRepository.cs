@@ -2,6 +2,7 @@ using BasketService.Api.Core.Application.Repository;
 using BasketService.Api.Core.Domain.Models;
 using Newtonsoft.Json;
 using StackExchange.Redis;
+using Velora.Shared.Middleware;
 
 namespace BasketService.Api.Infrastructure.Repository
 {
@@ -10,6 +11,7 @@ namespace BasketService.Api.Infrastructure.Repository
         private const string BasketKeyPrefix = "basket:";
         private const string WishlistKeyPrefix = "wishlist:";
         private const string CheckoutKeyPrefix = "checkout:";
+        private const string CheckoutLockKeyPrefix = "checkout-lock:";
 
         /// <summary>Abandoned baskets expire instead of growing forever.</summary>
         private static readonly TimeSpan BasketTtl = TimeSpan.FromDays(30);
@@ -18,7 +20,9 @@ namespace BasketService.Api.Infrastructure.Repository
         private static readonly TimeSpan WishlistTtl = TimeSpan.FromDays(365);
 
         /// <summary>Window in which a repeated checkout request id is treated as a duplicate.</summary>
-        private static readonly TimeSpan CheckoutIdempotencyTtl = TimeSpan.FromHours(24);
+        private static readonly TimeSpan CheckoutIdempotencyTtl = TimeSpan.FromDays(365);
+
+        private static readonly TimeSpan CheckoutLockTtl = TimeSpan.FromMinutes(2);
 
         private readonly ILogger<RedisBasketRepository> logger;
         private readonly IDatabase database;
@@ -38,17 +42,43 @@ namespace BasketService.Api.Infrastructure.Repository
 
         public async Task<CustomerBasket?> UpdateBasketAsync(CustomerBasket basket)
         {
+            const string compareAndSetScript = """
+                local current = redis.call('get', KEYS[1])
+                if current then
+                    local decoded = cjson.decode(current)
+                    local currentVersion = tonumber(decoded.Version or decoded.version or 0)
+                    if currentVersion ~= tonumber(ARGV[1]) then return 0 end
+                elseif tonumber(ARGV[1]) ~= 0 then
+                    return 0
+                end
+                redis.call('set', KEYS[1], ARGV[2], 'EX', ARGV[3])
+                return 1
+                """;
+
+            var expectedVersion = basket.Version;
+            basket.Version = expectedVersion + 1;
             basket.UpdatedAtUtc = DateTime.UtcNow;
 
-            var created = await database.StringSetAsync(
-                BasketKey(basket.BuyerId),
-                JsonConvert.SerializeObject(basket),
-                BasketTtl);
+            var result = (long)await database.ScriptEvaluateAsync(
+                compareAndSetScript,
+                new RedisKey[] { BasketKey(basket.BuyerId) },
+                new RedisValue[]
+                {
+                    expectedVersion,
+                    JsonConvert.SerializeObject(basket),
+                    (long)BasketTtl.TotalSeconds
+                });
 
-            if (!created)
+            if (result != 1)
             {
-                logger.LogWarning("Could not persist basket for {BuyerId}.", basket.BuyerId);
-                return null;
+                basket.Version = expectedVersion;
+                logger.LogWarning("Concurrent basket update rejected for {BuyerId} at version {Version}.",
+                    basket.BuyerId,
+                    expectedVersion);
+                throw new ApiException(
+                    "The basket changed in another request. Refresh and retry.",
+                    409,
+                    "basket_version_conflict");
             }
 
             return await GetBasketAsync(basket.BuyerId);
@@ -78,13 +108,42 @@ namespace BasketService.Api.Infrastructure.Repository
             return wishlist;
         }
 
-        public Task<bool> TryRegisterCheckoutAsync(string customerId, string requestId) =>
+        public Task<bool> TryRegisterCheckoutAsync(string customerId, string requestId, string requestHash) =>
             // SET NX: succeeds only the first time this request id is seen.
             database.StringSetAsync(
                 CheckoutKey(customerId, requestId),
-                DateTime.UtcNow.ToString("O"),
+                requestHash,
                 CheckoutIdempotencyTtl,
                 When.NotExists);
+
+        public async Task<string?> GetCheckoutHashAsync(string customerId, string requestId)
+        {
+            var value = await database.StringGetAsync(CheckoutKey(customerId, requestId));
+            return value.IsNullOrEmpty ? null : value.ToString();
+        }
+
+        public async Task<string?> TryAcquireCheckoutLockAsync(string customerId, string requestId)
+        {
+            var token = Guid.NewGuid().ToString("N");
+            var acquired = await database.StringSetAsync(
+                CheckoutLockKey(customerId, requestId),
+                token,
+                CheckoutLockTtl,
+                When.NotExists);
+
+            return acquired ? token : null;
+        }
+
+        public async Task ReleaseCheckoutLockAsync(string customerId, string requestId, string lockToken)
+        {
+            const string releaseScript =
+                "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+
+            await database.ScriptEvaluateAsync(
+                releaseScript,
+                new RedisKey[] { CheckoutLockKey(customerId, requestId) },
+                new RedisValue[] { lockToken });
+        }
 
         private static string BasketKey(string customerId) => BasketKeyPrefix + customerId;
 
@@ -92,5 +151,8 @@ namespace BasketService.Api.Infrastructure.Repository
 
         private static string CheckoutKey(string customerId, string requestId) =>
             $"{CheckoutKeyPrefix}{customerId}:{requestId}";
+
+        private static string CheckoutLockKey(string customerId, string requestId) =>
+            $"{CheckoutLockKeyPrefix}{customerId}:{requestId}";
     }
 }

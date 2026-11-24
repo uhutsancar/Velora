@@ -18,6 +18,7 @@ import os
 
 import json
 import time
+import uuid
 import urllib.error
 import urllib.request
 
@@ -31,13 +32,15 @@ ok = 0
 fail = 0
 
 
-def call(path, method="GET", body=None, token=None):
+def call(path, method="GET", body=None, token=None, headers=None):
     url = GW + path
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Content-Type", "application/json")
     if token:
         req.add_header("Authorization", "Bearer " + token)
+    for name, value in (headers or {}).items():
+        req.add_header(name, value)
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             raw = r.read().decode()
@@ -75,9 +78,17 @@ check("GET /brands", s == 200 and len(b) > 0, "(%s)" % len(b) if s == 200 else s
 s, cm = call("/campaigns?placement=Hero")
 check("GET /campaigns", s == 200 and len(cm) > 0, "(%s)" % len(cm) if s == 200 else s)
 
-prod = p["items"][0]
-s, pd = call("/products/%s" % prod["slug"])
-check("GET /products/{slug}", s == 200 and pd["id"] == prod["id"])
+prod = None
+pd = None
+selected_variant = None
+for candidate in p["items"]:
+    status, detail = call("/products/%s" % candidate["slug"])
+    variants = [v for v in detail.get("variants", []) if v.get("isActive", True) and v.get("stock", 0) >= 3] if status == 200 else []
+    if status == 200 and (variants or (not detail.get("variants") and detail.get("totalStock", 0) >= 3)):
+        prod, pd = candidate, detail
+        selected_variant = variants[0] if variants else None
+        break
+check("GET /products/{slug}", prod is not None and pd["id"] == prod["id"])
 s, f = call("/products/facets")
 check("GET /products/facets", s == 200 and len(f["brands"]) > 0)
 s, _ = call("/products/featured?take=4")
@@ -114,7 +125,14 @@ s, al = call("/addresses", token=tok)
 check("GET /addresses", s == 200 and len(al) == 1)
 
 print("SEPET")
-s, bk = call("/basket/additem", "POST", {"productId": prod["id"], "productName": prod["name"], "unitPrice": prod["effectivePrice"], "oldUnitPrice": prod["price"], "quantity": 2, "pictureUrl": prod["primaryImageUrl"], "slug": prod["slug"], "availableStock": prod["totalStock"]}, tok)
+s, bk = call("/basket/additem", "POST", {
+    "productId": prod["id"], "productName": prod["name"],
+    "unitPrice": prod["effectivePrice"], "oldUnitPrice": prod["price"], "quantity": 2,
+    "pictureUrl": prod["primaryImageUrl"], "slug": prod["slug"],
+    "variantId": selected_variant["id"] if selected_variant else None,
+    "variantLabel": " / ".join(filter(None, [selected_variant.get("color"), selected_variant.get("size")])) if selected_variant else None,
+    "availableStock": selected_variant["stock"] if selected_variant else prod["totalStock"],
+}, tok)
 check("POST /basket/additem", s == 200 and len(bk["items"]) == 1, "(subtotal %s)" % bk["subtotal"] if s == 200 else s)
 s, bk2 = call("/basket/me", token=tok)
 check("GET /basket/me", s == 200 and bk2["totalQuantity"] == 2)
@@ -135,8 +153,16 @@ s, wl2 = call("/basket/wishlist", token=tok)
 check("GET /basket/wishlist", s == 200 and len(wl2["productIds"]) == 1)
 
 print("SIPARIS SAGA")
-s, _ = call("/basket/checkout", "POST", {"city": "Istanbul", "street": "Karakoy Cad 12", "state": "Beyoglu", "country": "Turkiye", "zipCode": "34425", "cardNumber": "4242424242424242", "cardHolderName": "GW TEST", "cardExpiration": "2028-12-31T23:59:59Z", "cardSecurityNumber": "123", "cardTypeId": 2, "buyer": ""}, tok)
+checkout_id = str(uuid.uuid4())
+checkout = {
+    "city": "Istanbul", "street": "Karakoy Cad 12", "state": "Beyoglu",
+    "country": "Turkiye", "zipCode": "34425",
+    "paymentProvider": "sandbox", "paymentMethodToken": "sandbox_approved_verify_stack",
+}
+s, _ = call("/basket/checkout", "POST", checkout, tok, {"x-request-id": checkout_id})
 check("POST /basket/checkout", s == 202, "(got %s)" % s)
+s, _ = call("/basket/checkout", "POST", checkout, tok, {"x-request-id": checkout_id})
+check("checkout tekrari idempotent", s == 202, "(got %s)" % s)
 
 order = None
 for _ in range(20):

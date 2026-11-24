@@ -6,10 +6,13 @@ using IdentityService.Api.Infrastructure.Context;
 using Microsoft.OpenApi.Models;
 using Velora.Shared.Middleware;
 using Velora.Shared.Web;
+using Velora.Shared.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddVeloraProblemDetails();
+builder.Services.AddVeloraObservability(builder.Configuration, "IdentityService");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

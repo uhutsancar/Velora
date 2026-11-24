@@ -4,7 +4,6 @@ using CatalogService.Api.Core.Application.Services;
 using CatalogService.Api.Core.Domain;
 using CatalogService.Api.Infrastructure.Context;
 using CatalogService.Api.IntegrationEvents.Events;
-using EventBus.Base.Abstraction;
 using Microsoft.EntityFrameworkCore;
 using Velora.Shared.Contracts;
 using Velora.Shared.Middleware;
@@ -15,13 +14,11 @@ namespace CatalogService.Api.Infrastructure.Services
     public sealed class ProductAdminService : IProductAdminService
     {
         private readonly CatalogContext db;
-        private readonly IEventBus eventBus;
         private readonly ILogger<ProductAdminService> logger;
 
-        public ProductAdminService(CatalogContext db, IEventBus eventBus, ILogger<ProductAdminService> logger)
+        public ProductAdminService(CatalogContext db, ILogger<ProductAdminService> logger)
         {
             this.db = db;
-            this.eventBus = eventBus;
             this.logger = logger;
         }
 
@@ -124,10 +121,9 @@ namespace CatalogService.Api.Infrastructure.Services
             await ReplaceImages(product, request.Images, ct);
             await ReplaceVariants(product, request.Variants, ct);
 
-            await db.SaveChangesAsync(ct);
-
             PublishPriceChange(product, oldPrice);
             PublishStockChange(product, oldStock);
+            await db.SaveChangesAsync(ct);
 
             return (await GetById(product.Id, ct))!;
         }
@@ -171,9 +167,8 @@ namespace CatalogService.Api.Infrastructure.Services
                 if (variant is not null) variant.Stock = variantRequest.Stock;
             }
 
-            await db.SaveChangesAsync(ct);
-
             PublishStockChange(product, oldStock);
+            await db.SaveChangesAsync(ct);
         }
 
         public async Task UpdatePricing(int id, UpdatePricingRequest request, CancellationToken ct = default)
@@ -190,9 +185,8 @@ namespace CatalogService.Api.Infrastructure.Services
             product.DiscountPrice = request.DiscountPrice;
             product.UpdatedAtUtc = DateTime.UtcNow;
 
-            await db.SaveChangesAsync(ct);
-
             PublishPriceChange(product, oldPrice);
+            await db.SaveChangesAsync(ct);
         }
 
         public async Task<ProductImageDto> AddImage(int id, ProductImageRequest request, CancellationToken ct = default)
@@ -461,7 +455,7 @@ namespace CatalogService.Api.Infrastructure.Services
         {
             if (oldPrice == product.EffectivePrice) return;
 
-            eventBus.Publish(new ProductPriceChangedIntegrationEvent(product.Id, product.EffectivePrice, oldPrice));
+            db.Enqueue(new ProductPriceChangedIntegrationEvent(product.Id, product.EffectivePrice, oldPrice));
             logger.LogInformation("Product {ProductId} price changed {Old} -> {New}", product.Id, oldPrice, product.EffectivePrice);
         }
 
@@ -469,7 +463,7 @@ namespace CatalogService.Api.Infrastructure.Services
         {
             if (oldStock == product.TotalStock) return;
 
-            eventBus.Publish(new ProductStockChangedIntegrationEvent(product.Id, product.TotalStock, oldStock));
+            db.Enqueue(new ProductStockChangedIntegrationEvent(product.Id, product.TotalStock, oldStock));
         }
 
         private async Task<IReadOnlyCollection<CategoryBreadcrumbDto>> BuildBreadcrumbs(int? categoryId, CancellationToken ct)

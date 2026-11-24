@@ -7,7 +7,7 @@ namespace EventBus.Base.Abstraction
     public interface IEventBusSubscriptionManager
     {
         bool IsEmpty { get; }
-        event EventHandler<string> OnEventRemoved;
+        event EventHandler<string>? OnEventRemoved;
 
 
         void AddSubscription<T, TH>() where T : IntegrationEvent where TH : IIntegrationEventHandler<T>;
@@ -18,7 +18,7 @@ namespace EventBus.Base.Abstraction
         bool HasSubscriptionsForEvent<T>() where T : IntegrationEvent;
         bool HasSubscriptionsForEvent(string eventName);
 
-        Type GetEventTypeByName(string eventName);
+        Type? GetEventTypeByName(string eventName);
         void Clear();
 
         IEnumerable<SubscriptionInfo> GetHandlersForEvent<T>() where T : IntegrationEvent;

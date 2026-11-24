@@ -9,15 +9,15 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
 {
     public record Address // : ValueObject
     {
-        public String Street { get; private set; }
+        public string Street { get; private set; } = string.Empty;
 
-        public String City { get; private set; }
+        public string City { get; private set; } = string.Empty;
 
-        public String State { get; private set; }
+        public string State { get; private set; } = string.Empty;
 
-        public String Country { get; private set; }
+        public string Country { get; private set; } = string.Empty;
 
-        public String ZipCode { get; private set; }
+        public string ZipCode { get; private set; } = string.Empty;
 
         public Address()
         {

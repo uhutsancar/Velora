@@ -18,23 +18,22 @@ namespace OrderService.Domain.SeedWork
 
         int? _requestedHashCode;
 
-        private List<INotification> domainEvents;
-        public IReadOnlyCollection<INotification> DomainEvents => domainEvents?.AsReadOnly();
+        private readonly List<INotification> domainEvents = new();
+        public IReadOnlyCollection<INotification> DomainEvents => domainEvents.AsReadOnly();
 
         public void AddDomainEvent(INotification eventItem)
         {
-            domainEvents = domainEvents ?? new List<INotification>();
             domainEvents.Add(eventItem);
         }
 
         public void RemoveDomainEvent(INotification eventItem)
         {
-            domainEvents?.Remove(eventItem);
+            domainEvents.Remove(eventItem);
         }
 
         public void ClearDomainEvents()
         {
-            domainEvents?.Clear();
+            domainEvents.Clear();
         }
 
         public bool IsTransient()
@@ -42,7 +41,7 @@ namespace OrderService.Domain.SeedWork
             return Id == default;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null || !(obj is BaseEntity))
                 return false;
@@ -75,7 +74,7 @@ namespace OrderService.Domain.SeedWork
 
         }
 
-        public static bool operator ==(BaseEntity left, BaseEntity right)
+        public static bool operator ==(BaseEntity? left, BaseEntity? right)
         {
             if (Equals(left, null))
                 return Equals(right, null) ? true : false;
@@ -83,7 +82,7 @@ namespace OrderService.Domain.SeedWork
                 return left.Equals(right);
         }
 
-        public static bool operator !=(BaseEntity left, BaseEntity right)
+        public static bool operator !=(BaseEntity? left, BaseEntity? right)
         {
             return !(left == right);
         }

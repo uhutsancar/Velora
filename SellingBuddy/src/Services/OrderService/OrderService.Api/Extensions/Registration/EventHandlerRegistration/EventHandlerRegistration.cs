@@ -13,6 +13,8 @@ namespace OrderService.Api.Extensions.Registration
             services.AddTransient<OrderCreatedIntegrationEventHandler>();
             services.AddTransient<OrderPaymentSuccessIntegrationEventHandler>();
             services.AddTransient<OrderPaymentFailedIntegrationEventHandler>();
+            services.AddTransient<StockReservationConfirmedIntegrationEventHandler>();
+            services.AddTransient<StockReservationRejectedIntegrationEventHandler>();
 
             return services;
         }

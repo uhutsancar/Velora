@@ -14,11 +14,11 @@ namespace BasketService.Api.IntegrationEvents.Events
         {
         }
 
-        public OrderCreatedIntegrationEvent(string userId, string userName, string city, string street,
-            string state, string country, string zipCode, string cardNumber, string cardHolderName,
-            DateTime cardExpiration, string cardSecurityNumber, int cardTypeId, string buyer,
+        public OrderCreatedIntegrationEvent(Guid checkoutId, string userId, string userName, string city, string street,
+            string state, string country, string zipCode, string paymentProvider, string paymentMethodToken,
             CustomerBasket basket)
         {
+            CheckoutId = checkoutId;
             UserId = userId;
             UserName = userName;
             City = city;
@@ -26,16 +26,14 @@ namespace BasketService.Api.IntegrationEvents.Events
             State = state;
             Country = country;
             ZipCode = zipCode;
-            CardNumber = cardNumber;
-            CardHolderName = cardHolderName;
-            CardExpiration = cardExpiration;
-            CardSecurityNumber = cardSecurityNumber;
-            CardTypeId = cardTypeId;
-            Buyer = buyer;
+            PaymentProvider = paymentProvider;
+            PaymentMethodToken = paymentMethodToken;
             Basket = basket;
         }
 
         public string UserId { get; set; } = default!;
+
+        public Guid CheckoutId { get; set; }
 
         public string UserName { get; set; } = default!;
 
@@ -51,17 +49,9 @@ namespace BasketService.Api.IntegrationEvents.Events
 
         public string ZipCode { get; set; } = default!;
 
-        public string CardNumber { get; set; } = default!;
+        public string PaymentProvider { get; set; } = default!;
 
-        public string CardHolderName { get; set; } = default!;
-
-        public DateTime CardExpiration { get; set; }
-
-        public string CardSecurityNumber { get; set; } = default!;
-
-        public int CardTypeId { get; set; }
-
-        public string Buyer { get; set; } = default!;
+        public string PaymentMethodToken { get; set; } = default!;
 
         public CustomerBasket Basket { get; set; } = new();
     }

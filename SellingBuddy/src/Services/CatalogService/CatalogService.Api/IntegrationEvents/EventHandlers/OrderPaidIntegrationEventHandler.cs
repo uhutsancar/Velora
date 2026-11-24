@@ -1,48 +1,48 @@
+using CatalogService.Api.Core.Domain;
 using CatalogService.Api.Infrastructure.Context;
 using CatalogService.Api.IntegrationEvents.Events;
 using EventBus.Base.Abstraction;
 using Microsoft.EntityFrameworkCore;
 
-namespace CatalogService.Api.IntegrationEvents.EventHandlers
+namespace CatalogService.Api.IntegrationEvents.EventHandlers;
+
+/// <summary>Consumes stock and coupon reservations idempotently after payment.</summary>
+public sealed class OrderPaidIntegrationEventHandler : IIntegrationEventHandler<OrderPaidIntegrationEvent>
 {
-    /// <summary>
-    /// Redeems the coupon once the money is actually collected.
-    ///
-    /// Redemption is deliberately tied to payment rather than to checkout: an order that
-    /// is never paid must not burn a limited-use code. The increment is a single atomic
-    /// UPDATE, so concurrent payments cannot lose a count to a read-modify-write race.
-    /// </summary>
-    public class OrderPaidIntegrationEventHandler : IIntegrationEventHandler<OrderPaidIntegrationEvent>
+    private readonly CatalogContext db;
+    private readonly ILogger<OrderPaidIntegrationEventHandler> logger;
+
+    public OrderPaidIntegrationEventHandler(CatalogContext db, ILogger<OrderPaidIntegrationEventHandler> logger)
     {
-        private readonly CatalogContext db;
-        private readonly ILogger<OrderPaidIntegrationEventHandler> logger;
+        this.db = db;
+        this.logger = logger;
+    }
 
-        public OrderPaidIntegrationEventHandler(CatalogContext db, ILogger<OrderPaidIntegrationEventHandler> logger)
+    public async Task Handle(OrderPaidIntegrationEvent @event)
+    {
+        var executionStrategy = db.Database.CreateExecutionStrategy();
+        await executionStrategy.ExecuteAsync(async () =>
         {
-            this.db = db;
-            this.logger = logger;
-        }
+        db.ChangeTracker.Clear();
+        await using var transaction = await db.Database.BeginTransactionAsync();
 
-        public async Task Handle(OrderPaidIntegrationEvent @event)
-        {
-            if (string.IsNullOrWhiteSpace(@event.CouponCode))
-                return;
+        var stockRows = await db.StockReservations
+            .Where(item => item.OrderId == @event.OrderId && item.Status == StockReservationStatus.Reserved)
+            .ExecuteUpdateAsync(update => update
+                .SetProperty(item => item.Status, StockReservationStatus.Consumed)
+                .SetProperty(item => item.SettledAtUtc, DateTime.UtcNow));
 
-            var code = @event.CouponCode.Trim().ToUpperInvariant();
+        var couponRows = await db.CouponRedemptions
+            .Where(item => item.OrderId == @event.OrderId && item.Status == StockReservationStatus.Reserved)
+            .ExecuteUpdateAsync(update => update
+                .SetProperty(item => item.Status, StockReservationStatus.Consumed)
+                .SetProperty(item => item.SettledAtUtc, DateTime.UtcNow));
 
-            var affected = await db.Coupons
-                .Where(c => c.Code == code)
-                .ExecuteUpdateAsync(s => s.SetProperty(c => c.UsedCount, c => c.UsedCount + 1));
+        await transaction.CommitAsync();
 
-            if (affected == 0)
-            {
-                logger.LogWarning("Order {OrderNumber} was paid with unknown coupon {Code}.", @event.OrderNumber, code);
-                return;
-            }
-
-            logger.LogInformation(
-                "Coupon {Code} redeemed for order {OrderNumber} (discount {Discount}).",
-                code, @event.OrderNumber, @event.DiscountAmount);
-        }
+        logger.LogInformation(
+            "Settled order {OrderNumber}: {StockRows} stock rows, {CouponRows} coupon rows.",
+            @event.OrderNumber, stockRows, couponRows);
+        });
     }
 }

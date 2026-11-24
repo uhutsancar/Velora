@@ -21,6 +21,16 @@ namespace BasketService.Api.Core.Domain.Models
         /// <summary>Discount amount as computed by CatalogService when the coupon was applied.</summary>
         public decimal DiscountAmount { get; set; }
 
+        /// <summary>Identifier of the last server-authoritative Catalog quote.</summary>
+        public Guid? QuoteId { get; set; }
+
+        public DateTime? QuoteValidUntilUtc { get; set; }
+
+        public string Currency { get; set; } = "TRY";
+
+        /// <summary>Redis compare-and-set version used to reject lost updates.</summary>
+        public long Version { get; set; }
+
         public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
         public decimal Subtotal => Items.Sum(i => i.UnitPrice * i.Quantity);

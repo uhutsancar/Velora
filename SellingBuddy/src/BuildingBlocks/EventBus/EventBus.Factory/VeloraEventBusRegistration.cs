@@ -17,6 +17,8 @@ namespace EventBus.Factory
     ///   EventBus:Type              RabbitMQ (default) | AzureServiceBus
     ///   EventBus:TopicName         exchange/topic name, default SellingBuddyEventBus
     ///   EventBus:RetryCount        connection retry attempts, default 5
+    ///   EventBus:PrefetchCount      unacknowledged messages per consumer, default 16
+    ///   EventBus:PublisherConfirmTimeoutSeconds  broker confirm timeout, default 10
     ///   EventBus:HostName          RabbitMQ host, default localhost
     ///   EventBus:Port              RabbitMQ port, default 5672
     ///   EventBus:UserName          RabbitMQ user, default guest
@@ -50,6 +52,8 @@ namespace EventBus.Factory
             var config = new EventBusConfig
             {
                 ConnectionRetryCount = int.TryParse(section["RetryCount"], out var retry) && retry > 0 ? retry : 5,
+                PrefetchCount = ushort.TryParse(section["PrefetchCount"], out var prefetch) && prefetch > 0 ? prefetch : (ushort)16,
+                PublisherConfirmTimeoutSeconds = int.TryParse(section["PublisherConfirmTimeoutSeconds"], out var confirmTimeout) && confirmTimeout > 0 ? confirmTimeout : 10,
                 DefaultTopicName = Fallback(section["TopicName"], "SellingBuddyEventBus"),
                 EventNameSuffix = "IntegrationEvent",
                 SubscriberClientAppName = subscriberClientAppName,
@@ -72,7 +76,10 @@ namespace EventBus.Factory
                 UserName = Fallback(section["UserName"], "guest"),
                 Password = Fallback(section["Password"], "guest"),
                 VirtualHost = Fallback(section["VirtualHost"], "/"),
-                DispatchConsumersAsync = false
+                DispatchConsumersAsync = false,
+                AutomaticRecoveryEnabled = true,
+                TopologyRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(5)
             };
 
             if (int.TryParse(section["Port"], out var port) && port > 0)

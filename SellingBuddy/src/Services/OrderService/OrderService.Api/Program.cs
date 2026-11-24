@@ -13,10 +13,15 @@ using OrderService.Infrastructure.Context;
 using Velora.Shared.Middleware;
 using Velora.Shared.Security;
 using Velora.Shared.Web;
+using Velora.Shared.Observability;
+using OrderService.Api.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddVeloraProblemDetails();
+builder.Services.AddVeloraObservability(builder.Configuration, "OrderService");
+builder.Services.AddHostedService<OrderOutboxPublisher>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -117,6 +122,8 @@ eventBus.Subscribe<OrderCreatedIntegrationEvent, OrderCreatedIntegrationEventHan
 // Payment result -> close the saga by moving the order to Paid or Cancelled.
 eventBus.Subscribe<OrderPaymentSuccessIntegrationEvent, OrderPaymentSuccessIntegrationEventHandler>();
 eventBus.Subscribe<OrderPaymentFailedIntegrationEvent, OrderPaymentFailedIntegrationEventHandler>();
+eventBus.Subscribe<StockReservationConfirmedIntegrationEvent, StockReservationConfirmedIntegrationEventHandler>();
+eventBus.Subscribe<StockReservationRejectedIntegrationEvent, StockReservationRejectedIntegrationEventHandler>();
 
 app.Run();
 

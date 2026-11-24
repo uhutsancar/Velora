@@ -13,6 +13,7 @@ namespace OrderService.Application.Features.Commands.CreateOrder
         }
 
         public CreateOrderCommand(
+            Guid orderId,
             List<BasketItem> basketItems,
             string userId,
             string username,
@@ -21,14 +22,13 @@ namespace OrderService.Application.Features.Commands.CreateOrder
             string state,
             string country,
             string zipcode,
-            string cardNumber,
-            string cardHolderName,
-            DateTime cardExpiration,
-            string cardSecurityNumber,
-            int cardTypeId,
+            string paymentProvider,
+            string paymentMethodToken,
             string? couponCode = null,
-            decimal discountAmount = 0) : this()
+            decimal discountAmount = 0,
+            string currency = "TRY") : this()
         {
+            OrderId = orderId;
             _orderItems = basketItems.Select(item => new OrderItemDTO
             {
                 ProductId = item.ProductId,
@@ -47,14 +47,15 @@ namespace OrderService.Application.Features.Commands.CreateOrder
             State = state;
             Country = country;
             ZipCode = zipcode;
-            CardNumber = cardNumber;
-            CardHolderName = cardHolderName;
-            CardExpiration = cardExpiration;
-            CardSecurityNumber = cardSecurityNumber;
-            CardTypeId = cardTypeId;
+            PaymentProvider = paymentProvider;
+            PaymentMethodToken = paymentMethodToken;
             CouponCode = couponCode;
             DiscountAmount = discountAmount;
+            Currency = currency;
         }
+
+        /// <summary>Identity service user id, so the customer can find the order later.</summary>
+        public Guid OrderId { get; private set; }
 
         /// <summary>Identity service user id, so the customer can find the order later.</summary>
         public string UserId { get; private set; } = default!;
@@ -71,19 +72,15 @@ namespace OrderService.Application.Features.Commands.CreateOrder
 
         public string ZipCode { get; private set; } = default!;
 
-        public string CardNumber { get; private set; } = default!;
+        public string PaymentProvider { get; private set; } = default!;
 
-        public string CardHolderName { get; private set; } = default!;
-
-        public DateTime CardExpiration { get; private set; }
-
-        public string CardSecurityNumber { get; private set; } = default!;
-
-        public int CardTypeId { get; private set; }
+        public string PaymentMethodToken { get; private set; } = default!;
 
         public string? CouponCode { get; private set; }
 
         public decimal DiscountAmount { get; private set; }
+
+        public string Currency { get; private set; } = "TRY";
 
         public IEnumerable<OrderItemDTO> OrderItems => _orderItems;
     }

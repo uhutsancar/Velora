@@ -15,9 +15,8 @@ namespace EventBus.RabbitMQ
 
         private readonly IConnectionFactory connectionFactory;
         private readonly int retryCount;
-        private IConnection connection;
+        private IConnection? connection;
         private object lock_object = new object();
-        private bool _disposed;
 
 
         public RabbitMQPersistentConnection(IConnectionFactory connectionFactory, int retryCount = 5)
@@ -30,12 +29,14 @@ namespace EventBus.RabbitMQ
 
         public IModel CreateModel()
         {
-            return connection.CreateModel();
+            if (!IsConnected)
+                throw new InvalidOperationException("RabbitMQ connection is not open.");
+
+            return connection!.CreateModel();
         }
 
         public void Dispose()
         {
-            _disposed = true;
             connection?.Dispose();
         }
 
@@ -56,41 +57,8 @@ namespace EventBus.RabbitMQ
                 {
                     connection = connectionFactory.CreateConnection();
                 });
-                if (IsConnected)
-                {
-                    connection.ConnectionShutdown += Connection_ConnectionShutdown;
-                    connection.CallbackException += Connection_CallbackException;
-                    connection.ConnectionBlocked += Connection_ConnectionBlocked;
-
-                    return true;
-                }
-                return false;
+                return IsConnected;
             }
         }
-
-        private void Connection_ConnectionBlocked(object? sender, global::RabbitMQ.Client.Events.ConnectionBlockedEventArgs e)
-        {
-            if (_disposed) return;
-            TryConnect();
-        }
-
-        private void Connection_CallbackException(object? sender, global::RabbitMQ.Client.Events.CallbackExceptionEventArgs e)
-        {
-            if (_disposed) return;
-            TryConnect();
-        }
-
-        private void Connection_ConnectionShutdown(object? sender, ShutdownEventArgs e)
-        {
-            //log  Connection_ConnectionShutdown
-
-            if (_disposed) return;
-
-            TryConnect();
-        }
-
-
-
-
     }
 }

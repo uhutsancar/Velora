@@ -28,6 +28,7 @@ namespace OrderService.Api.IntegrationEvents.EventHandlers
             }
 
             var command = new CreateOrderCommand(
+                @event.CheckoutId == Guid.Empty ? @event.Id : @event.CheckoutId,
                 @event.Basket.Items,
                 @event.UserId,
                 @event.UserName,
@@ -36,13 +37,11 @@ namespace OrderService.Api.IntegrationEvents.EventHandlers
                 @event.State,
                 @event.Country,
                 @event.ZipCode,
-                @event.CardNumber,
-                @event.CardHolderName,
-                @event.CardExpiration,
-                @event.CardSecurityNumber,
-                @event.CardTypeId,
+                @event.PaymentProvider,
+                @event.PaymentMethodToken,
                 @event.Basket.CouponCode,
-                @event.Basket.DiscountAmount);
+                @event.Basket.DiscountAmount,
+                @event.Basket.Currency);
 
             await mediator.Send(command);
         }

@@ -99,8 +99,10 @@ export function SalesTrendChart({ data, loading }: { data: SalesPoint[]; loading
       xAxis: { ...baseChartOption.xAxis, data: dates },
       yAxis: [
         {
-          ...baseChartOption.yAxis,
+          type: 'value',
           name: '',
+          splitLine: { lineStyle: { color: '#F1F0EE' } },
+          axisLine: { show: false },
           axisLabel: { color: '#847D72', fontSize: 11, formatter: compactNumber },
         },
         {

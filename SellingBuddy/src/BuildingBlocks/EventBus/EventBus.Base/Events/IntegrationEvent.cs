@@ -15,11 +15,21 @@ namespace EventBus.Base.Events
         [JsonPropertyName("createdDate")]
         public DateTime CreatedDate { get; private set; }
 
+        [JsonPropertyName("schemaVersion")]
+        public int SchemaVersion { get; private set; } = 1;
+
+        [JsonPropertyName("correlationId")]
+        public Guid CorrelationId { get; private set; }
+
+        [JsonPropertyName("causationId")]
+        public Guid? CausationId { get; private set; }
+
 
         public IntegrationEvent()
         {
             Id = Guid.NewGuid();
-            CreatedDate = DateTime.Now;
+            CreatedDate = DateTime.UtcNow;
+            CorrelationId = Id;
         }
 
 
@@ -28,7 +38,14 @@ namespace EventBus.Base.Events
         public IntegrationEvent(Guid id, DateTime createdDate)
         {
             Id = id;
-            CreatedDate = createdDate;
+            CreatedDate = createdDate.Kind == DateTimeKind.Utc ? createdDate : createdDate.ToUniversalTime();
+            CorrelationId = id;
+        }
+
+        public void SetContext(Guid correlationId, Guid? causationId = null)
+        {
+            CorrelationId = correlationId == Guid.Empty ? Id : correlationId;
+            CausationId = causationId;
         }
     }
 }

@@ -97,38 +97,17 @@ describe('addressSchema', () => {
 });
 
 describe('paymentSchema', () => {
-  const nextYear = String((new Date().getFullYear() + 2) % 100).padStart(2, '0');
-
   const payment = {
-    cardHolderName: 'UHUT SANCAR',
-    // Passes the Luhn check.
-    cardNumber: '4242424242424242',
-    cardExpiration: `12/${nextYear}`,
-    cardSecurityNumber: '123',
-    cardTypeId: 2,
+    paymentMethodToken: 'sandbox_approved_demo',
+    paymentProvider: 'sandbox',
   };
 
-  it('accepts a valid card', () => {
+  it('accepts an opaque provider token', () => {
     expect(paymentSchema.safeParse(payment).success).toBe(true);
   });
 
-  it('strips spaces from the card number before validating', () => {
-    const result = paymentSchema.safeParse({ ...payment, cardNumber: '4242 4242 4242 4242' });
-
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.cardNumber).toBe('4242424242424242');
-  });
-
-  it('rejects a card number that fails the Luhn check', () => {
-    expect(paymentSchema.safeParse({ ...payment, cardNumber: '4242424242424243' }).success).toBe(false);
-  });
-
-  it('rejects an expired card', () => {
-    expect(paymentSchema.safeParse({ ...payment, cardExpiration: '01/20' }).success).toBe(false);
-  });
-
-  it('rejects a malformed expiry', () => {
-    expect(paymentSchema.safeParse({ ...payment, cardExpiration: '13/29' }).success).toBe(false);
+  it('rejects a missing or suspiciously short token', () => {
+    expect(paymentSchema.safeParse({ ...payment, paymentMethodToken: '123' }).success).toBe(false);
   });
 });
 

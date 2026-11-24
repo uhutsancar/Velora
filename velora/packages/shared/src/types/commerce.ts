@@ -20,6 +20,10 @@ export interface CustomerBasket {
   items: BasketItem[];
   couponCode: string | null;
   discountAmount: number;
+  quoteId: string | null;
+  quoteValidUntilUtc: string | null;
+  currency: string;
+  version: number;
   updatedAtUtc: string;
   subtotal: number;
   totalQuantity: number;
@@ -52,12 +56,10 @@ export interface BasketCheckoutRequest {
   state: string;
   country: string;
   zipCode: string;
-  cardNumber: string;
-  cardHolderName: string;
-  cardExpiration: string;
-  cardSecurityNumber: string;
-  cardTypeId: number;
-  buyer: string;
+  /** Opaque value returned by the PSP hosted/tokenized payment form. Never PAN/CVV. */
+  paymentMethodToken: string;
+  paymentProvider: string;
+  requestId?: string;
 }
 
 export const ORDER_STATUS = {

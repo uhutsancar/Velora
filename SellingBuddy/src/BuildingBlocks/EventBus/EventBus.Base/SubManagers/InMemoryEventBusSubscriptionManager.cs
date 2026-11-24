@@ -11,8 +11,8 @@ namespace EventBus.Base.SubManagers
         private readonly Dictionary<string, List<SubscriptionInfo>> _handlers;
         private readonly List<Type> _eventTypes;
 
-        public event EventHandler<string> OnEventRemoved;
-        public Func<string, string> eventNameGetter;
+        public event EventHandler<string>? OnEventRemoved;
+        public readonly Func<string, string> eventNameGetter;
 
         public InMemoryEventBusSubscriptionManager(Func<string, string> eventNameGetter)
         {
@@ -57,7 +57,7 @@ namespace EventBus.Base.SubManagers
             RemoveHandler(eventName, handlerToRemove);
         }
 
-        private void RemoveHandler(string eventName, SubscriptionInfo subsToRemove)
+        private void RemoveHandler(string eventName, SubscriptionInfo? subsToRemove)
         {
             if (subsToRemove != null)
             {
@@ -90,13 +90,13 @@ namespace EventBus.Base.SubManagers
             handler?.Invoke(this, eventName);
         }
 
-        private SubscriptionInfo FindSubscriptionToRemove<T, TH>() where T : IntegrationEvent where TH : IIntegrationEventHandler<T>
+        private SubscriptionInfo? FindSubscriptionToRemove<T, TH>() where T : IntegrationEvent where TH : IIntegrationEventHandler<T>
         {
             var eventName = GetEventKey<T>();
             return FindSubscriptionToRemove(eventName, typeof(TH));
         }
 
-        private SubscriptionInfo FindSubscriptionToRemove(string eventName, Type handlerType)
+        private SubscriptionInfo? FindSubscriptionToRemove(string eventName, Type handlerType)
         {
             if (!HasSubscriptionsForEvent(eventName))
             {
@@ -113,7 +113,7 @@ namespace EventBus.Base.SubManagers
 
         public bool HasSubscriptionsForEvent(string eventName) => _handlers.ContainsKey(eventName);
 
-        public Type GetEventTypeByName(string eventName) => _eventTypes.SingleOrDefault(t => t.Name == eventName);
+        public Type? GetEventTypeByName(string eventName) => _eventTypes.SingleOrDefault(t => t.Name == eventName);
 
         public string GetEventKey<T>()
         {

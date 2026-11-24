@@ -5,6 +5,8 @@ using Polly;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System;
 using System.Net.Sockets;
 using System.Text;
@@ -21,9 +23,9 @@ namespace EventBus.RabbitMQ
         /// <summary>Channel used exclusively for consuming (RabbitMQ IModel is not thread-safe).</summary>
         private IModel consumerChannel;
 
-        /// <summary>Dedicated publish channel guarded by <see cref="publishLock"/>.</summary>
-        private readonly IModel publisherChannel;
+        /// <summary>Serializes publish/confirm operations and BasicReturn bookkeeping.</summary>
         private readonly object publishLock = new();
+        private readonly ConcurrentDictionary<string, string> returnedMessages = new();
 
         public EventBusRabbitMQ(EventBusConfig config, IServiceProvider serviceProvider) : base(config, serviceProvider)
         {
@@ -32,12 +34,12 @@ namespace EventBus.RabbitMQ
             persistentConnection = new RabbitMQPersistentConnection(connectionFactory, config.ConnectionRetryCount);
 
             consumerChannel = CreateChannel();
-            publisherChannel = CreateChannel();
-
+            consumerChannel.BasicQos(prefetchSize: 0, prefetchCount: config.PrefetchCount, global: false);
             SubsManager.OnEventRemoved += SubsManager_OnEventRemoved;
         }
 
-        private string DeadLetterExchangeName => EventBusConfig.DefaultTopicName + DeadLetterExchangeSuffix;
+        private string DeadLetterExchangeName =>
+            $"{EventBusConfig.DefaultTopicName}.{EventBusConfig.SubscriberClientAppName}{DeadLetterExchangeSuffix}";
 
         private IModel CreateChannel()
         {
@@ -49,6 +51,19 @@ namespace EventBus.RabbitMQ
             channel.ExchangeDeclare(exchange: EventBusConfig.DefaultTopicName, type: "direct", durable: true);
             channel.ExchangeDeclare(exchange: DeadLetterExchangeName, type: "direct", durable: true);
 
+            return channel;
+        }
+
+        private IModel CreatePublisherChannel()
+        {
+            var channel = CreateChannel();
+            channel.ConfirmSelect();
+            channel.BasicReturn += (_, args) =>
+            {
+                var messageId = args.BasicProperties?.MessageId;
+                if (!string.IsNullOrWhiteSpace(messageId))
+                    returnedMessages[messageId] = $"{args.ReplyCode} {args.ReplyText}";
+            };
             return channel;
         }
 
@@ -69,11 +84,17 @@ namespace EventBus.RabbitMQ
 
         public override void Publish(IntegrationEvent @event)
         {
+            using var activity = EventBusDiagnostics.ActivitySource.StartActivity(
+                $"publish {@event.GetType().Name}", ActivityKind.Producer);
+            activity?.SetTag("messaging.system", "rabbitmq");
+            activity?.SetTag("messaging.message.id", @event.Id);
             if (!persistentConnection.IsConnected)
                 persistentConnection.TryConnect();
 
             var policy = Policy.Handle<BrokerUnreachableException>()
                 .Or<SocketException>()
+                .Or<AlreadyClosedException>()
+                .Or<OperationInterruptedException>()
                 .WaitAndRetry(EventBusConfig.ConnectionRetryCount,
                     retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
@@ -86,17 +107,34 @@ namespace EventBus.RabbitMQ
             {
                 lock (publishLock)
                 {
-                    var properties = publisherChannel.CreateBasicProperties();
+                    // Publisher-confirm state is channel-local. Keeping this channel across
+                    // automatic connection recovery can leave a waiter attached to the old
+                    // delivery sequence and stall a consumer that publishes its result.
+                    // A short-lived channel gives every attempt a fresh confirm sequence.
+                    using var channel = CreatePublisherChannel();
+
+                    var properties = channel.CreateBasicProperties();
                     properties.DeliveryMode = 2; // persistent
                     properties.MessageId = @event.Id.ToString();
                     properties.ContentType = "application/json";
+                    properties.Headers = new Dictionary<string, object>();
+                    if (Activity.Current?.Id is { } traceParent)
+                        properties.Headers["traceparent"] = Encoding.UTF8.GetBytes(traceParent);
 
-                    publisherChannel.BasicPublish(
+                    returnedMessages.TryRemove(properties.MessageId, out _);
+                    channel.BasicPublish(
                         exchange: EventBusConfig.DefaultTopicName,
                         routingKey: eventName,
-                        mandatory: false,
+                        mandatory: true,
                         basicProperties: properties,
                         body: body);
+
+                    channel.WaitForConfirmsOrDie(
+                        TimeSpan.FromSeconds(EventBusConfig.PublisherConfirmTimeoutSeconds));
+
+                    if (returnedMessages.TryRemove(properties.MessageId, out var returnReason))
+                        throw new InvalidOperationException(
+                            $"RabbitMQ returned unroutable event '{eventName}' ({returnReason}).");
                 }
             });
         }
@@ -172,19 +210,9 @@ namespace EventBus.RabbitMQ
             }
             catch (OperationInterruptedException ex) when (ex.ShutdownReason?.ReplyCode == 406)
             {
-                Console.Error.WriteLine(
-                    $"[EventBus] Queue '{queueName}' already exists without a dead-letter policy. " +
-                    "Continuing without dead-lettering; delete the queue in the RabbitMQ console to enable it.");
-
-                // The 406 closed the channel, so a fresh one is required.
-                consumerChannel = CreateChannel();
-
-                consumerChannel.QueueDeclare(
-                    queue: queueName,
-                    durable: true,
-                    exclusive: false,
-                    autoDelete: false,
-                    arguments: null);
+                throw new InvalidOperationException(
+                    $"Queue '{queueName}' has an incompatible topology. " +
+                    "Refusing to start without the required dead-letter policy; migrate or recreate the queue.", ex);
             }
         }
 
@@ -205,6 +233,20 @@ namespace EventBus.RabbitMQ
         {
             var eventName = ProcessEventName(eventArgs.RoutingKey);
             var message = Encoding.UTF8.GetString(eventArgs.Body.Span);
+
+            var parentContext = default(ActivityContext);
+            if (eventArgs.BasicProperties.Headers?.TryGetValue("traceparent", out var rawTraceParent) == true &&
+                rawTraceParent is byte[] traceParentBytes)
+            {
+                ActivityContext.TryParse(Encoding.UTF8.GetString(traceParentBytes), null, out parentContext);
+            }
+
+            using var activity = EventBusDiagnostics.ActivitySource.StartActivity(
+                $"consume {eventName}", ActivityKind.Consumer, parentContext);
+            activity?.SetTag("messaging.system", "rabbitmq");
+            activity?.SetTag("messaging.destination.name", eventArgs.Exchange);
+            activity?.SetTag("messaging.rabbitmq.routing_key", eventArgs.RoutingKey);
+            activity?.SetTag("messaging.message.id", eventArgs.BasicProperties.MessageId);
 
             try
             {
@@ -227,8 +269,6 @@ namespace EventBus.RabbitMQ
             SubsManager.OnEventRemoved -= SubsManager_OnEventRemoved;
 
             if (consumerChannel?.IsOpen == true) consumerChannel.Close();
-            if (publisherChannel?.IsOpen == true) publisherChannel.Close();
-
             persistentConnection.Dispose();
 
             base.Dispose();

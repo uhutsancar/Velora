@@ -13,10 +13,15 @@ using Microsoft.OpenApi.Models;
 using Velora.Shared.Middleware;
 using Velora.Shared.Security;
 using Velora.Shared.Web;
+using Velora.Shared.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddVeloraProblemDetails();
+builder.Services.AddVeloraObservability(builder.Configuration, "CatalogService");
+builder.Services.AddHostedService<CatalogOutboxPublisher>();
+builder.Services.AddHostedService<StockReservationExpiryWorker>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -54,6 +59,7 @@ builder.Services.AddScoped<IProductAdminService, ProductAdminService>();
 // Event handlers must be resolvable from the DI scope the event bus creates.
 builder.Services.AddTransient<OrderCreatedIntegrationEventHandler>();
 builder.Services.AddTransient<OrderPaidIntegrationEventHandler>();
+builder.Services.AddTransient<OrderPaymentFailedIntegrationEventHandler>();
 
 builder.Services.AddVeloraEventBus(builder.Configuration, "CatalogService");
 builder.Services.AddResponseCaching();
@@ -160,6 +166,7 @@ eventBus.Subscribe<OrderCreatedIntegrationEvent, OrderCreatedIntegrationEventHan
 
 // ...and the coupon is redeemed only once the payment actually succeeds.
 eventBus.Subscribe<OrderPaidIntegrationEvent, OrderPaidIntegrationEventHandler>();
+eventBus.Subscribe<OrderPaymentFailedIntegrationEvent, OrderPaymentFailedIntegrationEventHandler>();
 
 app.Run();
 

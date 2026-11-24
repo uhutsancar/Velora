@@ -13,13 +13,17 @@ namespace OrderService.Application.IntegrationEvents
         {
         }
 
-        public OrderStartedIntegrationEvent(Guid orderId, string orderNumber, string? userId, string? userName, decimal totalAmount)
+        public OrderStartedIntegrationEvent(Guid orderId, string orderNumber, string? userId, string? userName,
+            decimal totalAmount, string currency, string paymentProvider, string paymentMethodToken)
         {
             OrderId = orderId;
             OrderNumber = orderNumber;
             UserId = userId;
             UserName = userName;
             TotalAmount = totalAmount;
+            Currency = currency;
+            PaymentProvider = paymentProvider;
+            PaymentMethodToken = paymentMethodToken;
         }
 
         public Guid OrderId { get; set; }
@@ -31,5 +35,11 @@ namespace OrderService.Application.IntegrationEvents
         public string? UserName { get; set; }
 
         public decimal TotalAmount { get; set; }
+
+        public string Currency { get; set; } = "TRY";
+
+        public string PaymentProvider { get; set; } = default!;
+
+        public string PaymentMethodToken { get; set; } = default!;
     }
 }

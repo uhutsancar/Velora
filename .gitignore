@@ -206,8 +206,13 @@ secrets.json
 # ------------------------------------------------------------
 .dotnet/
 .nuget/
+__pycache__/
+*.py[cod]
 *.received.*
 *.approved.received.*
+gw-debug.*
+pod-*.yaml
+ServiceUrls.txt
 
 # --- Velora frontend ---
 velora/node_modules/

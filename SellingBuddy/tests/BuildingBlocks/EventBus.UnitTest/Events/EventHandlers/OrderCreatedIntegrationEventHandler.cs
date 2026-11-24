@@ -14,9 +14,9 @@ namespace EventBus.UnitTest.Events.EventHandlers
 
         public Task Handle(OrderCreatedIntegrationEvent @event)
         {
-            Console.WriteLine("Handle method worked: with id:" + @event.Id);
+            Console.WriteLine("Handle method worked: with id:" + @event.TestMessageId);
 
-            if (Awaited.TryGetValue(@event.Id, out var pending))
+            if (Awaited.TryGetValue(@event.TestMessageId, out var pending))
                 pending.TrySetResult(@event);
 
             return Task.CompletedTask;

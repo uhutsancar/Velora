@@ -25,7 +25,6 @@ namespace OrderService.Infrastructure.Repositories
             DbContext.Orders
                 .Include(o => o.OrderItems)
                 .Include(o => o.OrderStatus)
-                .Include(o => o.Buyer)
                 .FirstOrDefaultAsync(o => o.Id == id, ct);
 
         public async Task<(IReadOnlyList<Order> Items, long Total)> ListAsync(OrderListFilter filter, CancellationToken ct = default)

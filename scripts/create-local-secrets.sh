@@ -23,6 +23,12 @@ apply() {
   kubectl create secret generic "$name" -n "$NS" "$@" --dry-run=client -o yaml | kubectl apply -f -
 }
 
+apply velora-data-secrets \
+  --from-literal=SQL_SA_PASSWORD="${SQL_SA_PASSWORD}" \
+  --from-literal=REDIS_PASSWORD="${REDIS_PASSWORD}" \
+  --from-literal=RABBITMQ_USER="${RABBITMQ_USER}" \
+  --from-literal=RABBITMQ_PASSWORD="${RABBITMQ_PASSWORD}"
+
 # Tum servislerin paylastigi: JWT imza anahtari ve broker kimlik bilgileri.
 apply velora-common-secrets \
   --from-literal=AuthConfig__Secret="${AUTH_SIGNING_KEY}" \

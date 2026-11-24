@@ -1,8 +1,8 @@
-using EventBus.Base.Abstraction;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using OrderService.Application.IntegrationEvents;
 using OrderService.Domain.Events;
+using OrderService.Application.Interfaces.Repositories;
 
 namespace OrderService.Application.DomainEventHandlers
 {
@@ -13,12 +13,12 @@ namespace OrderService.Application.DomainEventHandlers
     /// </summary>
     public class OrderPaidDomainEventHandler : INotificationHandler<OrderPaidDomainEvent>
     {
-        private readonly IEventBus eventBus;
+        private readonly IIntegrationEventOutbox outbox;
         private readonly ILogger<OrderPaidDomainEventHandler> logger;
 
-        public OrderPaidDomainEventHandler(IEventBus eventBus, ILogger<OrderPaidDomainEventHandler> logger)
+        public OrderPaidDomainEventHandler(IIntegrationEventOutbox outbox, ILogger<OrderPaidDomainEventHandler> logger)
         {
-            this.eventBus = eventBus;
+            this.outbox = outbox;
             this.logger = logger;
         }
 
@@ -30,7 +30,7 @@ namespace OrderService.Application.DomainEventHandlers
                 notification.TotalAmount,
                 notification.CouponCode is null ? string.Empty : $" with coupon {notification.CouponCode}");
 
-            eventBus.Publish(new OrderPaidIntegrationEvent(
+            outbox.Enqueue(new OrderPaidIntegrationEvent(
                 notification.OrderId,
                 notification.OrderNumber,
                 notification.UserId,

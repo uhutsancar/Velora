@@ -3,6 +3,7 @@ using BasketService.Api.Core.Application.Repository;
 using BasketService.Api.Core.Application.Services;
 using BasketService.Api.Extensions;
 using BasketService.Api.Infrastructure.Repository;
+using BasketService.Api.Infrastructure.Clients;
 using BasketService.Api.IntegrationEvents.EventHandlers;
 using BasketService.Api.IntegrationEvents.Events;
 using EventBus.Base.Abstraction;
@@ -12,10 +13,13 @@ using StackExchange.Redis;
 using Velora.Shared.Middleware;
 using Velora.Shared.Security;
 using Velora.Shared.Web;
+using Velora.Shared.Observability;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddVeloraProblemDetails();
+builder.Services.AddVeloraObservability(builder.Configuration, "BasketService");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -49,6 +53,11 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp => sp.ConfigureRedis(bu
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IBasketRepository, RedisBasketRepository>();
 builder.Services.AddTransient<IIdentityService, IdentityService>();
+builder.Services.AddHttpClient<ICatalogQuoteClient, CatalogQuoteClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Services:CatalogBaseUrl"] ?? "http://localhost:5004/");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 builder.Services.AddTransient<OrderCreatedIntegrationEventHandler>();
 
 builder.Services.AddVeloraEventBus(builder.Configuration, "BasketService");

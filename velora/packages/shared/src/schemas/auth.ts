@@ -30,7 +30,7 @@ export const registerSchema = z
     password: passwordSchema,
     confirmPassword: z.string().min(1, 'Şifre tekrarı gerekli'),
     acceptTerms: z.literal(true, {
-      errorMap: () => ({ message: 'Devam etmek için sözleşmeyi onaylamalısınız' }),
+      error: 'Devam etmek için sözleşmeyi onaylamalısınız',
     }),
   })
   .refine((data) => data.password === data.confirmPassword, {

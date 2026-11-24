@@ -116,6 +116,8 @@ services:
     replicas: 2
     autoscaling: { min: 2, max: 6, cpu: 70 }
     secretName: velora-basket-secrets
+    env:
+      - { name: Services__CatalogBaseUrl, value: "http://catalog:8080/" }
     resources:
       requests: { cpu: 100m, memory: 256Mi }
       limits: { memory: 512Mi }

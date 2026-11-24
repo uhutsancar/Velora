@@ -103,7 +103,12 @@ export const basketApi = baseApi.injectEndpoints({
     }),
 
     checkout: builder.mutation<void, BasketCheckoutRequest>({
-      query: (body) => ({ url: endpoints.basket.checkout, method: 'POST', data: body }),
+      query: ({ requestId, ...body }) => ({
+        url: endpoints.basket.checkout,
+        method: 'POST',
+        data: body,
+        headers: requestId ? { 'x-request-id': requestId } : undefined,
+      }),
       // Checkout is asynchronous (event driven): the basket is cleared by the
       // OrderCreated handler, and the order list gains a row shortly after.
       invalidatesTags: [BASKET_TAG, { type: 'Order', id: 'LIST' }],

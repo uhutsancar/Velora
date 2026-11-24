@@ -166,6 +166,16 @@ cd D:\microservice_project
 .\scripts\verify-stack.ps1
 ```
 
+Kubernetes'te RabbitMQ paneli ve canli mesaj/yuk testleri:
+
+```powershell
+.\scripts\velora-k8s.ps1 rabbit
+$env:VELORA_GATEWAY = 'http://127.0.0.1:30000'
+$env:VELORA_RABBITMQ = 'http://127.0.0.1:15672'
+python scripts\verify-eventbus.py
+python scripts\verify-live-load.py
+```
+
 ---
 
 ## 6. Kapatma

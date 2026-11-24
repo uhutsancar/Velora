@@ -1,6 +1,8 @@
 using CatalogService.Api.Core.Domain;
 using CatalogService.Api.Infrastructure.EntityConfigurations;
 using Microsoft.EntityFrameworkCore;
+using EventBus.Base.Events;
+using Newtonsoft.Json;
 
 namespace CatalogService.Api.Infrastructure.Context
 {
@@ -30,6 +32,23 @@ namespace CatalogService.Api.Infrastructure.Context
 
         public DbSet<Campaign> Campaigns { get; set; } = default!;
 
+        public DbSet<StockReservation> StockReservations { get; set; } = default!;
+
+        public DbSet<CouponRedemption> CouponRedemptions { get; set; } = default!;
+        public DbSet<CatalogOutboxMessage> OutboxMessages { get; set; } = default!;
+
+        public void Enqueue(IntegrationEvent integrationEvent)
+        {
+            OutboxMessages.Add(new CatalogOutboxMessage
+            {
+                Id = integrationEvent.Id,
+                OccurredAtUtc = integrationEvent.CreatedDate,
+                EventType = integrationEvent.GetType().AssemblyQualifiedName
+                    ?? throw new InvalidOperationException("Integration event type has no assembly-qualified name."),
+                Payload = JsonConvert.SerializeObject(integrationEvent)
+            });
+        }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.ApplyConfiguration(new CatalogBrandEntityTypeConfiguration());
@@ -41,6 +60,38 @@ namespace CatalogService.Api.Infrastructure.Context
             builder.ApplyConfiguration(new ProductReviewEntityTypeConfiguration());
             builder.ApplyConfiguration(new CouponEntityTypeConfiguration());
             builder.ApplyConfiguration(new CampaignEntityTypeConfiguration());
+
+            builder.Entity<StockReservation>(reservation =>
+            {
+                reservation.ToTable("stock_reservations", DEFAULT_SCHEMA);
+                reservation.HasKey(item => item.Id);
+                reservation.HasIndex(item => item.OrderId);
+                reservation.HasIndex(item => new { item.OrderId, item.ProductId, item.VariantId })
+                    .IsUnique()
+                    .HasFilter(null);
+                reservation.Property(item => item.Status).HasConversion<int>();
+            });
+
+            builder.Entity<CouponRedemption>(redemption =>
+            {
+                redemption.ToTable("coupon_redemptions", DEFAULT_SCHEMA);
+                redemption.HasKey(item => item.Id);
+                redemption.HasIndex(item => item.OrderId).IsUnique();
+                redemption.HasIndex(item => new { item.UserId, item.CouponCode });
+                redemption.Property(item => item.UserId).IsRequired().HasMaxLength(64);
+                redemption.Property(item => item.CouponCode).IsRequired().HasMaxLength(64);
+                redemption.Property(item => item.Status).HasConversion<int>();
+            });
+
+            builder.Entity<CatalogOutboxMessage>(message =>
+            {
+                message.ToTable("outbox_messages", DEFAULT_SCHEMA);
+                message.HasKey(item => item.Id);
+                message.HasIndex(item => new { item.ProcessedAtUtc, item.OccurredAtUtc });
+                message.Property(item => item.EventType).IsRequired().HasMaxLength(1000);
+                message.Property(item => item.Payload).IsRequired();
+                message.Property(item => item.LastError).HasMaxLength(2000);
+            });
         }
     }
 }

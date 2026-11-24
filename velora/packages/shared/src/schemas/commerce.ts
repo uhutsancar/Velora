@@ -13,46 +13,9 @@ export const addressSchema = z.object({
   isDefault: z.boolean(),
 });
 
-/** Luhn check — catches typos before the request ever leaves the browser. */
-const luhnValid = (value: string): boolean => {
-  const digits = value.replace(/\D/g, '');
-  if (digits.length < 13) return false;
-
-  let sum = 0;
-  let double = false;
-
-  for (let i = digits.length - 1; i >= 0; i -= 1) {
-    let digit = Number(digits[i]);
-
-    if (double) {
-      digit *= 2;
-      if (digit > 9) digit -= 9;
-    }
-
-    sum += digit;
-    double = !double;
-  }
-
-  return sum % 10 === 0;
-};
-
 export const paymentSchema = z.object({
-  cardHolderName: z.string().min(5, 'Kart üzerindeki ismi girin').max(200),
-  cardNumber: z
-    .string()
-    .transform((value) => value.replace(/\s/g, ''))
-    .refine((value) => /^\d{13,19}$/.test(value), 'Kart numarası 13-19 hane olmalı')
-    .refine(luhnValid, 'Kart numarası geçersiz'),
-  cardExpiration: z
-    .string()
-    .regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'Son kullanma tarihi AA/YY biçiminde olmalı')
-    .refine((value) => {
-      const [month, year] = value.split('/');
-      const expiry = new Date(2000 + Number(year), Number(month), 0, 23, 59, 59);
-      return expiry > new Date();
-    }, 'Kartın süresi dolmuş'),
-  cardSecurityNumber: z.string().regex(/^\d{3,4}$/, 'CVV 3 veya 4 hane olmalı'),
-  cardTypeId: z.number().int().min(1).max(3),
+  paymentMethodToken: z.string().min(8, 'Ödeme sağlayıcı tokenı gerekli').max(512),
+  paymentProvider: z.string().min(2).max(64),
 });
 
 export const checkoutSchema = z.object({
@@ -93,10 +56,10 @@ export const contactSchema = z.object({
   name: z.string().min(2, 'Ad soyad en az 2 karakter olmalı').max(128),
   email: z.string().min(1, 'E-posta gerekli').email('Geçerli bir e-posta girin').max(256),
   orderNumber: z.string().max(64).optional().or(z.literal('')),
-  subject: z.enum(CONTACT_SUBJECTS, { errorMap: () => ({ message: 'Bir konu seçin' }) }),
+  subject: z.enum(CONTACT_SUBJECTS, { error: 'Bir konu seçin' }),
   message: z.string().min(20, 'Mesaj en az 20 karakter olmalı').max(2000),
   consent: z.literal(true, {
-    errorMap: () => ({ message: 'Devam etmek için aydınlatma metnini onaylamalısınız' }),
+    error: 'Devam etmek için aydınlatma metnini onaylamalısınız',
   }),
 });
 

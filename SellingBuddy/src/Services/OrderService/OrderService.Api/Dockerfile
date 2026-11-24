@@ -15,7 +15,7 @@
 # The whole solution is copied because the service project references the shared
 # BuildingBlocks projects; .dockerignore keeps the context small.
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY SellingBuddy.sln ./
@@ -39,15 +39,15 @@ COPY SellingBuddy/src/Services/OrderService/OrderService.Infrastructure/OrderSer
 COPY SellingBuddy/src/Services/PaymentService/PaymentService.Api/PaymentService.Api.csproj SellingBuddy/src/Services/PaymentService/PaymentService.Api/
 COPY SellingBuddy/tests/BuildingBlocks/EventBus.UnitTest/EventBus.UnitTest.csproj SellingBuddy/tests/BuildingBlocks/EventBus.UnitTest/
 
-RUN dotnet restore "SellingBuddy/src/Services/OrderService/OrderService.Api/OrderService.Api.csproj"
+RUN --mount=type=cache,target=/root/.nuget/packages dotnet restore "SellingBuddy/src/Services/OrderService/OrderService.Api/OrderService.Api.csproj"
 
 # 2) Kaynak kod. Buradan sonrasi her commit'te yeniden calisir,
 #    ama yukaridaki restore katmani korunur.
 COPY SellingBuddy/ ./SellingBuddy/
 
-RUN dotnet publish "SellingBuddy/src/Services/OrderService/OrderService.Api/OrderService.Api.csproj" -c Release -o /app/publish --no-restore /p:UseAppHost=false
+RUN --mount=type=cache,target=/root/.nuget/packages dotnet publish "SellingBuddy/src/Services/OrderService/OrderService.Api/OrderService.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 # The aspnet/runtime images ship a non-root user; running as root in production

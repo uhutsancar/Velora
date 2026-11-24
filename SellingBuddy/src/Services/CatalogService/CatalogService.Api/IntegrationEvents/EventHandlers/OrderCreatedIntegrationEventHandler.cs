@@ -1,115 +1,184 @@
+using CatalogService.Api.Core.Domain;
 using CatalogService.Api.Infrastructure.Context;
 using CatalogService.Api.IntegrationEvents.Events;
 using EventBus.Base.Abstraction;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
-namespace CatalogService.Api.IntegrationEvents.EventHandlers
+namespace CatalogService.Api.IntegrationEvents.EventHandlers;
+
+/// <summary>
+/// Atomically reserves every line before OrderService is allowed to start payment.
+/// The order id is the checkout id, making redelivery naturally idempotent.
+/// </summary>
+public sealed class OrderCreatedIntegrationEventHandler : IIntegrationEventHandler<OrderCreatedIntegrationEvent>
 {
-    /// <summary>
-    /// Reserves stock when a checkout is accepted. Runs in the catalogue service because
-    /// inventory belongs to the merchandising bounded context, not to ordering.
-    /// </summary>
-    public class OrderCreatedIntegrationEventHandler : IIntegrationEventHandler<OrderCreatedIntegrationEvent>
-    {
-        private readonly CatalogContext db;
-        private readonly IEventBus eventBus;
-        private readonly ILogger<OrderCreatedIntegrationEventHandler> logger;
+    private readonly CatalogContext db;
+    private readonly ILogger<OrderCreatedIntegrationEventHandler> logger;
 
-        public OrderCreatedIntegrationEventHandler(
-            CatalogContext db,
-            IEventBus eventBus,
-            ILogger<OrderCreatedIntegrationEventHandler> logger)
+    public OrderCreatedIntegrationEventHandler(
+        CatalogContext db,
+        ILogger<OrderCreatedIntegrationEventHandler> logger)
+    {
+        this.db = db;
+        this.logger = logger;
+    }
+
+    public async Task Handle(OrderCreatedIntegrationEvent @event)
+    {
+        var orderId = @event.CheckoutId == Guid.Empty ? @event.Id : @event.CheckoutId;
+        if (@event.Basket?.Items is not { Count: > 0 } sourceLines)
         {
-            this.db = db;
-            this.eventBus = eventBus;
-            this.logger = logger;
+            db.Enqueue(new StockReservationRejectedIntegrationEvent(orderId, "The basket is empty."));
+            await db.SaveChangesAsync();
+            return;
         }
 
-        public async Task Handle(OrderCreatedIntegrationEvent @event)
+        // A committed reservation means a previous delivery completed its local effect
+        // but may have lost the confirmation publish/ACK. Re-publish only the result.
+        var priorReservations = await db.StockReservations.AsNoTracking()
+            .Where(item => item.OrderId == orderId)
+            .Select(item => item.Status)
+            .ToListAsync();
+
+        if (priorReservations.Count > 0)
         {
-            if (@event.Basket?.Items is not { Count: > 0 } items)
-            {
-                logger.LogWarning("OrderCreated event {EventId} carried an empty basket.", @event.Id);
-                return;
-            }
+            var stillValid = priorReservations.All(status =>
+                status == StockReservationStatus.Reserved || status == StockReservationStatus.Consumed);
 
-            var productIds = items.Select(i => i.ProductId).Distinct().ToList();
-
-            var products = await db.CatalogItems
-                .Include(p => p.Variants)
-                .Where(p => productIds.Contains(p.Id))
-                .ToListAsync();
-
-            foreach (var group in items.GroupBy(i => i.ProductId))
-            {
-                var product = products.FirstOrDefault(p => p.Id == group.Key);
-                if (product is null)
-                {
-                    logger.LogWarning("Order references unknown product {ProductId}.", group.Key);
-                    continue;
-                }
-
-                var oldStock = product.TotalStock;
-
-                foreach (var line in group)
-                {
-                    var variant = line.VariantId is { } variantId
-                        ? product.Variants.FirstOrDefault(v => v.Id == variantId)
-                        : null;
-
-                    if (variant is not null)
-                        variant.Stock = Math.Max(0, variant.Stock - line.Quantity);
-                    else
-                        DeductUnallocated(product, line.Quantity);
-
-                    product.SoldCount += line.Quantity;
-                }
-
-                product.OnReorder = product.TotalStock <= product.RestockThreshold;
-                product.UpdatedAtUtc = DateTime.UtcNow;
-
-                eventBus.Publish(new ProductStockChangedIntegrationEvent(product.Id, product.TotalStock, oldStock));
-            }
+            if (stillValid)
+                db.Enqueue(new StockReservationConfirmedIntegrationEvent(orderId));
+            else
+                db.Enqueue(new StockReservationRejectedIntegrationEvent(orderId, "The stock reservation is no longer active."));
 
             await db.SaveChangesAsync();
-
-            logger.LogInformation("Stock adjusted for {Count} products from order event {EventId}.", productIds.Count, @event.Id);
+            return;
         }
 
-        /// <summary>
-        /// Removes stock for a line that names no variant.
-        ///
-        /// A variant product reports <c>TotalStock</c> from its variants, so decrementing
-        /// only <c>AvailableStock</c> would leave the advertised stock untouched. Take the
-        /// units from the best-stocked variants instead, so inventory stays truthful even
-        /// when a line arrives without a variant id.
-        /// </summary>
-        private static void DeductUnallocated(Core.Domain.CatalogItem product, int quantity)
+        var lines = sourceLines
+            .GroupBy(line => new { line.ProductId, line.VariantId })
+            .Select(group => new
+            {
+                group.Key.ProductId,
+                group.Key.VariantId,
+                Quantity = group.Sum(line => line.Quantity)
+            })
+            .ToList();
+
+        var executionStrategy = db.Database.CreateExecutionStrategy();
+        await executionStrategy.ExecuteAsync(async () =>
         {
-            var variants = product.Variants.Where(v => v.IsActive && v.Stock > 0)
-                .OrderByDescending(v => v.Stock)
-                .ToList();
+        db.ChangeTracker.Clear();
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        var productIds = lines.Select(line => line.ProductId).Distinct().ToList();
+        var products = await db.CatalogItems
+            .Include(product => product.Variants)
+            .Where(product => productIds.Contains(product.Id))
+            .ToDictionaryAsync(product => product.Id);
 
-            if (variants.Count == 0)
+        string? rejection = null;
+        var stockChanges = new List<(int ProductId, int OldStock)>();
+
+        foreach (var productGroup in lines.GroupBy(line => line.ProductId))
+        {
+            if (!products.TryGetValue(productGroup.Key, out var product) || !product.IsPublished)
             {
-                product.AvailableStock = Math.Max(0, product.AvailableStock - quantity);
-                return;
+                rejection = $"Product {productGroup.Key} is unavailable.";
+                break;
             }
 
-            var remaining = quantity;
-
-            foreach (var variant in variants)
+            stockChanges.Add((product.Id, product.TotalStock));
+            foreach (var line in productGroup)
             {
-                if (remaining <= 0) break;
+                if (line.Quantity <= 0)
+                {
+                    rejection = $"Product {line.ProductId} has an invalid quantity.";
+                    break;
+                }
 
-                var taken = Math.Min(variant.Stock, remaining);
-                variant.Stock -= taken;
-                remaining -= taken;
+                if (line.VariantId is { } variantId)
+                {
+                    var variant = product.Variants.SingleOrDefault(candidate => candidate.Id == variantId && candidate.IsActive);
+                    if (variant is null || variant.Stock < line.Quantity)
+                    {
+                        rejection = $"Variant {variantId} does not have enough stock.";
+                        break;
+                    }
+
+                    variant.Stock -= line.Quantity;
+                }
+                else
+                {
+                    if (product.Variants.Any(candidate => candidate.IsActive) || product.AvailableStock < line.Quantity)
+                    {
+                        rejection = $"Product {line.ProductId} does not have enough stock or requires a variant.";
+                        break;
+                    }
+
+                    product.AvailableStock -= line.Quantity;
+                }
+
+                db.StockReservations.Add(new StockReservation
+                {
+                    OrderId = orderId,
+                    SourceEventId = @event.Id,
+                    ProductId = line.ProductId,
+                    VariantId = line.VariantId,
+                    Quantity = line.Quantity
+                });
             }
 
-            // Anything the variants could not cover comes off the base stock.
-            if (remaining > 0)
-                product.AvailableStock = Math.Max(0, product.AvailableStock - remaining);
+            if (rejection is not null) break;
+
+            product.OnReorder = product.TotalStock <= product.RestockThreshold;
+            product.UpdatedAtUtc = DateTime.UtcNow;
         }
+
+        if (rejection is null && !string.IsNullOrWhiteSpace(@event.Basket.CouponCode))
+        {
+            var code = @event.Basket.CouponCode.Trim().ToUpperInvariant();
+            var coupon = await db.Coupons.SingleOrDefaultAsync(candidate => candidate.Code == code);
+            var userUsage = await db.CouponRedemptions.CountAsync(item =>
+                item.UserId == @event.UserId &&
+                item.CouponCode == code &&
+                (item.Status == StockReservationStatus.Reserved || item.Status == StockReservationStatus.Consumed));
+
+            if (coupon is null || !coupon.IsRedeemable(DateTime.UtcNow) || userUsage >= coupon.PerUserLimit)
+            {
+                rejection = "Coupon usage limit was reached.";
+            }
+            else
+            {
+                coupon.UsedCount += 1; // reservations count against the finite quota
+                db.CouponRedemptions.Add(new CouponRedemption
+                {
+                    OrderId = orderId,
+                    UserId = @event.UserId,
+                    CouponCode = code
+                });
+            }
+        }
+
+        if (rejection is not null)
+        {
+            await transaction.RollbackAsync();
+            db.ChangeTracker.Clear();
+            logger.LogWarning("Stock reservation rejected for {OrderId}: {Reason}", orderId, rejection);
+            db.Enqueue(new StockReservationRejectedIntegrationEvent(orderId, rejection));
+            await db.SaveChangesAsync();
+            return;
+        }
+
+        foreach (var change in stockChanges)
+        {
+            var product = products[change.ProductId];
+            db.Enqueue(new ProductStockChangedIntegrationEvent(product.Id, product.TotalStock, change.OldStock));
+        }
+        db.Enqueue(new StockReservationConfirmedIntegrationEvent(orderId));
+
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        logger.LogInformation("Reserved {LineCount} stock lines for order {OrderId}.", lines.Count, orderId);
+        });
     }
 }

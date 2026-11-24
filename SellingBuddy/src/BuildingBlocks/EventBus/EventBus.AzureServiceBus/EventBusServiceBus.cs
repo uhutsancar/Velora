@@ -2,6 +2,7 @@
 using EventBus.Base.Events;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Management;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
@@ -17,11 +18,11 @@ namespace EventBus.AzureServiceBus
 
         private ITopicClient topicClient;
         private ManagementClient managementClient;
-        private ILogger logger;
+        private readonly ILogger<EventBusServiceBus> logger;
 
         public EventBusServiceBus(EventBusConfig config, IServiceProvider serviceProvider) : base(config, serviceProvider)
         {
-            logger = serviceProvider.GetService(typeof(ILogger<EventBusServiceBus>)) as ILogger<EventBusServiceBus>;
+            logger = serviceProvider.GetRequiredService<ILogger<EventBusServiceBus>>();
             managementClient = new ManagementClient(config.EventBusConnectionString);
             topicClient = createTopicClient();
 
@@ -52,7 +53,7 @@ namespace EventBus.AzureServiceBus
 
             var message = new Message()
             {
-                MessageId = Guid.NewGuid().ToString(),
+                MessageId = @event.Id.ToString(),
                 Body = bodyArr,
                 Label = eventName
             };
@@ -208,8 +209,6 @@ namespace EventBus.AzureServiceBus
 
             topicClient.CloseAsync().GetAwaiter().GetResult();
             managementClient.CloseAsync().GetAwaiter().GetResult();
-            topicClient = null;
-            managementClient = null;
         }
 
     }

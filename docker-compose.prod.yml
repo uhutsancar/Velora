@@ -154,6 +154,7 @@ services:
     environment:
       <<: *dotnet-env
       RedisSettings__ConnectionString: redis:6379,password=${REDIS_PASSWORD},abortConnect=false
+      Services__CatalogBaseUrl: http://catalog:8080/
       ConsulConfig__ServiceHost: basket
       ConsulConfig__HealthCheckHost: basket
     depends_on:
@@ -183,8 +184,8 @@ services:
     image: velora/payment:${VELORA_TAG:-latest}
     environment:
       <<: *dotnet-env
-      # Stand-in for a real PSP: flips every authorisation to success or failure.
-      PaymentSuccess: ${PAYMENT_SUCCESS:-true}
+      Payment__Mode: ${PAYMENT_MODE:-Disabled}
+      Payment__AllowSandbox: ${PAYMENT_ALLOW_SANDBOX:-false}
     depends_on:
       rabbitmq: {condition: service_healthy}
 

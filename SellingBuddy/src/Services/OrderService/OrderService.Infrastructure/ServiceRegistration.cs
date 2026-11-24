@@ -48,8 +48,8 @@ namespace OrderService.Infrastructure
                     options.EnableSensitiveDataLogging();
             });
 
-            services.AddScoped<IBuyerRepository, BuyerRepository>();
             services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<IIntegrationEventOutbox>(provider => provider.GetRequiredService<OrderDbContext>());
 
             // Schema creation and seeding happen once at start-up in Program.cs,
             // not as a side effect of registering services.

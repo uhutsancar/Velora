@@ -35,7 +35,6 @@ namespace OrderService.Application
         {
             var assm = Assembly.GetExecutingAssembly();
 
-            services.AddAutoMapper(cfg => { }, assm);
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assm));
 
             return services;

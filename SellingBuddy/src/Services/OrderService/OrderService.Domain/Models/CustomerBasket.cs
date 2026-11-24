@@ -22,5 +22,11 @@ namespace OrderService.Domain.Models
         public string? CouponCode { get; set; }
 
         public decimal DiscountAmount { get; set; }
+
+        public Guid? QuoteId { get; set; }
+
+        public DateTime? QuoteValidUntilUtc { get; set; }
+
+        public string Currency { get; set; } = "TRY";
     }
 }

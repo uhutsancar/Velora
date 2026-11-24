@@ -52,13 +52,39 @@ namespace CatalogService.Api.IntegrationEvents.Events
     /// </summary>
     public class OrderCreatedIntegrationEvent : IntegrationEvent
     {
+        public Guid CheckoutId { get; set; }
+
         public string UserId { get; set; } = default!;
 
         public string UserName { get; set; } = default!;
 
-        public string Buyer { get; set; } = default!;
-
         public CheckoutBasket Basket { get; set; } = new();
+    }
+
+    public class StockReservationConfirmedIntegrationEvent : IntegrationEvent
+    {
+        public StockReservationConfirmedIntegrationEvent() { }
+        public StockReservationConfirmedIntegrationEvent(Guid orderId) => OrderId = orderId;
+        public Guid OrderId { get; set; }
+    }
+
+    public class StockReservationRejectedIntegrationEvent : IntegrationEvent
+    {
+        public StockReservationRejectedIntegrationEvent() { }
+        public StockReservationRejectedIntegrationEvent(Guid orderId, string reason)
+        {
+            OrderId = orderId;
+            Reason = reason;
+        }
+        public Guid OrderId { get; set; }
+        public string Reason { get; set; } = default!;
+    }
+
+    public class OrderPaymentFailedIntegrationEvent : IntegrationEvent
+    {
+        public Guid OrderId { get; set; }
+        public string? OrderNumber { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 
     public class CheckoutBasket
@@ -66,6 +92,10 @@ namespace CatalogService.Api.IntegrationEvents.Events
         public string BuyerId { get; set; } = default!;
 
         public List<CheckoutBasketItem> Items { get; set; } = new();
+
+        public string? CouponCode { get; set; }
+
+        public decimal DiscountAmount { get; set; }
     }
 
     /// <summary>Mirror of the event OrderService publishes once payment succeeds.</summary>

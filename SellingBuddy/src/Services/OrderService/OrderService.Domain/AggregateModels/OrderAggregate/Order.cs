@@ -1,4 +1,3 @@
-using OrderService.Domain.AggregateModels.BuyerAggregate;
 using OrderService.Domain.Events;
 using OrderService.Domain.Exceptions;
 using OrderService.Domain.SeedWork;
@@ -18,29 +17,26 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
         }
 
         public Order(
+            Guid orderId,
             string userName,
             Address address,
-            int cardTypeId,
-            string cardNumber,
-            string cardSecurityNumber,
-            string cardHolderName,
-            DateTime cardExpiration,
-            Guid? paymentMethodId,
-            Guid? buyerId = null,
+            string paymentProvider,
+            string paymentMethodToken,
+            string currency,
             string? userId = null,
             string? description = null) : this()
         {
-            BuyerId = buyerId;
+            Id = orderId == Guid.Empty ? Guid.NewGuid() : orderId;
             UserId = userId;
             UserName = userName;
             Description = description;
             orderStatusId = OrderStatus.Submitted.Id;
             OrderDate = DateTime.UtcNow;
             Address = address;
-            PaymentMethodId = paymentMethodId;
+            PaymentProvider = paymentProvider;
+            PaymentMethodToken = paymentMethodToken;
+            Currency = currency;
             OrderNumber = GenerateOrderNumber(OrderDate);
-
-            AddOrderStartedDomainEvent(userName, cardTypeId, cardNumber, cardSecurityNumber, cardHolderName, cardExpiration);
         }
 
         public DateTime OrderDate { get; private set; }
@@ -61,6 +57,13 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
 
         public decimal DiscountAmount { get; private set; }
 
+        public string Currency { get; private set; } = "TRY";
+
+        public string PaymentProvider { get; private set; } = default!;
+
+        /// <summary>Opaque PSP reference. Never a card number or CVV.</summary>
+        public string PaymentMethodToken { get; private set; } = default!;
+
         public string? CouponCode { get; private set; }
 
         public string? Description { get; private set; }
@@ -73,10 +76,6 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
 
         public DateTime? CancelledAtUtc { get; private set; }
 
-        public Guid? BuyerId { get; private set; }
-
-        public Buyer? Buyer { get; private set; }
-
         public Address Address { get; private set; } = default!;
 
         public OrderStatus OrderStatus { get; private set; } = default!;
@@ -85,8 +84,6 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
         public int OrderStatusId => orderStatusId;
 
         public IReadOnlyCollection<OrderItem> OrderItems => _orderItems;
-
-        public Guid? PaymentMethodId { get; set; }
 
         public void AddOrderItem(int productId, string productName, decimal unitPrice, string pictureUrl, int units = 1, int? variantId = null, string? variantLabel = null)
         {
@@ -112,12 +109,11 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
             RecalculateTotals();
         }
 
-        public void SetBuyerId(Guid buyerId) => BuyerId = buyerId;
-
-        public void SetPaymentMethodId(Guid paymentMethodId) => PaymentMethodId = paymentMethodId;
-
         public void SetAwaitingValidationStatus()
         {
+            if (orderStatusId == OrderStatus.AwaitingValidation.Id)
+                return;
+
             if (orderStatusId != OrderStatus.Submitted.Id)
                 ThrowInvalidTransition(OrderStatus.AwaitingValidation);
 
@@ -126,6 +122,9 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
 
         public void SetStockConfirmedStatus()
         {
+            if (orderStatusId == OrderStatus.StockConfirmed.Id)
+                return;
+
             if (orderStatusId != OrderStatus.Submitted.Id && orderStatusId != OrderStatus.AwaitingValidation.Id)
                 ThrowInvalidTransition(OrderStatus.StockConfirmed);
 
@@ -134,7 +133,14 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
 
         public void SetPaidStatus()
         {
-            if (orderStatusId == OrderStatus.Cancelled.Id || orderStatusId == OrderStatus.Shipped.Id)
+            // Payment webhooks and broker deliveries are at-least-once. Replaying a
+            // successful payment must not emit another paid/coupon side effect.
+            if (orderStatusId == OrderStatus.Paid.Id)
+                return;
+
+            if (orderStatusId != OrderStatus.Submitted.Id &&
+                orderStatusId != OrderStatus.AwaitingValidation.Id &&
+                orderStatusId != OrderStatus.StockConfirmed.Id)
                 ThrowInvalidTransition(OrderStatus.Paid);
 
             orderStatusId = OrderStatus.Paid.Id;
@@ -149,7 +155,11 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
 
         public void SetShippedStatus()
         {
-            if (orderStatusId != OrderStatus.Paid.Id && orderStatusId != OrderStatus.StockConfirmed.Id)
+            if (orderStatusId == OrderStatus.Shipped.Id)
+                return;
+
+            // Shipping is a fulfilment action and is only valid after confirmed payment.
+            if (orderStatusId != OrderStatus.Paid.Id)
                 ThrowInvalidTransition(OrderStatus.Shipped);
 
             orderStatusId = OrderStatus.Shipped.Id;
@@ -160,6 +170,12 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
 
         public void SetCancelledStatus(string? reason = null)
         {
+            if (orderStatusId == OrderStatus.Cancelled.Id)
+                return;
+
+            if (orderStatusId == OrderStatus.Paid.Id)
+                throw new OrderingDomainException("A paid order cannot be cancelled directly; start the refund workflow.");
+
             if (orderStatusId == OrderStatus.Shipped.Id)
                 throw new OrderingDomainException("Kargoya verilmiş bir sipariş iptal edilemez.");
 
@@ -191,13 +207,6 @@ namespace OrderService.Domain.AggregateModels.OrderAggregate
             var subtotal = _orderItems.Sum(i => i.UnitPrice * i.Units);
 
             TotalAmount = Math.Max(0, subtotal - DiscountAmount);
-        }
-
-        private void AddOrderStartedDomainEvent(string userName, int cardTypeId, string cardNumber,
-            string cardSecurityNumber, string cardHolderName, DateTime cardExpiration)
-        {
-            AddDomainEvent(new OrderStartedDomainEvent(this, userName, cardTypeId,
-                cardNumber, cardSecurityNumber, cardHolderName, cardExpiration));
         }
 
         private void ThrowInvalidTransition(OrderStatus target) =>

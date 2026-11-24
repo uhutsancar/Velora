@@ -110,6 +110,6 @@ namespace Velora.Shared.Middleware
     public static class ApiExceptionMiddlewareExtensions
     {
         public static IApplicationBuilder UseVeloraExceptionHandling(this IApplicationBuilder app) =>
-            app.UseMiddleware<ApiExceptionMiddleware>();
+            app.UseExceptionHandler();
     }
 }

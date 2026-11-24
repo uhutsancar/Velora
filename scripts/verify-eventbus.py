@@ -50,6 +50,7 @@ import base64
 import json
 import os
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -60,7 +61,6 @@ MGMT_USER = os.environ.get("VELORA_RABBITMQ_USER", "guest")
 MGMT_PASS = os.environ.get("VELORA_RABBITMQ_PASSWORD", "guest")
 VHOST = os.environ.get("VELORA_RABBITMQ_VHOST", "/")
 EXCHANGE = "SellingBuddyEventBus"
-DLX = EXCHANGE + ".dlx"
 
 ADMIN_EMAIL = os.environ.get("VELORA_ADMIN_EMAIL", "admin@velora.com")
 ADMIN_PASSWORD = os.environ["VELORA_ADMIN_PASSWORD"]
@@ -70,6 +70,8 @@ EXPECTED_QUEUES = {
     "BasketService.OrderCreated": "OrderCreated",
     "CatalogService.OrderCreated": "OrderCreated",
     "OrderService.OrderCreated": "OrderCreated",
+    "OrderService.StockReservationConfirmed": "StockReservationConfirmed",
+    "OrderService.StockReservationRejected": "StockReservationRejected",
     "PaymentService.OrderStarted": "OrderStarted",
     "OrderService.OrderPaymentSuccess": "OrderPaymentSuccess",
     "OrderService.OrderPaymentFailed": "OrderPaymentFailed",
@@ -78,6 +80,7 @@ EXPECTED_QUEUES = {
     "NotificationService.OrderStatusChanged": "OrderStatusChanged",
     "NotificationService.OrderPaid": "OrderPaid",
     "CatalogService.OrderPaid": "OrderPaid",
+    "CatalogService.OrderPaymentFailed": "OrderPaymentFailed",
     "NotificationService.ProductStockChanged": "ProductStockChanged",
 }
 
@@ -86,6 +89,7 @@ SAGA_HOPS = [
     ("1. sepet bosaltma", "BasketService.OrderCreated"),
     ("1. stok rezervasyonu", "CatalogService.OrderCreated"),
     ("1. siparis olusturma", "OrderService.OrderCreated"),
+    ("1. stok onayi -> siparis", "OrderService.StockReservationConfirmed"),
     ("2. odeme talebi", "PaymentService.OrderStarted"),
     ("3. odeme sonucu -> siparis", "OrderService.OrderPaymentSuccess"),
     ("3. odeme sonucu -> bildirim", "NotificationService.OrderPaymentSuccess"),
@@ -113,13 +117,15 @@ def check(name, cond, extra=""):
 # transports
 # --------------------------------------------------------------------------- #
 
-def call(path, method="GET", body=None, token=None):
+def call(path, method="GET", body=None, token=None, headers=None):
     """API gateway call. Returns (status, parsed-body-or-text)."""
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(GW + path, data=data, method=method)
     req.add_header("Content-Type", "application/json")
     if token:
         req.add_header("Authorization", "Bearer " + token)
+    for name, value in (headers or {}).items():
+        req.add_header(name, value)
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
             raw = r.read().decode()
@@ -174,8 +180,11 @@ except urllib.error.URLError as e:
 
 check("exchange %s (direct, durable)" % EXCHANGE,
       EXCHANGE in exchanges and exchanges[EXCHANGE]["type"] == "direct" and exchanges[EXCHANGE]["durable"])
-check("dead-letter exchange %s" % DLX,
-      DLX in exchanges and exchanges[DLX]["type"] == "direct")
+expected_dlx = {"%s.%s.dlx" % (EXCHANGE, queue.split(".", 1)[0]) for queue in EXPECTED_QUEUES}
+missing_dlx = [name for name in sorted(expected_dlx)
+               if name not in exchanges or exchanges[name]["type"] != "direct"]
+check("servis bazli dead-letter exchange'leri", not missing_dlx,
+      "(eksik: %s)" % missing_dlx if missing_dlx else "(%s)" % len(expected_dlx))
 
 bindings = mgmt("/api/bindings/" + urllib.parse.quote(VHOST, safe=""))
 bound = {(b["destination"], b["routing_key"]) for b in bindings
@@ -184,7 +193,7 @@ bound = {(b["destination"], b["routing_key"]) for b in bindings
 stats = queue_stats()
 
 missing_queue = [q for q in EXPECTED_QUEUES if q not in stats]
-check("12 abone kuyrugunun tamami mevcut", not missing_queue,
+check("15 abone kuyrugunun tamami mevcut", not missing_queue,
       "(eksik: %s)" % missing_queue if missing_queue else "")
 
 wrong_binding = [q for q, key in EXPECTED_QUEUES.items() if (q, key) not in bound]
@@ -193,7 +202,7 @@ check("her kuyruk dogru routing key'e bagli", not wrong_binding,
 
 silent = [q for q in EXPECTED_QUEUES if stats.get(q, {}).get("consumers", 0) < 1]
 check("her kuyrugun canli dinleyicisi var", not silent,
-      "(dinleyicisiz: %s)" % silent if silent else "(12/12)")
+      "(dinleyicisiz: %s)" % silent if silent else "(15/15)")
 
 dlq_names = [q for q in stats if q.endswith(".dlx")]
 check("her abone kuyrugunun dlx esi var", len(dlq_names) >= len(EXPECTED_QUEUES),
@@ -243,13 +252,16 @@ if stale_dlq:
 
 print("TETIKLEME")
 
-status, products = call("/products?pageSize=1")
+status, products = call("/products?pageSize=10")
 if not check("katalogda urun var", status == 200 and products["totalCount"] > 0):
     raise SystemExit(1)
 
-product = products["items"][0]
+product = None
+product_detail = None
+selected_variant = None
 
-# Stok, listeden DEGIL urun detayindan okunur.
+# Stok, listeden DEGIL urun detayindan okunur. Varyantli urunlerde stoklu bir
+# varyant secilir; varyantsiz urunlerde urun stogu kullanilir.
 #
 # GET /products tasiyor: [ResponseCache(Duration = 30)]. Bu olcumun "sonra"
 # degeri detay ucundan geliyor ve o onbelleklenmiyor, dolayisiyla ikisini
@@ -257,8 +269,15 @@ product = products["items"][0]
 # senaryonun stok dusumu o pencereye denk geldiginde fark iki yerine dort
 # gorunuyor ve olay iki kez islenmis gibi okunuyor - oysa mesaj sayaci bir
 # tek teslimat gosteriyor. Iki ucu da ayni yerden okumak sorunu bitiriyor.
-status, product_detail = call("/products/%s" % product["slug"])
-if not check("urun detayi okunabiliyor", status == 200, "(%s)" % status):
+for candidate in products["items"]:
+    status, detail = call("/products/%s" % candidate["slug"])
+    variants = [v for v in detail.get("variants", []) if v.get("isActive", True) and v.get("stock", 0) >= 3] if status == 200 else []
+    if status == 200 and (variants or (not detail.get("variants") and detail.get("totalStock", 0) >= 3)):
+        product, product_detail = candidate, detail
+        selected_variant = variants[0] if variants else None
+        break
+
+if not check("urun detayi okunabiliyor", product is not None, "(%s)" % status):
     raise SystemExit(1)
 
 stock_before = product_detail["totalStock"]
@@ -278,7 +297,9 @@ status, basket = call("/basket/additem", "POST", {
     "quantity": 2,
     "pictureUrl": product["primaryImageUrl"],
     "slug": product["slug"],
-    "availableStock": product["totalStock"],
+    "variantId": selected_variant["id"] if selected_variant else None,
+    "variantLabel": " / ".join(filter(None, [selected_variant.get("color"), selected_variant.get("size")])) if selected_variant else None,
+    "availableStock": selected_variant["stock"] if selected_variant else product["totalStock"],
 }, token)
 check("sepete ekleme", status == 200 and len(basket["items"]) == 1)
 
@@ -303,10 +324,8 @@ check("kupon sayaci okundu", used_before is not None, "(UsedCount=%s)" % used_be
 status, _ = call("/basket/checkout", "POST", {
     "city": "Istanbul", "street": "Karakoy Cad 12", "state": "Beyoglu",
     "country": "Turkiye", "zipCode": "34425",
-    "cardNumber": "4242424242424242", "cardHolderName": "BUS TEST",
-    "cardExpiration": "2028-12-31T23:59:59Z", "cardSecurityNumber": "123",
-    "cardTypeId": 2, "buyer": "",
-}, token)
+    "paymentProvider": "sandbox", "paymentMethodToken": "sandbox_approved_verify_eventbus",
+}, token, {"x-request-id": str(uuid.uuid4())})
 if not check("checkout -> OrderCreated yayinlandi", status == 202, "(got %s)" % status):
     raise SystemExit(1)
 

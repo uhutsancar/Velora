@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Velora.Shared.Health;
 using NotificationService.IntegrationEvents.EventHandlers;
 using NotificationService.IntegrationEvents.Events;
+using Velora.Shared.Observability;
 
 // A web host rather than a plain console host, purely so the process can answer
 // health probes. Without an HTTP surface Kubernetes has no way to tell a wedged
@@ -15,6 +16,7 @@ using NotificationService.IntegrationEvents.Events;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddLogging(logging => logging.AddConsole());
+builder.Services.AddVeloraObservability(builder.Configuration, "NotificationService");
 
 builder.Services.AddTransient<OrderPaymentFailedIntegrationEventHandler>();
 builder.Services.AddTransient<OrderPaymentSuccessIntegrationEventHandler>();

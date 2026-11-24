@@ -25,6 +25,9 @@ namespace OrderService.Infrastructure.EntityConfigurations
             builder.Property(o => o.CouponCode).HasMaxLength(64);
             builder.Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
             builder.Property(o => o.DiscountAmount).HasColumnType("decimal(18,2)");
+            builder.Property(o => o.Currency).IsRequired().HasMaxLength(3);
+            builder.Property(o => o.PaymentProvider).IsRequired().HasMaxLength(64);
+            builder.Property(o => o.PaymentMethodToken).IsRequired().HasMaxLength(512);
 
             builder.HasIndex(o => o.OrderNumber).IsUnique();
             builder.HasIndex(o => o.UserId);
@@ -47,11 +50,6 @@ namespace OrderService.Infrastructure.EntityConfigurations
 
             builder.Metadata.FindNavigation(nameof(Order.OrderItems))!
                 .SetPropertyAccessMode(PropertyAccessMode.Field);
-
-            builder.HasOne(o => o.Buyer)
-                .WithMany()
-                .HasForeignKey(o => o.BuyerId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(o => o.OrderStatus)
                 .WithMany()

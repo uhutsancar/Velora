@@ -139,6 +139,13 @@ namespace IdentityService.Api.Infrastructure.Context
                 }
 
                 password = DevelopmentAdminPassword;
+
+                if (string.IsNullOrWhiteSpace(password))
+                {
+                    logger.LogWarning(
+                        "VELORA_SEED_ADMIN_PASSWORD is not configured, so no development admin was created.");
+                    return;
+                }
             }
 
             if (await context.Users.AnyAsync(u => u.Email == email))

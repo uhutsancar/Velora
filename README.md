@@ -1,6 +1,6 @@
 # Velora
 
-Premium e-commerce platform built on the existing **SellingBuddy** .NET 8 microservice
+Premium e-commerce platform built on the existing **SellingBuddy** .NET 10 microservice
 architecture: a customer storefront, a separate back office, and the services behind them.
 
 Everything below runs against real services — there is no mock layer anywhere in the stack.
@@ -42,7 +42,7 @@ Everything below runs against real services — there is no mock layer anywhere 
 
 ## 1. Quick start
 
-**Requirements:** .NET 8 SDK, Node 20+, pnpm 9+, Docker Desktop, Python 3 (for the
+**Requirements:** .NET 10 SDK (10.0.301), Node 20+, pnpm 9+, Docker Desktop, Python 3 (for the
 verification scripts only).
 
 Everything below runs against `Development`, where the services fall back to local
@@ -121,17 +121,20 @@ pnpm test:e2e       # Playwright, needs the backend running
 ### 1.4 Verify the whole chain
 
 ```powershell
-# 60 assertions: HTTP surface, end to end through the gateway
+# 61 assertions: HTTP surface, end to end through the gateway
 python scripts/verify-stack.py
 
-# 32 assertions: the asynchronous half, message by message
+# 34 assertions: the asynchronous half, message by message
 python scripts/verify-eventbus.py
+
+# concurrent stock contention, queue/DLQ checks and p50/p95/p99
+python scripts/verify-live-load.py
 ```
 
 `verify-stack.py` walks catalogue → register → basket → coupon → checkout → order saga →
 authorization → admin CRUD → storefront reflection.
 
-`verify-eventbus.py` asserts the topology (12 subscriber queues, their bindings and a live
+`verify-eventbus.py` asserts the topology (15 subscriber queues, their bindings and a live
 consumer on each), publishes one real checkout, then proves every hop of the saga consumed
 its message in order, that each handler's side effect actually happened, and that no message
 landed in a dead-letter queue. See section 5.3.
@@ -155,7 +158,7 @@ dotnet test SellingBuddy/tests/BuildingBlocks/EventBus.UnitTest
 
 ```
 microservice_project/
-├── SellingBuddy/                       # backend solution (.NET 8)
+├── SellingBuddy/                       # backend solution (.NET 10)
 │   └── src/
 │       ├── ApiGateways/WebApiGateway/  # Ocelot + Consul
 │       ├── BuildingBlocks/
@@ -180,8 +183,9 @@ microservice_project/
 │   ├── start-infrastructure.ps1
 │   ├── run-backend.ps1
 │   ├── reset-databases.ps1
-│   ├── verify-stack.py                 # 60 assertions, HTTP surface
-│   └── verify-eventbus.py              # 32 assertions, message flow
+│   ├── verify-stack.py                 # 61 assertions, HTTP surface
+│   ├── verify-eventbus.py              # 34 assertions, message flow
+│   └── verify-live-load.py             # contention + latency baseline
 │
 ├── docker-compose.infrastructure.yml   # LOCAL: infrastructure only
 ├── docker-compose.prod.yml             # PRODUCTION: the whole stack
@@ -309,12 +313,14 @@ makes the storefront return **404**, verified by `scripts/verify-stack.py`.
 
 ```
 POST /basket/checkout
-   └─ BasketService: idempotency (x-request-id), publishes OrderCreated
-        ├─► OrderService  : creates the Order aggregate, publishes OrderStarted
-        │                    └─► PaymentService : publishes OrderPaymentSuccess / Failed
-        │                          └─► OrderService : Paid, or Cancelled with a reason
-        │                                └─► NotificationService
-        ├─► CatalogService : decrements stock, increments SoldCount
+   └─ BasketService: authoritative quote + idempotency, publishes OrderCreated
+        ├─► OrderService  : creates the Order aggregate and waits for stock
+        ├─► CatalogService : transactionally reserves stock
+        │      ├─► StockReservationConfirmed ─► Order ─► OrderStarted
+        │      │                                      └─► PaymentService
+        │      │                                           ├─► success: Paid + consume stock
+        │      │                                           └─► failed: Cancelled + release stock
+        │      └─► StockReservationRejected ─► Order Cancelled (payment never starts)
         └─► BasketService  : clears the basket
 ```
 
@@ -323,7 +329,7 @@ now dead-letters the message (`*.dlx` queues) instead of silently dropping it.
 
 ### 5.3 Every message, and who listens
 
-One direct exchange, `SellingBuddyEventBus`, plus `SellingBuddyEventBus.dlx` for failures.
+One direct exchange, `SellingBuddyEventBus`, plus service-specific dead-letter exchanges.
 Each subscriber gets its own durable queue named `{Service}.{Event}`, bound on the event name
 as routing key, with a `.dlx` twin.
 
@@ -332,6 +338,8 @@ as routing key, with a `.dlx` twin.
 | `OrderCreated` | BasketService | BasketService | empties the basket |
 | | | CatalogService | reserves stock, raises `ProductStockChanged` |
 | | | OrderService | creates the Order aggregate |
+| `StockReservationConfirmed` | CatalogService | OrderService | confirms stock and starts payment |
+| `StockReservationRejected` | CatalogService | OrderService | cancels before payment |
 | `OrderStarted` | OrderService | PaymentService | attempts the authorisation |
 | `OrderPaymentSuccess` | PaymentService | OrderService | moves the order to Paid |
 | | | NotificationService | payment-confirmed notification |
@@ -343,7 +351,7 @@ as routing key, with a `.dlx` twin.
 | `ProductStockChanged` | CatalogService | NotificationService | low-stock notification |
 | `ProductPriceChanged` | CatalogService | — | published for future subscribers |
 
-`scripts/verify-eventbus.py` asserts all of it against a live broker: the exchanges, all 12
+`scripts/verify-eventbus.py` asserts all of it against a live broker: the exchanges, all 15
 queues, their bindings, a live consumer on each, then one real checkout traced hop by hop
 through the RabbitMQ management counters, the side effect each handler owns, an empty backlog
 and no growth in any dead-letter queue.
@@ -400,9 +408,13 @@ so a missing key is a compile error rather than a runtime `undefined`.
 
 ## 7. Testing
 
+The latest executed Docker Compose and Kubernetes evidence, including the
+concurrent stock test and RabbitMQ recovery test, is recorded in
+[`docs/CANLI-TEST-SONUCLARI-2026-11-24.md`](docs/CANLI-TEST-SONUCLARI-2026-11-24.md).
+
 ```powershell
 cd velora
-pnpm test          # 109 unit tests (Vitest)
+pnpm test          # 127 unit tests (Vitest)
 pnpm lint          # ESLint, zero warnings allowed
 pnpm typecheck     # strict TypeScript
 pnpm build         # production build of both apps
@@ -423,8 +435,9 @@ Backend:
 ```powershell
 dotnet build SellingBuddy.sln                              # 0 errors
 dotnet test SellingBuddy/tests/BuildingBlocks/EventBus.UnitTest
-python scripts/verify-stack.py                             # 60 checks, HTTP surface
-python scripts/verify-eventbus.py                          # 32 checks, message flow
+python scripts/verify-stack.py                             # 61 checks, HTTP surface
+python scripts/verify-eventbus.py                          # 34 checks, message flow
+python scripts/verify-live-load.py                         # contention + p50/p95/p99
 ```
 
 The broker tests are inconclusive rather than failing when no broker is reachable, so a clean
@@ -441,11 +454,11 @@ checkout stays green; the Azure ones skip unless `EventBus__ConnectionString` is
 | Brute force | 5 failed attempts → 15-minute lockout, plus IP rate limiting on the auth endpoints |
 | Authorization | permission policies enforced by the API. The UI hides controls as a convenience, never as the gate |
 | Ownership | a customer can only read their own basket, orders and addresses; identity always comes from the token, never the request body |
-| Payment data | the CVV is explicitly `Ignore`d in the EF mapping and never persisted |
+| Payment data | PAN/CVV/expiry fields do not exist in the active model, event or DB; only an opaque provider token/reference travels |
 | Input validation | zod on the client, DataAnnotations + domain invariants on the server |
 | CORS | allow-listed origins, configurable per environment |
 | Media upload | extension **and** content-type allow-list, 5 MB cap, generated filenames, path-traversal guard |
-| Idempotency | `x-request-id` prevents a retried checkout from creating two orders |
+| Idempotency | stable `x-request-id`, payload hash, Redis AOF marker and business-key uniqueness prevent duplicate effects |
 
 ### Known limitations
 
@@ -454,8 +467,9 @@ checkout stays green; the Azure ones skip unless `EventBus__ConnectionString` is
   60-minute access tokens, refresh rotation with reuse detection, and a CSP that blocks
   third-party script origins. Move to HttpOnly cookies if the API is ever served from the
   storefront's own origin — that is the only configuration where they are strictly better.
-- **The payment service is simulated.** It is a saga participant with the correct contract, not
-  a PSP integration. `PaymentSuccess` decides the outcome of every authorisation.
+- **The payment service is sandbox-only.** Development accepts explicit `sandbox_approved_*`
+  tokens. Production fails closed until a real PSP, signed webhook, refund and reconciliation
+  adapter is configured.
 - **The Azure Service Bus key committed in the original repository must be rotated.** It is no
   longer in the working tree, but git history still contains it. See section 8.1.
 

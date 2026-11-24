@@ -18,6 +18,12 @@ namespace BasketService.Api.Core.Application.Repository
         /// Marks a checkout request id as processed. Returns false when the same id was
         /// already seen, which makes the checkout endpoint idempotent.
         /// </summary>
-        Task<bool> TryRegisterCheckoutAsync(string customerId, string requestId);
+        Task<bool> TryRegisterCheckoutAsync(string customerId, string requestId, string requestHash);
+
+        Task<string?> GetCheckoutHashAsync(string customerId, string requestId);
+
+        Task<string?> TryAcquireCheckoutLockAsync(string customerId, string requestId);
+
+        Task ReleaseCheckoutLockAsync(string customerId, string requestId, string lockToken);
     }
 }

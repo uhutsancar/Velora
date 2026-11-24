@@ -1,8 +1,8 @@
-using EventBus.Base.Abstraction;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using OrderService.Application.IntegrationEvents;
 using OrderService.Domain.Events;
+using OrderService.Application.Interfaces.Repositories;
 
 namespace OrderService.Application.DomainEventHandlers
 {
@@ -12,12 +12,12 @@ namespace OrderService.Application.DomainEventHandlers
     /// </summary>
     public class OrderStatusChangedDomainEventHandler : INotificationHandler<OrderStatusChangedDomainEvent>
     {
-        private readonly IEventBus eventBus;
+        private readonly IIntegrationEventOutbox outbox;
         private readonly ILogger<OrderStatusChangedDomainEventHandler> logger;
 
-        public OrderStatusChangedDomainEventHandler(IEventBus eventBus, ILogger<OrderStatusChangedDomainEventHandler> logger)
+        public OrderStatusChangedDomainEventHandler(IIntegrationEventOutbox outbox, ILogger<OrderStatusChangedDomainEventHandler> logger)
         {
-            this.eventBus = eventBus;
+            this.outbox = outbox;
             this.logger = logger;
         }
 
@@ -25,7 +25,7 @@ namespace OrderService.Application.DomainEventHandlers
         {
             logger.LogInformation("Order {OrderId} moved to {Status}.", notification.OrderId, notification.StatusName);
 
-            eventBus.Publish(new OrderStatusChangedIntegrationEvent(
+            outbox.Enqueue(new OrderStatusChangedIntegrationEvent(
                 notification.OrderId,
                 notification.StatusId,
                 notification.StatusName,

@@ -17,99 +17,49 @@ namespace OrderService.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.6")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("OrderService.Domain.AggregateModels.BuyerAggregate.Buyer", b =>
+            modelBuilder.Entity("OrderService.Application.Interfaces.Repositories.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreateDate")
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("OccurredAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Name")
+                    b.Property<string>("Payload")
                         .IsRequired()
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name");
-
-                    b.ToTable("buyers", "ordering");
-                });
-
-            modelBuilder.Entity("OrderService.Domain.AggregateModels.BuyerAggregate.CardType", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("cardtypes", "ordering");
-                });
-
-            modelBuilder.Entity("OrderService.Domain.AggregateModels.BuyerAggregate.PaymentMethod", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Alias")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasColumnName("Alias");
-
-                    b.Property<Guid>("BuyerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CardHolderName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasColumnName("CardHolderName");
-
-                    b.Property<string>("CardNumber")
-                        .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)")
-                        .HasColumnName("CardNumber");
-
-                    b.Property<int>("CardTypeId")
-                        .HasColumnType("int")
-                        .HasColumnName("CardTypeId");
-
-                    b.Property<DateTime>("CreateDate")
+                    b.Property<DateTime?>("ProcessedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("Expiration")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("Expiration");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("BuyerId");
+                    b.HasIndex("ProcessedAtUtc", "OccurredAtUtc");
 
-                    b.HasIndex("CardTypeId");
-
-                    b.ToTable("paymentmethods", "ordering");
+                    b.ToTable("outbox_messages", "ordering");
                 });
 
             modelBuilder.Entity("OrderService.Domain.AggregateModels.OrderAggregate.Order", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("BuyerId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CancelReason")
@@ -125,6 +75,11 @@ namespace OrderService.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreateDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
@@ -144,8 +99,15 @@ namespace OrderService.Infrastructure.Migrations
                     b.Property<DateTime?>("PaidAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("PaymentMethodId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("PaymentMethodToken")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<string>("PaymentProvider")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -169,8 +131,6 @@ namespace OrderService.Infrastructure.Migrations
                         .HasColumnName("OrderStatusId");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BuyerId");
 
                     b.HasIndex("OrderDate");
 
@@ -244,30 +204,8 @@ namespace OrderService.Infrastructure.Migrations
                     b.ToTable("orderstatus", "ordering");
                 });
 
-            modelBuilder.Entity("OrderService.Domain.AggregateModels.BuyerAggregate.PaymentMethod", b =>
-                {
-                    b.HasOne("OrderService.Domain.AggregateModels.BuyerAggregate.Buyer", null)
-                        .WithMany("PaymentMethods")
-                        .HasForeignKey("BuyerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("OrderService.Domain.AggregateModels.BuyerAggregate.CardType", "CardType")
-                        .WithMany()
-                        .HasForeignKey("CardTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CardType");
-                });
-
             modelBuilder.Entity("OrderService.Domain.AggregateModels.OrderAggregate.Order", b =>
                 {
-                    b.HasOne("OrderService.Domain.AggregateModels.BuyerAggregate.Buyer", "Buyer")
-                        .WithMany()
-                        .HasForeignKey("BuyerId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("OrderService.Domain.AggregateModels.OrderAggregate.OrderStatus", "OrderStatus")
                         .WithMany()
                         .HasForeignKey("orderStatusId")
@@ -315,8 +253,6 @@ namespace OrderService.Infrastructure.Migrations
                     b.Navigation("Address")
                         .IsRequired();
 
-                    b.Navigation("Buyer");
-
                     b.Navigation("OrderStatus");
                 });
 
@@ -327,11 +263,6 @@ namespace OrderService.Infrastructure.Migrations
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("OrderService.Domain.AggregateModels.BuyerAggregate.Buyer", b =>
-                {
-                    b.Navigation("PaymentMethods");
                 });
 
             modelBuilder.Entity("OrderService.Domain.AggregateModels.OrderAggregate.Order", b =>

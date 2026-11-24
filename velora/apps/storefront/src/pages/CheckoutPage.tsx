@@ -5,14 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   addressSchema,
-  formatCardNumber,
   paymentSchema,
   zodValidator,
   type AddressFormValues,
   type PaymentFormValues,
 } from '@velora/shared';
 import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Input';
+import { Input } from '@/components/ui/Input';
 import { Price } from '@/components/ui/Display';
 import { EmptyState, Spinner } from '@/components/ui/Feedback';
 import { Modal } from '@/components/ui/Overlay';
@@ -23,12 +22,6 @@ import { useCreateAddressMutation, useGetAddressesQuery } from '@/store/api/acco
 import { useCheckoutMutation, useGetBasketQuery } from '@/store/api/basketApi';
 import { mediaUrl, PRODUCT_PLACEHOLDER } from '@/utils/media';
 import { cn } from '@/utils/cn';
-
-const CARD_TYPES = [
-  { value: 1, label: 'American Express' },
-  { value: 2, label: 'Visa' },
-  { value: 3, label: 'MasterCard' },
-];
 
 const emptyAddress: AddressFormValues = {
   title: '',
@@ -47,9 +40,11 @@ export default function CheckoutPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  const { data: basket, isLoading: basketLoading } = useGetBasketQuery(undefined, { skip: !isAuthenticated });
+  const { data: basket, isLoading: basketLoading } = useGetBasketQuery(undefined, {
+    skip: !isAuthenticated,
+  });
   const { data: addresses = [], isLoading: addressesLoading } = useGetAddressesQuery(undefined, {
     skip: !isAuthenticated,
   });
@@ -90,22 +85,21 @@ export default function CheckoutPage() {
     }
 
     try {
+      const requestId = sessionStorage.getItem('velora-checkout-request-id') ?? crypto.randomUUID();
+      sessionStorage.setItem('velora-checkout-request-id', requestId);
+
       await checkout({
         city: selectedAddress.city,
         street: selectedAddress.street,
         state: selectedAddress.state,
         country: selectedAddress.country,
         zipCode: selectedAddress.zipCode,
-        cardNumber: values.cardNumber,
-        cardHolderName: values.cardHolderName,
-        // The API expects a full timestamp; the form collects MM/YY.
-        cardExpiration: expiryToIso(values.cardExpiration),
-        cardSecurityNumber: values.cardSecurityNumber,
-        cardTypeId: values.cardTypeId,
-        // Ignored by the server, which uses the token identity instead.
-        buyer: user?.id ?? '',
+        paymentMethodToken: values.paymentMethodToken,
+        paymentProvider: values.paymentProvider,
+        requestId,
       }).unwrap();
 
+      sessionStorage.removeItem('velora-checkout-request-id');
       navigate('/siparis-alindi', { replace: true });
     } catch (error) {
       toast.error(error, t('checkout.orderFailed'));
@@ -134,7 +128,12 @@ export default function CheckoutPage() {
 
   return (
     <div className="container-velora py-10 md:py-16">
-      <Seo title={t('checkout.title')} description={t('checkout.metaDescription')} path="/odeme" noindex />
+      <Seo
+        title={t('checkout.title')}
+        description={t('checkout.metaDescription')}
+        path="/odeme"
+        noindex
+      />
 
       <h1 className="text-headline">{t('checkout.title')}</h1>
 
@@ -161,10 +160,18 @@ export default function CheckoutPage() {
               <EmptyState
                 title={t('account.noAddresses')}
                 description={t('checkout.noAddressBody')}
-                action={<Button onClick={() => setAddressModalOpen(true)}>{t('checkout.newAddress')}</Button>}
+                action={
+                  <Button onClick={() => setAddressModalOpen(true)}>
+                    {t('checkout.newAddress')}
+                  </Button>
+                }
               />
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t('checkout.address')}>
+              <ul
+                className="grid gap-3 sm:grid-cols-2"
+                role="radiogroup"
+                aria-label={t('checkout.address')}
+              >
                 {addresses.map((address) => {
                   const selected = address.id === selectedAddressId;
 
@@ -177,7 +184,9 @@ export default function CheckoutPage() {
                         onClick={() => setSelectedAddressId(address.id)}
                         className={cn(
                           'w-full border p-5 text-left transition-colors',
-                          selected ? 'border-ink-900 bg-white' : 'border-ink-200 hover:border-ink-400',
+                          selected
+                            ? 'border-ink-900 bg-white'
+                            : 'border-ink-200 hover:border-ink-400',
                         )}
                       >
                         <span className="label-caps block text-ink-900">{address.title}</span>
@@ -204,87 +213,26 @@ export default function CheckoutPage() {
 
             <Formik<PaymentFormValues>
               initialValues={{
-                cardHolderName: '',
-                cardNumber: '',
-                cardExpiration: '',
-                cardSecurityNumber: '',
-                cardTypeId: 2,
+                paymentMethodToken: import.meta.env.DEV ? 'sandbox_approved_demo' : '',
+                paymentProvider: import.meta.env.DEV ? 'sandbox' : '',
               }}
               validate={zodValidator<PaymentFormValues>(paymentSchema)}
               onSubmit={submitOrder}
             >
-              {({ values, setFieldValue }) => (
+              {() => (
                 <Form className="max-w-xl space-y-4">
-                  <Field name="cardHolderName">
+                  <Field name="paymentMethodToken">
                     {({ field, meta }: FieldProps) => (
                       <Input
                         {...field}
-                        label={t('checkout.cardHolder')}
-                        autoComplete="cc-name"
-                        placeholder={t('checkout.cardHolderPlaceholder')}
+                        label="Sandbox / sağlayıcı ödeme tokenı"
+                        autoComplete="off"
+                        placeholder="PSP hosted form tokenı"
                         error={meta.touched ? meta.error : undefined}
                         required
                       />
                     )}
                   </Field>
-
-                  <Field name="cardNumber">
-                    {({ field, meta }: FieldProps) => (
-                      <Input
-                        {...field}
-                        label={t('checkout.cardNumber')}
-                        inputMode="numeric"
-                        autoComplete="cc-number"
-                        placeholder="0000 0000 0000 0000"
-                        value={formatCardNumber(String(field.value ?? ''))}
-                        onChange={(event) =>
-                          void setFieldValue('cardNumber', event.target.value.replace(/\s/g, ''))
-                        }
-                        error={meta.touched ? meta.error : undefined}
-                        required
-                      />
-                    )}
-                  </Field>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field name="cardExpiration">
-                      {({ field, meta }: FieldProps) => (
-                        <Input
-                          {...field}
-                          label={t('checkout.expiration')}
-                          inputMode="numeric"
-                          autoComplete="cc-exp"
-                          placeholder="AA/YY"
-                          maxLength={5}
-                          onChange={(event) => void setFieldValue('cardExpiration', maskExpiry(event.target.value))}
-                          error={meta.touched ? meta.error : undefined}
-                          required
-                        />
-                      )}
-                    </Field>
-
-                    <Field name="cardSecurityNumber">
-                      {({ field, meta }: FieldProps) => (
-                        <Input
-                          {...field}
-                          label={t('checkout.cvv')}
-                          inputMode="numeric"
-                          autoComplete="cc-csc"
-                          placeholder="123"
-                          maxLength={4}
-                          error={meta.touched ? meta.error : undefined}
-                          required
-                        />
-                      )}
-                    </Field>
-                  </div>
-
-                  <Select
-                    label={t('checkout.cardType')}
-                    options={CARD_TYPES}
-                    value={values.cardTypeId}
-                    onChange={(event) => void setFieldValue('cardTypeId', Number(event.target.value))}
-                  />
 
                   <p className="flex items-center gap-2 text-xs text-ink-400">
                     <Lock className="h-3.5 w-3.5" aria-hidden />
@@ -321,7 +269,9 @@ export default function CheckoutPage() {
                   />
                   <div className="flex-1 text-sm">
                     <p className="font-medium text-ink-900">{item.productName}</p>
-                    {item.variantLabel && <p className="text-xs text-ink-400">{item.variantLabel}</p>}
+                    {item.variantLabel && (
+                      <p className="text-xs text-ink-400">{item.variantLabel}</p>
+                    )}
                     <p className="text-xs text-ink-400">{item.quantity} adet</p>
                   </div>
                   <Price value={item.unitPrice * item.quantity} size="sm" />
@@ -388,14 +338,24 @@ export default function CheckoutPage() {
           }}
         >
           <Form className="space-y-3">
-            <TextField name="title" label={t('account.addressTitle')} placeholder={t('checkout.addressTitlePlaceholder')} required />
+            <TextField
+              name="title"
+              label={t('account.addressTitle')}
+              placeholder={t('checkout.addressTitlePlaceholder')}
+              required
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <TextField name="firstName" label={t('account.firstName')} required />
               <TextField name="lastName" label={t('account.lastName')} required />
             </div>
 
-            <TextField name="phone" label={t('account.phone')} placeholder="0555 555 55 55" required />
+            <TextField
+              name="phone"
+              label={t('account.phone')}
+              placeholder="0555 555 55 55"
+              required
+            />
             <TextField name="street" label={t('account.street')} required />
 
             <div className="grid grid-cols-2 gap-4">
@@ -417,7 +377,6 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
 function TextField({
   name,
   label,
@@ -442,18 +401,4 @@ function TextField({
       )}
     </Field>
   );
-}
-
-/** "12/28" -> last day of that month, as an ISO timestamp. */
-function expiryToIso(value: string): string {
-  const [month, year] = value.split('/');
-  const date = new Date(Date.UTC(2000 + Number(year), Number(month), 0, 23, 59, 59));
-
-  return date.toISOString();
-}
-
-function maskExpiry(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 4);
-
-  return digits.length <= 2 ? digits : `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }

@@ -50,6 +50,7 @@ namespace EventBus.UnitTest
         {
             var eventBus = CreateBus(GetRabbitMQConfig);
 
+            eventBus.Subscribe<OrderCreatedIntegrationEvent, OrderCreatedIntegrationEventHandler>();
             eventBus.Publish(new OrderCreatedIntegrationEvent(1));
         }
 
@@ -90,7 +91,7 @@ namespace EventBus.UnitTest
                 var completed = await Task.WhenAny(received.Task, Task.Delay(TimeSpan.FromSeconds(30)));
 
                 Assert.AreSame(received.Task, completed, $"Message {id} was published but never came back within 30s.");
-                Assert.AreEqual(id, received.Task.Result.Id);
+                Assert.AreEqual(id, received.Task.Result.TestMessageId);
             }
             finally
             {

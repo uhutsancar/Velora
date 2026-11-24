@@ -1,14 +1,16 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using OrderService.Domain.AggregateModels.BuyerAggregate;
 using OrderService.Domain.AggregateModels.OrderAggregate;
 using OrderService.Domain.SeedWork;
 using OrderService.Infrastructure.EntityConfigurations;
 using OrderService.Infrastructure.Extensions;
+using OrderService.Application.Interfaces.Repositories;
+using EventBus.Base.Events;
+using Newtonsoft.Json;
 
 namespace OrderService.Infrastructure.Context
 {
-    public class OrderDbContext : DbContext, IUnitOfWork
+    public class OrderDbContext : DbContext, IUnitOfWork, IIntegrationEventOutbox
     {
         public const string DEFAULT_SCHEMA = "ordering";
 
@@ -25,10 +27,20 @@ namespace OrderService.Infrastructure.Context
 
         public DbSet<Order> Orders { get; set; } = default!;
         public DbSet<OrderItem> OrderItems { get; set; } = default!;
-        public DbSet<PaymentMethod> Payments { get; set; } = default!;
-        public DbSet<Buyer> Buyers { get; set; } = default!;
-        public DbSet<CardType> CardTypes { get; set; } = default!;
         public DbSet<OrderStatus> OrderStatus { get; set; } = default!;
+        public DbSet<OutboxMessage> OutboxMessages { get; set; } = default!;
+
+        public void Enqueue(IntegrationEvent integrationEvent)
+        {
+            OutboxMessages.Add(new OutboxMessage
+            {
+                Id = integrationEvent.Id,
+                OccurredAtUtc = integrationEvent.CreatedDate,
+                EventType = integrationEvent.GetType().AssemblyQualifiedName
+                    ?? throw new InvalidOperationException("Integration event type has no assembly-qualified name."),
+                Payload = JsonConvert.SerializeObject(integrationEvent)
+            });
+        }
 
         /// <summary>
         /// Commits the unit of work and dispatches the domain events raised by the
@@ -48,10 +60,17 @@ namespace OrderService.Infrastructure.Context
         {
             modelBuilder.ApplyConfiguration(new OrderEntityConfiguration());
             modelBuilder.ApplyConfiguration(new OrderItemEntityConfiguration());
-            modelBuilder.ApplyConfiguration(new BuyerEntityConfiguration());
             modelBuilder.ApplyConfiguration(new OrderStatusEntityConfiguration());
-            modelBuilder.ApplyConfiguration(new PaymentMethodEntityConfiguration());
-            modelBuilder.ApplyConfiguration(new CardTypeEntityConfiguration());
+
+            modelBuilder.Entity<OutboxMessage>(message =>
+            {
+                message.ToTable("outbox_messages", DEFAULT_SCHEMA);
+                message.HasKey(item => item.Id);
+                message.HasIndex(item => new { item.ProcessedAtUtc, item.OccurredAtUtc });
+                message.Property(item => item.EventType).IsRequired().HasMaxLength(1000);
+                message.Property(item => item.Payload).IsRequired();
+                message.Property(item => item.LastError).HasMaxLength(2000);
+            });
         }
     }
 }

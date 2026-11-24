@@ -15,6 +15,8 @@ namespace OrderService.Api.IntegrationEvents.Events
 
         public string UserId { get; set; } = default!;
 
+        public Guid CheckoutId { get; set; }
+
         public string UserName { get; set; } = default!;
 
         public int OrderNumber { get; set; }
@@ -29,17 +31,9 @@ namespace OrderService.Api.IntegrationEvents.Events
 
         public string ZipCode { get; set; } = default!;
 
-        public string CardNumber { get; set; } = default!;
+        public string PaymentProvider { get; set; } = default!;
 
-        public string CardHolderName { get; set; } = default!;
-
-        public DateTime CardExpiration { get; set; }
-
-        public string CardSecurityNumber { get; set; } = default!;
-
-        public int CardTypeId { get; set; }
-
-        public string Buyer { get; set; } = default!;
+        public string PaymentMethodToken { get; set; } = default!;
 
         public Guid RequestId { get; set; }
 

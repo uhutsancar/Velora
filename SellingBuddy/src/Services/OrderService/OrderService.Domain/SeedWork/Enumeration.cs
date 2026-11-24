@@ -22,7 +22,7 @@ namespace OrderService.Domain.SeedWork
                 .Select(f => f.GetValue(null))
                 .Cast<T>();
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is not Enumeration otherValue)
             {
@@ -65,6 +65,7 @@ namespace OrderService.Domain.SeedWork
             return matchingItem;
         }
 
-        public int CompareTo(object other) => Id.CompareTo(((Enumeration)other).Id);
+        public int CompareTo(object? other) =>
+            other is Enumeration value ? Id.CompareTo(value.Id) : 1;
     }
 }

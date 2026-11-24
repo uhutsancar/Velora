@@ -17,7 +17,7 @@ Hepsinin ortak on kosulu **Adim 0**'dir.
 ### 0.1 Gerekli araclar
 
 ```powershell
-dotnet --version      # 8.x olmali
+dotnet --version      # 10.0.301 olmali (global.json)
 node --version        # 20.11+
 pnpm --version        # 9.x   (yoksa: corepack enable)
 docker --version
@@ -224,8 +224,8 @@ Her servisi kendi penceresinde baslatir, sirayi da kendisi gozetir.
 
 ```powershell
 . .\scripts\load-env.ps1
-python scripts\verify-stack.py       # 60 kontrol: HTTP zinciri, checkout dahil
-python scripts\verify-eventbus.py    # 32 kontrol: kuyruklar ve saga
+python scripts\verify-stack.py       # 61 kontrol: HTTP zinciri, checkout dahil
+python scripts\verify-eventbus.py    # 34 kontrol: kuyruklar ve saga
 ```
 
 ### A.6 Durdurma
@@ -250,12 +250,21 @@ cd D:\microservice_project
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
+Yerel Docker Compose'ta basarili odeme sagasini denemek icin komuttan once iki
+acik test bayragi verin. Bunlar gercek uretim ortaminda kullanilmaz:
+
+```powershell
+$env:PAYMENT_MODE = 'Sandbox'
+$env:PAYMENT_ALLOW_SANDBOX = 'true'
+docker compose -f docker-compose.prod.yml up -d
+```
+
 Ilk sefer 20-30 dakika surer (dokuz imaj derlenir). Sonraki calistirmalar
 katman onbellegi sayesinde cok daha hizlidir.
 
 | Ne | Adres |
 |---|---|
-| Magaza | http://localhost:8080 |
+| Magaza | http://localhost:18080 (bu makinedeki `.env`; varsayilan 8080) |
 | Admin | http://localhost:8081 |
 | API | http://localhost:5000 |
 
@@ -283,7 +292,7 @@ kubectl get nodes     # docker-desktop  Ready
 
 ```powershell
 cd D:\microservice_project
-bash scripts/build-local-images.sh
+.\scripts\build-local-images.ps1
 ```
 
 ### C.3 Kur
@@ -306,6 +315,7 @@ bash scripts/build-local-images.sh
 .\scripts\velora-k8s.ps1 logs -Service catalog    # canli log
 .\scripts\velora-k8s.ps1 restart -Service catalog
 .\scripts\velora-k8s.ps1 open                     # tarayicida ac
+.\scripts\velora-k8s.ps1 rabbit                   # RabbitMQ UI :15672
 .\scripts\velora-k8s.ps1 down                     # uygulamayi kaldir
 ```
 
@@ -322,7 +332,7 @@ Ayrintilar: [deploy/README.md](../deploy/README.md)
 # Backend birim testleri
 dotnet test SellingBuddy.sln
 
-# Frontend birim testleri (111 test)
+# Frontend birim testleri (127 test)
 cd velora
 pnpm -r test
 pnpm -r typecheck
@@ -333,6 +343,7 @@ cd D:\microservice_project
 . .\scripts\load-env.ps1
 python scripts\verify-stack.py
 python scripts\verify-eventbus.py
+python scripts\verify-live-load.py
 
 # Helm chart kurallari (calisan yigin gerekmez)
 python scripts\verify-chart.py

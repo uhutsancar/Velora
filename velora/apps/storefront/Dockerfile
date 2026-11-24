@@ -42,6 +42,11 @@ COPY velora/apps/storefront/security-headers.conf.template /etc/nginx/velora-sec
 COPY velora/apps/storefront/nginx.conf /etc/nginx/conf.d/default.conf
 # Acilista /config.js icindeki yer tutuculari ortam degiskenleriyle doldurur.
 COPY velora/apps/storefront/docker-entrypoint.d/ /docker-entrypoint.d/
+# Windows checkout'larinda CRLF olan shell betikleri Linux'ta shebang'i bozar.
+# Imaj katmaninda LF'ye normalize ederek build'i host Git ayarindan bagimsiz tut.
+USER root
+RUN sed -i 's/\r$//' /docker-entrypoint.d/*.sh && chmod 755 /docker-entrypoint.d/*.sh
+USER 101
 COPY --from=build /repo/apps/storefront/dist /usr/share/nginx/html
 
 EXPOSE 8080
