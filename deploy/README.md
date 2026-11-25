@@ -1,7 +1,7 @@
 # Velora — Kubernetes
 
-Velora'nin Kubernetes kurulumu. Bu dosya *nasil kullanilacagini* anlatir;
-*neden boyle tasarlandigi* chart dosyalarindaki yorumlarda ve `plan.md` icinde.
+Velora'nin Kubernetes kurulumu. Bu dosya kullanim ve operasyon akisini;
+chart dosyalarindaki yorumlar ise ilgili tasarim gerekcelerini anlatir.
 
 ---
 
@@ -82,7 +82,7 @@ migration Job'i ayni sablonlardan uretilir; hicbir manifest kopyalanmaz.
 
 | | local | dev | staging | prod |
 |---|---|---|---|---|
-| Veri katmani | kume ici | kume ici | kume ici | **yonetilen** (ADR-04) |
+| Veri katmani | kume ici | kume ici | kume ici | **yonetilen** |
 | Replika | 1 | 1 | 2+ | 2+ |
 | HPA / PDB | yok | yok | var | var |
 | NetworkPolicy | kapali | kapali | acik | acik |
@@ -99,8 +99,9 @@ migration Job'i ayni sablonlardan uretilir; hicbir manifest kopyalanmaz.
 Ham `Secret` manifesti **Git'e girmez** (base64 sifreleme degildir).
 
 * **Yerel:** `.env` dosyasindan `scripts/create-local-secrets.ps1` ile uretilir.
-* **dev/staging/prod:** External Secrets Operator bir vault'tan ceker; chart
-  yalnizca Secret'in *adini* bilir, icerigini degil.
+* **dev/staging/prod:** Chart yalnizca onceden olusturulmus Secret'in *adini*
+  bilir. Hedef platform bu Secret'i vault/External Secrets/Sealed Secrets gibi
+  kurumun sectigi yontemle saglamalidir; bu repo o operatoru kurmaz.
 
 ---
 
@@ -156,7 +157,7 @@ registry'e itilmeden pod'larda kullanilabilir (`imagePullPolicy: Never`).
 
 Dockerfile'lar once yalnizca `.csproj` dosyalarini kopyalayip `restore` eder,
 kaynak kodu sonra alir. Boylece kod degisikliklerinde bagimlilik cozumu
-onbellekten gelir (plan.md B12).
+onbellekten gelir.
 
 ---
 

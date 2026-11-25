@@ -1,5 +1,9 @@
 import { AxiosError } from 'axios';
-import { isNormalizedApiError, type ApiErrorResponse, type NormalizedApiError } from '../types/common';
+import {
+  isNormalizedApiError,
+  type ApiErrorResponse,
+  type NormalizedApiError,
+} from '../types/common';
 
 const NETWORK_MESSAGE = 'Sunucuya ulaşılamıyor. Bağlantınızı kontrol edip tekrar deneyin.';
 const TIMEOUT_MESSAGE = 'İstek zaman aşımına uğradı. Lütfen tekrar deneyin.';
@@ -54,7 +58,11 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
     return {
       status,
       code: body?.code ?? codeForStatus(status),
-      message: body?.message ?? firstValidationMessage(validationErrors) ?? defaultMessageFor(status),
+      message:
+        body?.detail ??
+        body?.message ??
+        firstValidationMessage(validationErrors) ??
+        defaultMessageFor(status),
       ...(validationErrors ? { fieldErrors: validationErrors } : {}),
       ...(body?.traceId ? { traceId: body.traceId } : {}),
       isNetworkError: false,

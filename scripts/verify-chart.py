@@ -107,7 +107,7 @@ def verify(env: str) -> None:
         f"(ocelot={sorted(ocelot_ports)} service={sorted(service_ports)})",
     )
 
-    # ADR-08: liveness disa bagimli olursa gecici bir DB yavaslamasi tum
+    # Liveness disa bagimli olursa gecici bir DB yavaslamasi tum
     # replikalari ayni anda restart ettirir ve kesintiyi kume capina yayar.
     #
     # Kural "yol tam olarak /health/live olsun" degil, "liveness bagimlilik
@@ -145,7 +145,7 @@ def verify(env: str) -> None:
         ),
     )
 
-    # ADR-06: CFS quota .NET'in GC sicramalarini throttle eder, p99'u bozar.
+    # CFS quota .NET'in GC sicramalarini throttle eder, p99'u bozar.
     check(
         "hicbir kapta CPU limiti yok",
         all("cpu" not in container(d)["resources"].get("limits", {}) for d in deployments),

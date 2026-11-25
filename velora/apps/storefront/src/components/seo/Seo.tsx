@@ -22,12 +22,20 @@ export interface SeoProps {
  * preview scraping becomes a requirement, put a prerender layer in front of the
  * static host — the tags below are already the right shape for it.
  */
-export function Seo({ title, description, path = '/', image, type = 'website', noindex, jsonLd }: SeoProps) {
+export function Seo({
+  title,
+  description,
+  path = '/',
+  image,
+  type = 'website',
+  noindex,
+  jsonLd,
+}: SeoProps) {
   const { i18n } = useTranslation();
 
   const canonical = `${env.siteUrl}${path}`;
   const fullTitle = title.includes(env.siteName) ? title : `${title} | ${env.siteName}`;
-  const ogImage = image ?? `${env.siteUrl}/og-default.jpg`;
+  const ogImage = image ?? `${env.siteUrl}/showcase/hero-autumn.jpg`;
 
   return (
     <Helmet prioritizeSeoTags>

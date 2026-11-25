@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-#  Katman siralamasi bilincli (plan.md B12).
+#  Katman siralamasi restore katmanini kaynak kodu degisikliklerinden ayirir.
 #
 #  Onceki hali once TUM kaynak kodu kopyalayip sonra restore ediyordu: tek bir
 #  .cs satiri degisince "dotnet restore" sifirdan calisiyordu. Yedi servis x
@@ -27,7 +27,6 @@ COPY SellingBuddy/src/BuildingBlocks/EventBus/EventBus.AzureServiceBus/EventBus.
 COPY SellingBuddy/src/BuildingBlocks/EventBus/EventBus.Base/EventBus.Base.csproj SellingBuddy/src/BuildingBlocks/EventBus/EventBus.Base/
 COPY SellingBuddy/src/BuildingBlocks/EventBus/EventBus.Factory/EventBus.Factory.csproj SellingBuddy/src/BuildingBlocks/EventBus/EventBus.Factory/
 COPY SellingBuddy/src/BuildingBlocks/EventBus/EventBus.RabbitMQ/EventBus.RabbitMQ.csproj SellingBuddy/src/BuildingBlocks/EventBus/EventBus.RabbitMQ/
-COPY SellingBuddy/src/Clients/BlazorWebApp/WebApp/WebApp.csproj SellingBuddy/src/Clients/BlazorWebApp/WebApp/
 COPY SellingBuddy/src/Services/BasketService/BasketService.Api/BasketService.Api.csproj SellingBuddy/src/Services/BasketService/BasketService.Api/
 COPY SellingBuddy/src/Services/CatalogService/CatalogService.Api/CatalogService.Api.csproj SellingBuddy/src/Services/CatalogService/CatalogService.Api/
 COPY SellingBuddy/src/Services/IdentityService/IdentityService.Api/IdentityService.Api.csproj SellingBuddy/src/Services/IdentityService/IdentityService.Api/

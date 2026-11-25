@@ -130,13 +130,14 @@ support, use [local development](#local-development) instead.
 ### 1. Create local configuration
 
 ```powershell
-Copy-Item .env.example .env
+New-Item -ItemType File -Path .env -ErrorAction SilentlyContinue
 notepad .env
 ```
 
-Generate your own values; do not copy secrets from documentation or commit
-`.env`. At minimum, fill the required signing, SQL, Redis and RabbitMQ values,
-plus the optional bootstrap-admin credentials.
+Environment templates are intentionally not stored in the repository. Obtain
+deployment values through the team's secure channel, generate every secret
+locally, and never commit `.env`. At minimum, provide the required signing, SQL,
+Redis and RabbitMQ values plus the optional bootstrap-admin credentials.
 
 For a local full-stack run, use browser-reachable origins:
 
@@ -196,8 +197,8 @@ from the .NET SDK, and both frontends run from Vite.
 ### 1. Prepare the environment
 
 ```powershell
-Copy-Item .env.example .env
-# Fill .env, then load it into every shell used for the backend.
+New-Item -ItemType File -Path .env -ErrorAction SilentlyContinue
+# Fill .env from your private configuration source, then load it into every backend shell.
 . .\scripts\load-env.ps1
 ```
 
@@ -339,8 +340,9 @@ instead of producing a misleading brokerless green run.
 
 ## Configuration and secrets
 
-`.env` is ignored by Git and must stay uncommitted. `.env.example` documents the
-supported variables but intentionally contains no usable secret.
+All `.env` variants, including example and template files, are ignored by Git
+and excluded from Docker build contexts. Keep environment configuration in a
+local file or an external secret store; never add an exception for an env file.
 
 .NET configuration follows the normal precedence rules: `appsettings.json`,
 environment-specific settings, then environment variables. Nested keys use
@@ -471,7 +473,6 @@ microservice_project/
 ├── docker-compose.infrastructure.yml
 ├── docker-compose.prod.yml
 ├── docker-compose.ci.yml
-├── .env.example
 └── SellingBuddy.sln
 ```
 
@@ -527,4 +528,3 @@ image; do not delete the volume blindly.
 | [Kubernetes guide](deploy/README.md) | Helm structure, local cluster and operations |
 | [Live test results](docs/CANLI-TEST-SONUCLARI-2026-11-24.md) | Latest recorded runtime evidence |
 | [Production readiness](docs/URETIME-HAZIRLIK-DURUMU.md) | P0/P1/P2 gaps and evidence |
-| [Legacy structure analysis](PROJECT_STRUCTURE.md) | Pre-Velora SellingBuddy baseline; not the current architecture source |

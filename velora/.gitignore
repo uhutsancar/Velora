@@ -28,11 +28,13 @@ blob-report/
 .cache/
 
 # --- Ortam dosyalari ---
-# .env.example commit edilir, gercek degerler edilmez.
+# Ornek/template dahil hicbir ortam dosyasi commit edilmez.
 .env
 .env.*
-!.env.example
-!.env.production.example
+.envrc
+*.envrc
+*.env
+*.env.*
 *.local
 
 # --- Editor / isletim sistemi ---

@@ -9,10 +9,16 @@ export interface PagedResult<T> {
   hasNext: boolean;
 }
 
-/** Normalised error body produced by Velora.Shared's ApiExceptionMiddleware. */
+/** RFC 9457 Problem Details body produced by the shared backend exception handler. */
 export interface ApiErrorResponse {
-  code: string;
-  message: string;
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  instance?: string;
+  code?: string;
+  /** Kept for compatibility with older endpoints and upstream proxies. */
+  message?: string;
   errors?: Record<string, string[]>;
   traceId?: string;
 }

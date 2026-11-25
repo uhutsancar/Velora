@@ -22,6 +22,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $src = Join-Path $root 'SellingBuddy/src'
+$envFile = Join-Path $root '.env'
+
+if (Test-Path -LiteralPath $envFile) {
+    . (Join-Path $PSScriptRoot 'load-env.ps1') -EnvFile $envFile
+}
 
 if (-not $SkipInfrastructure) {
     & (Join-Path $PSScriptRoot 'start-infrastructure.ps1')
@@ -34,7 +39,7 @@ $services = @(
     @{ Name = 'BasketService';    Path = 'Services/BasketService/BasketService.Api';           Port = 5003 },
     @{ Name = 'OrderService';     Path = 'Services/OrderService/OrderService.Api';             Port = 5002 },
     @{ Name = 'PaymentService';   Path = 'Services/PaymentService/PaymentService.Api';         Port = 5001 },
-    @{ Name = 'NotificationSvc';  Path = 'Services/NotificationService/NotificationService';   Port = 0    },
+    @{ Name = 'NotificationSvc';  Path = 'Services/NotificationService/NotificationService';   Port = 5006 },
     @{ Name = 'ApiGateway';       Path = 'ApiGateways/WebApiGateway/Web.ApiGateway';           Port = 5000 }
 )
 
@@ -51,10 +56,12 @@ foreach ($service in $services) {
 
     Write-Host "  -> $($service.Name)" -ForegroundColor Yellow
 
-    Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+    $url = "http://localhost:$($service.Port)"
+
+    Start-Process -FilePath 'powershell.exe' -WindowStyle Normal -ArgumentList @(
         '-NoExit',
         '-Command',
-        "`$Host.UI.RawUI.WindowTitle = 'Velora - $($service.Name)'; Set-Location '$projectPath'; dotnet run"
+        "`$Host.UI.RawUI.WindowTitle = 'Velora - $($service.Name)'; Set-Location '$root'; dotnet run --project '$projectPath' --urls '$url'"
     ) | Out-Null
 
     # Give each service a head start so its Consul registration lands before the
@@ -69,6 +76,8 @@ Write-Host '  Identity      http://localhost:5005/swagger'
 Write-Host '  Catalog       http://localhost:5004/swagger'
 Write-Host '  Basket        http://localhost:5003/swagger'
 Write-Host '  Order         http://localhost:5002/swagger'
+Write-Host '  Payment       http://localhost:5001/swagger'
+Write-Host '  Notification  http://localhost:5006/health'
 Write-Host '  Consul UI     http://localhost:8500'
 Write-Host ''
 Write-Host 'Frontend icin:  cd velora; pnpm install; pnpm dev' -ForegroundColor Cyan

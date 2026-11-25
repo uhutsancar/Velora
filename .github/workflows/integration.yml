@@ -31,7 +31,7 @@ jobs:
             echo "SEED_ADMIN_EMAIL=ci-admin@velora.local"
             echo "SEED_ADMIN_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=')Aa1!"
             echo "API_PUBLIC_URL=http://localhost:5000"
-            echo "MEDIA_PUBLIC_URL=http://localhost:5000/media"
+            echo "MEDIA_PUBLIC_URL=http://localhost:5000"
             echo "STOREFRONT_ORIGIN=http://localhost:8080"
             echo "ADMIN_ORIGIN=http://localhost:8081"
             echo "SITE_NAME=Velora"
@@ -42,8 +42,8 @@ jobs:
             echo "ADMIN_PORT=8081"
             echo "VELORA_TAG=ci-${GITHUB_SHA::7}"
             echo "EVENTBUS_TYPE=RabbitMQ"
-            echo "EVENTBUS_CONNECTION_STRING="
-            echo "PAYMENT_SUCCESS=true"
+            echo "PAYMENT_MODE=Sandbox"
+            echo "PAYMENT_ALLOW_SANDBOX=true"
           } > .env
 
       # Dogrulama scriptleri parolalari ortamdan okur (artik kodda yedek yok).

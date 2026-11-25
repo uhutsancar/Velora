@@ -81,7 +81,7 @@ spec:
 {{/*
 Veri katmanina cikis.
 
-Prod'da SQL/Redis/RabbitMQ kume disindadir (ADR-04), bu yuzden hedef bir pod
+Prod'da SQL/Redis/RabbitMQ kume disindadir, bu yuzden hedef bir pod
 degil bir CIDR'dir. Kubelet'in prob'lari bu politikalardan etkilenmez.
 */}}
 apiVersion: networking.k8s.io/v1

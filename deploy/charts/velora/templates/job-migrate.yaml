@@ -29,8 +29,7 @@ burasidir.
 
 DIKKAT — expand/contract: maxUnavailable=0 ile eski ve yeni pod'lar bir sure
 AYNI veritabanina birlikte baglanir. Bu yuzden bir goc eski kodu kirmamalidir:
-kolon yeniden adlandirma ve default'suz NOT NULL ekleme tek adimda yapilamaz
-(ADR-10).
+kolon yeniden adlandirma ve default'suz NOT NULL ekleme tek adimda yapilamaz.
 */}}
 {{- range $slug, $svc := .Values.services }}
 {{- if $svc.migrate }}

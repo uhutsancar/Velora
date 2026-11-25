@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -72,4 +73,10 @@ public static class VeloraProblemDetailsRegistration
         services.AddExceptionHandler<VeloraExceptionHandler>();
         return services;
     }
+}
+
+public static class VeloraExceptionHandlingExtensions
+{
+    public static IApplicationBuilder UseVeloraExceptionHandling(this IApplicationBuilder app) =>
+        app.UseExceptionHandler();
 }

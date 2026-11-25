@@ -90,4 +90,4 @@ END
 
 Write-Host ''
 Write-Host 'Veritabanlari silindi. Servisler bir sonraki baslangicta migrationlari uygulayip tohumlayacak.' -ForegroundColor Green
-Write-Host 'Redis sepetlerini de temizlemek icin: docker exec local-redis redis-cli FLUSHALL' -ForegroundColor DarkGray
+Write-Host 'Redis sepetlerini de temizlemek icin: docker exec velora-redis redis-cli FLUSHALL' -ForegroundColor DarkGray

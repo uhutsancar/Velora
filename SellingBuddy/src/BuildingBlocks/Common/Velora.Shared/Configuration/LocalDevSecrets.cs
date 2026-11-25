@@ -40,7 +40,7 @@ namespace Velora.Shared.Configuration
 
             throw new InvalidOperationException(
                 $"{variable} tanimli degil. Yerel gelistirme sirlari depoda tutulmaz.\n" +
-                "Cozum: depo kokundeki .env dosyasini olusturun (ornek: .env.example) ve\n" +
+                "Cozum: depo kokundeki .env dosyasini yerelde olusturun ve\n" +
                 "kabugunuza yukleyin. PowerShell icin: ./scripts/load-env.ps1");
         }
     }

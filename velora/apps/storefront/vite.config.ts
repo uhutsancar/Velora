@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => ({
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'state-vendor': ['@reduxjs/toolkit', 'react-redux'],
           'motion-vendor': ['framer-motion'],
-          'form-vendor': ['formik', 'zod'],
+          'form-vendor': ['formik'],
           'i18n-vendor': ['i18next', 'react-i18next'],
         },
       },

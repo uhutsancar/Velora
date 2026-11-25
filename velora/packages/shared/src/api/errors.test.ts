@@ -14,9 +14,14 @@ const axiosError = (status: number, data: unknown): AxiosError =>
   new AxiosError('Request failed', 'ERR_BAD_REQUEST', undefined, undefined, response(status, data));
 
 describe('normalizeApiError', () => {
-  it('reads the Velora error envelope', () => {
+  it('reads the RFC 9457 Problem Details envelope', () => {
     const result = normalizeApiError(
-      axiosError(409, { code: 'duplicate_review', message: 'Bu ürünü zaten değerlendirdiniz.' }),
+      axiosError(409, {
+        title: 'Request rejected',
+        detail: 'Bu ürünü zaten değerlendirdiniz.',
+        status: 409,
+        code: 'duplicate_review',
+      }),
     );
 
     expect(result).toMatchObject({
@@ -49,7 +54,9 @@ describe('normalizeApiError', () => {
   });
 
   it('falls back to a status-specific message for an empty body', () => {
-    expect(normalizeApiError(axiosError(403, undefined)).message).toBe('Bu işlem için yetkiniz yok.');
+    expect(normalizeApiError(axiosError(403, undefined)).message).toBe(
+      'Bu işlem için yetkiniz yok.',
+    );
     expect(normalizeApiError(axiosError(404, undefined)).code).toBe('not_found');
   });
 

@@ -1,10 +1,9 @@
 # Velora uretime hazirlik durumu
 
-Son guncelleme: **24 Kasim 2026**
+Son guncelleme: **25 Kasim 2026**
 
-Bu belge, `VELORA_URETIME_HAZIRLIK_VE_EKSIKLER (3).md` revizyon 2'deki
-bulgulari mevcut kod ve calisan yerel ortamla eslestirir. Kaynak denetim eski
-bir commit'i inceliyordu; asagidaki tablo bugunku depoyu esas alir.
+Bu belge mevcut kodu, calisan yerel ortam kanitlarini ve halen acik olan
+uretim kapilarini tek tabloda eslestirir.
 
 ## Sonuc
 
@@ -39,7 +38,7 @@ operasyonu olmadan kapatilamayacak isi ifade eder.
 | P0-06 Transactional outbox | Kismi | Order ve Catalog is verisiyle olayi ayni SQL transaction'inda outbox'a yazar; confirm sonrasi isaretler. Basket checkout siniri Redis + confirmed publish kullaniyor. |
 | P0-07 Kalici tuketici tekillestirme | Kismi | Siparis, stok, kupon ve durum gecislerinde business-key/unique constraint idempotency var. Tum handler'lar icin ortak transactional inbox yok. |
 | P0-08 Broker onayi/toparlanma | Tamam | Publisher confirm, mandatory/return, retry, otomatik kanal/baglanti toparlama, yeniden abonelik ve servis bazli DLQ var. Canli broker restart sonrasi 15/15 consumer ve 34/34 mesaj testi yeniden gecti. |
-| P0-09 Desteklenen runtime | Tamam | 17 proje .NET 10, SDK `global.json` ile sabit, container ve CI .NET 10. |
+| P0-09 Desteklenen runtime | Tamam | 16 solution projesi ve Azure observer araci .NET 10; SDK `global.json` ile sabit, container ve CI .NET 10. |
 
 ## P1 maddeleri
 
@@ -58,7 +57,7 @@ operasyonu olmadan kapatilamayacak isi ifade eder.
 | P1-11 Yetki/audit | Kismi | Musteri/admin negatif yetki akislari E2E testte; fiyat, kupon, rol ve durum degisikligi icin tam audit defteri yok. |
 | P1-12 Rate limit/proxy | Kismi | Gercek `/auth`, `/basket/checkout`, medya ve genel yollar icin gateway limitleri, trusted proxy ve body/timeout siniri var. Limit deposu replika basina bellekte. |
 | P1-13 Medya | Acik | Boyut/tur kontrolleri ve kalici Compose volume var; decode/re-encode, malware tarama ve ortak object storage yok. |
-| P1-14 TLS/secret/ortam | Kismi / Dis | K8s Secret, ExternalSecret sablonu, NetworkPolicy ve ic port izolasyonu var. Canli TLS ve secret rotation tatbikati ortama bagli. |
+| P1-14 TLS/secret/ortam | Kismi / Dis | Chart harici bir Secret adina baglanir; NetworkPolicy ve ic port izolasyonu var. Secret'i uretecek vault/ESO kurulumu, canli TLS ve rotation tatbikati hedef ortama bagli. |
 | P1-15 Kisisel veri/saklama | Kismi | Kart verisi kaldirildi, telemetry hassas alan testi var. Kurumsal veri envanteri, anonimlestirme ve retention otomasyonu eksik. |
 | P1-16 Tekrarlanabilir performans | Kismi | `verify-live-load.py` p50/p95/p99, stok yarisi, kuyruk ve DLQ olcer. Uretim hacmi/SLO hedefi urun sahibi ve staging ile belirlenmeli. |
 | P1-17 Checkout durum ekrani | Kismi | Kalici request-id ve siparis sonucu sorgusu var; 202 response icinde status URL ve yenilemede otomatik ayni isleme donus eksik. |
@@ -71,7 +70,7 @@ operasyonu olmadan kapatilamayacak isi ifade eder.
 | P1-24 Test/CI kapisi | Kismi | Unit, frontend, chart, full-stack, eventbus, security/SBOM/image taramalari var. Test cesitliligi artti; tum servisler icin ayrik integration test projesi yok. |
 | P1-25 Telemetry platformu | Kismi | Ortak `AddVeloraObservability`, OTLP, ASP.NET/HTTP/EF/AMQP izleri ve hassas veri testi var. Collector/backend bu yerel kurulumun disinda. |
 | P1-26 Global hata sozlesmesi | Tamam | Ortak RFC 9457 ProblemDetails, kod/traceId ve uretimde ayrinti gizleme var. |
-| P1-27 Gateway guvenligi/kesif | Kismi | JWT on kontrol, gercek rota bazli rate-limit, timeout, K8s DNS ve route parity kontrolu var. Compose halen Consul kullaniyor. |
+| P1-27 Gateway guvenligi/kesif | Kismi | JWT on kontrol, rota bazli rate-limit ve timeout var. SDK gelistirme Consul, Compose/Kubernetes ise platform DNS ve uretilen route tablosunu kullaniyor. |
 | P1-28 Repo hijyeni | Kismi | Artiklar temizlendi, ignore/analyzer/CI sertlestirildi. Branch protection, CODEOWNERS ve kurum politikasi repo disi ayar ister. |
 | P1-29 Lisans | Kismi | AutoMapper kaldirildi, NuGet/npm audit ve SBOM var. Kurum onayli lisans allow-list kapisi ayrica tanimlanmali. |
 | P1-30 API contract/surum | Acik | OpenAPI mevcut; formal `/v1`, oasdiff kapisi ve uretilmis TypeScript istemci yok. |

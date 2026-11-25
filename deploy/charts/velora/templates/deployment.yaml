@@ -96,7 +96,7 @@ spec:
           livenessProbe:
             # DIKKAT: bu uc hicbir dis bagimliligi yoklamaz. SQL yavasladiginda
             # liveness'in dusmesi tum replikalari ayni anda restart eder ve
-            # gecici bir aksakligi kume capinda kesintiye cevirir (ADR-08).
+            # gecici bir aksakligi kume capinda kesintiye cevirir.
             httpGet:
               path: {{ (default dict $svc.probes).live | default "/health/live" }}
               port: http
@@ -125,7 +125,7 @@ spec:
             limits:
               # CPU limiti BILEREK yok: CFS quota .NET'in GC ve thread pool
               # sicramalarini throttle eder ve p99 gecikmeyi bozar. Bellek
-              # limiti ise zorunlu, yoksa tek pod node'u OOM'a surukler (ADR-06).
+              # limiti ise zorunlu, yoksa tek pod node'u OOM'a surukler.
               memory: {{ $svc.resources.limits.memory | default "512Mi" }}
           securityContext:
             allowPrivilegeEscalation: false

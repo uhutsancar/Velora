@@ -8,8 +8,8 @@
     degiskeninden okur. Bu script o degiskenleri tek komutla yukler.
 
     .env dosyasi .gitignore tarafindan disarida tutulur; hicbir zaman
-    commit'lenmemelidir. Ilk kurulumda .env.example dosyasini kopyalayip
-    kendi degerlerinizi uretin.
+    commit'lenmemelidir. Depoda env sablonu tutulmaz; ilk kurulumda .env
+    dosyasini yerelde olusturup degerleri guvenli kaynaktan alin.
 
 .EXAMPLE
     . ./scripts/load-env.ps1
@@ -36,7 +36,7 @@ if (-not $EnvFile) {
 }
 
 if (-not (Test-Path $EnvFile)) {
-    throw ".env bulunamadi: $EnvFile`nOnce .env.example dosyasini kopyalayip kendi degerlerinizi uretin."
+    throw ".env bulunamadi: $EnvFile`nDosyayi yerelde olusturun ve degerleri guvenli yapilandirma kaynagindan alin."
 }
 
 $loaded = 0

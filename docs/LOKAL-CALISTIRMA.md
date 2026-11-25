@@ -29,34 +29,37 @@ Parolalar depoda tutulmuyor; `.env` dosyasini bir kere uretmelisiniz.
 
 ```powershell
 cd D:\microservice_project
-Copy-Item .env.example .env
+New-Item -ItemType File -Path .env -ErrorAction SilentlyContinue
 notepad .env
 ```
+
+Depoda `.env` ornegi tutulmaz. Degerleri ekibin guvenli yapilandirma
+kaynagindan alin ve tum parolalari yerelde uretin.
 
 Doldurulmasi zorunlu alanlar:
 
 ```
-SQL_SA_PASSWORD=Guclu.Bir.Parola123!
-REDIS_PASSWORD=baska-bir-parola
+SQL_SA_PASSWORD=<yerelde uretilen guclu parola>
+REDIS_PASSWORD=<yerelde uretilen rastgele parola>
 RABBITMQ_USER=velora
-RABBITMQ_PASSWORD=bir-parola-daha
+RABBITMQ_PASSWORD=<yerelde uretilen rastgele parola>
 AUTH_SIGNING_KEY=<en az 48 karakter rastgele>
 SEED_ADMIN_EMAIL=admin@velora.com
-SEED_ADMIN_PASSWORD=Admin.Parolasi123!
+SEED_ADMIN_PASSWORD=<yerelde uretilen admin parolasi>
 
 # .NET tarafinin okudugu turevler (SQL_SA_PASSWORD ile AYNI olmali)
-VELORA_SQL_PASSWORD=Guclu.Bir.Parola123!
-VELORA_SEED_ADMIN_PASSWORD=Admin.Parolasi123!
+VELORA_SQL_PASSWORD=<SQL_SA_PASSWORD ile ayni>
+VELORA_SEED_ADMIN_PASSWORD=<SEED_ADMIN_PASSWORD ile ayni>
 VELORA_ADMIN_EMAIL=admin@velora.com
-VELORA_ADMIN_PASSWORD=Admin.Parolasi123!
+VELORA_ADMIN_PASSWORD=<SEED_ADMIN_PASSWORD ile ayni>
 VELORA_RABBITMQ_USER=velora
-VELORA_RABBITMQ_PASSWORD=bir-parola-daha
+VELORA_RABBITMQ_PASSWORD=<RABBITMQ_PASSWORD ile ayni>
 
 # Servislerin RabbitMQ'ya baglanirken kullandigi kimlik.
 # RABBITMQ_USER / RABBITMQ_PASSWORD ile AYNI olmali: broker bu kullaniciyla
 # kurulur, servisler de appsettings.json'daki guest/guest varsayilanini bunlarla ezer.
 EventBus__UserName=velora
-EventBus__Password=bir-parola-daha
+EventBus__Password=<RABBITMQ_PASSWORD ile ayni>
 ```
 
 Rastgele anahtar uretmek icin:

@@ -1,12 +1,12 @@
 # ============================================================================
 #  Velora - production stack
 #
-#  Everything that differs between environments comes from .env (see
-#  .env.example). No secret is written in this file and none is baked into an
-#  image; the services read them from the environment at start-up and refuse to
+#  Everything that differs between environments comes from a local .env file or
+#  an external secret source. No env template or secret is stored in Git and no
+#  secret is baked into an image; services read values at start-up and refuse to
 #  boot if a required one is missing.
 #
-#      cp .env.example .env      # then fill it in
+#      New-Item -ItemType File .env   # create locally, then fill securely
 #      docker compose -f docker-compose.prod.yml build
 #      docker compose -f docker-compose.prod.yml up -d
 #

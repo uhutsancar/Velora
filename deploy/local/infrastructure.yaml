@@ -1,7 +1,7 @@
 # Yerel Kubernetes icin veri katmani (Docker Desktop).
 #
 # Prod'da SQL/Redis/RabbitMQ kume DISINDA, yonetilen servisler olarak calisir
-# (ADR-04): kumede stateful veri isletmek bu olcekte kazanctan cok maliyettir.
+# Bu olcekte kumede stateful veri isletmek kazanctan cok operasyon maliyeti getirir.
 # Bu dosya YALNIZCA yerel deneme icindir; tek replika, kalicilik yok, kaynak
 # talepleri kucuk. Bu yuzden charts/ altinda degil, ayri duruyor.
 #

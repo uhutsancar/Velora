@@ -16,6 +16,9 @@
 **/*.user
 **/.env
 **/.env.*
-!**/.env.example
+**/.envrc
+**/*.envrc
+**/*.env
+**/*.env.*
 scripts/
 *.md

@@ -20,9 +20,11 @@ Tum komutlar depo kokunden, PowerShell'de calisir. Docker Desktop acik olmali ve
 2. `.env` yoksa uret ve doldur
 
    ```powershell
-   Copy-Item .env.example .env
+   New-Item -ItemType File -Path .env -ErrorAction SilentlyContinue
    notepad .env
    ```
+
+   Depoda env sablonu tutulmaz; degerleri guvenli yapilandirma kaynagindan alin.
 
 ---
 
@@ -49,43 +51,43 @@ anahtari bulunamaz ve servis acilmaz.
 1. **Identity** — `:5005`
 
    ```powershell
-   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\IdentityService\IdentityService.Api
+   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\IdentityService\IdentityService.Api --urls http://localhost:5005
    ```
 
 2. **Catalog** — `:5004`
 
    ```powershell
-   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\CatalogService\CatalogService.Api
+   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\CatalogService\CatalogService.Api --urls http://localhost:5004
    ```
 
 3. **Basket** — `:5003`
 
    ```powershell
-   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\BasketService\BasketService.Api
+   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\BasketService\BasketService.Api --urls http://localhost:5003
    ```
 
 4. **Order** — `:5002`
 
    ```powershell
-   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\OrderService\OrderService.Api
+   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\OrderService\OrderService.Api --urls http://localhost:5002
    ```
 
 5. **Payment** — `:5001`
 
    ```powershell
-   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\PaymentService\PaymentService.Api
+   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\PaymentService\PaymentService.Api --urls http://localhost:5001
    ```
 
-6. **Notification** — HTTP ucu yok, kuyrugu dinler
+6. **Notification** — kuyrugu dinler, `:5006` uzerinden health probe sunar
 
    ```powershell
-   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\NotificationService\NotificationService
+   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\Services\NotificationService\NotificationService --urls http://localhost:5006
    ```
 
 7. **API Gateway** — `:5000`, en son
 
    ```powershell
-   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\ApiGateways\WebApiGateway\Web.ApiGateway
+   cd D:\microservice_project; . .\scripts\load-env.ps1; dotnet run --project SellingBuddy\src\ApiGateways\WebApiGateway\Web.ApiGateway --urls http://localhost:5000
    ```
 
 Catalog ilk acilista semayi kurar ve katalogu tohumlar. O pencerede
@@ -145,6 +147,7 @@ Ayri ayri isterseniz iki terminal:
 | Basket Swagger | http://localhost:5003/swagger |
 | Order Swagger | http://localhost:5002/swagger |
 | Payment Swagger | http://localhost:5001/swagger |
+| Notification health | http://localhost:5006/health |
 | Consul UI | http://localhost:8500 |
 | RabbitMQ UI | http://localhost:15672 |
 
@@ -163,7 +166,7 @@ Her seyin ayakta oldugunu tek komutla kontrol eder:
 
 ```powershell
 cd D:\microservice_project
-.\scripts\verify-stack.ps1
+python scripts\verify-stack.py
 ```
 
 Kubernetes'te RabbitMQ paneli ve canli mesaj/yuk testleri:

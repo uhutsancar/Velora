@@ -17,6 +17,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+$envFile = Join-Path $root '.env'
+
+if (Test-Path -LiteralPath $envFile) {
+    . (Join-Path $PSScriptRoot 'load-env.ps1') -EnvFile $envFile
+}
 
 Write-Host 'Velora altyapisi baslatiliyor...' -ForegroundColor Cyan
 
@@ -61,6 +66,6 @@ if (-not $ready) {
 Write-Host ''
 Write-Host 'Altyapi hazir:' -ForegroundColor Green
 Write-Host '  Consul UI    http://localhost:8500'
-Write-Host '  RabbitMQ UI  http://localhost:15672  (guest / guest)'
+Write-Host '  RabbitMQ UI  http://localhost:15672  (.env: RABBITMQ_USER / RABBITMQ_PASSWORD)'
 Write-Host '  Redis        localhost:6379'
-Write-Host '  SQL Server   localhost,1444          (sa / $env:SQL_SA_PASSWORD)'
+Write-Host '  SQL Server   localhost,1444          (sa / .env: SQL_SA_PASSWORD)'
