@@ -1,7 +1,8 @@
-import { Card, CardContent, CardHeader, Chip, MenuItem, Select, Stack, Typography } from '@mui/material';
+import { Button, Card, CardContent, CardHeader, Chip, MenuItem, Select, Stack, Typography } from '@mui/material';
 import {
   AlertTriangle,
   Package,
+  Plus,
   ShoppingCart,
   TrendingUp,
   Users,
@@ -64,18 +65,23 @@ export default function DashboardPage() {
         title={t('admin.dashboard')}
         description={t('admin.dashboardSubtitle')}
         actions={
-          <Select
-            value={days}
-            size="small"
-            onChange={(event) => setDays(Number(event.target.value))}
-            aria-label={t('admin.dateRange')}
-          >
-            {RANGE_OPTIONS.map((option) => (
-              <MenuItem key={option} value={option}>
-                {t('admin.lastDays', { count: option })}
-              </MenuItem>
-            ))}
-          </Select>
+          <Stack direction="row" spacing={1.25}>
+            <Button component={Link} to="/products/new" variant="contained" startIcon={<Plus size={17} />}>
+              {t('admin.newProduct')}
+            </Button>
+            <Select
+              value={days}
+              size="small"
+              onChange={(event) => setDays(Number(event.target.value))}
+              aria-label={t('admin.dateRange')}
+            >
+              {RANGE_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {t('admin.lastDays', { count: option })}
+                </MenuItem>
+              ))}
+            </Select>
+          </Stack>
         }
       />
 

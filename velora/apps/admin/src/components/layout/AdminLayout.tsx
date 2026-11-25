@@ -40,7 +40,7 @@ export function AdminLayout() {
       </Drawer>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-ink-100 bg-white px-4 lg:px-6">
+        <header className="flex h-[4.5rem] shrink-0 items-center justify-between gap-4 border-b border-ink-100 bg-white/95 px-4 backdrop-blur lg:px-8">
           <div className="flex items-center gap-3">
             <IconButton
               onClick={() => dispatch(setMobileSidebar(true))}
@@ -116,7 +116,7 @@ export function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="admin-main flex-1 overflow-y-auto p-4 lg:p-8">
           {/* Route chunks stream in behind this boundary. */}
           <Suspense fallback={<LoadingScreen />}>
             <Outlet />

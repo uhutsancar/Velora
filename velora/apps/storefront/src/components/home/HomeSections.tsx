@@ -95,7 +95,7 @@ export function EditorialSection() {
       <div className="container-velora grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-20">
         <div className="relative aspect-editorial overflow-hidden lg:sticky lg:top-28">
           <motion.img
-            src="https://picsum.photos/seed/velora-editorial/1200/1500"
+            src="/showcase/atelier-craft.jpg"
             alt={t('home.editorialImageAlt')}
             loading="lazy"
             decoding="async"

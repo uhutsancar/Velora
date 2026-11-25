@@ -15,11 +15,47 @@ namespace CatalogService.Api.Infrastructure.Context
     public class CatalogContextSeed
     {
         /// <summary>
-        /// Deterministic placeholder photography. Replace with real asset URLs (or upload
-        /// through the admin media endpoint) before going live.
+        /// Curated, repository-owned catalogue photography. User-uploaded media
+        /// continues to come from the admin media endpoint.
         /// </summary>
         private static string Photo(string seed, int width = 1200, int height = 1500)
-            => $"https://picsum.photos/seed/velora-{seed}/{width}/{height}";
+        {
+            _ = width;
+            _ = height;
+
+            var key = seed.ToLowerInvariant();
+            var asset = key switch
+            {
+                var value when value.StartsWith("campaign-sonbahar") => "hero-autumn.jpg",
+                var value when value.StartsWith("campaign-seyahat") => "weekender-meridian-brown.jpg",
+                var value when value.StartsWith("campaign-ofis") => "laptop-sedir-brown.jpg",
+                var value when value.StartsWith("campaign-ilk-siparis") => "campaign-first-order.jpg",
+                var value when value.StartsWith("campaign-hediye") => "wallet-mira-cognac.jpg",
+                var value when value.StartsWith("campaign-arsiv") => "briefcase-atlas-cognac.jpg",
+
+                var value when value.StartsWith("cat-kadin") => "hero-autumn.jpg",
+                var value when value.StartsWith("cat-erkek") => "briefcase-atlas-cognac.jpg",
+                var value when value.StartsWith("cat-aksesuar") => "wallet-mira-cognac.jpg",
+                var value when value.StartsWith("cat-seyahat") => "weekender-meridian-brown.jpg",
+                var value when value.StartsWith("cat-ofis") => "laptop-sedir-brown.jpg",
+
+                var value when ContainsAny(value, "nova-tote", "lumen-el-cantasi") => "bag-nova-ivory.jpg",
+                var value when ContainsAny(value, "aurora", "sera-mini", "iris-bucket", "alba-baget", "yaz-hasir") => "bag-aurora-black.jpg",
+                var value when ContainsAny(value, "sirt-cantasi", "baros-govde") => "backpack-orion-black.jpg",
+                var value when ContainsAny(value, "atlas-evrak", "hektor-postaci", "arsiv-postaci") => "briefcase-atlas-cognac.jpg",
+                var value when ContainsAny(value, "cuzdan", "kartlik", "anahtar", "pasaportluk", "gozluk-kilifi") => "wallet-mira-cognac.jpg",
+                var value when ContainsAny(value, "babet", "loafer", "derby") => "shoes-kastor-black.jpg",
+                var value when value.Contains("weekender") => "weekender-meridian-brown.jpg",
+                var value when value.Contains("valiz") => "luggage-kompas-anthracite.jpg",
+                var value when ContainsAny(value, "laptop", "evrak-dosyasi", "defter-kilifi", "masa-deri", "kalemlik") => "laptop-sedir-brown.jpg",
+                _ => "campaign-first-order.jpg"
+            };
+
+            return $"/media/catalog/{asset}";
+        }
+
+        private static bool ContainsAny(string value, params string[] fragments)
+            => fragments.Any(value.Contains);
 
         /// <summary>
         /// Fixed seed so a rebuilt database produces the same demo numbers.
@@ -51,6 +87,65 @@ namespace CatalogService.Api.Infrastructure.Context
             await SeedCampaigns(context, categories);
             await SeedCoupons(context);
             await BackfillSlugs(context, logger);
+            await RefreshPlaceholderPhotography(context, logger);
+        }
+
+        /// <summary>
+        /// Upgrades databases created by older releases without touching operator
+        /// uploads. Only URLs from the retired picsum demo source are replaced.
+        /// </summary>
+        private static async Task RefreshPlaceholderPhotography(CatalogContext context, ILogger logger)
+        {
+            static bool IsLegacyPlaceholder(string? url)
+                => url?.Contains("picsum.photos/seed/velora-", StringComparison.OrdinalIgnoreCase) == true;
+
+            var changed = 0;
+            var products = await context.CatalogItems.Include(product => product.Images).ToListAsync();
+
+            foreach (var product in products)
+            {
+                if (IsLegacyPlaceholder(product.PictureUri))
+                {
+                    product.PictureUri = Photo(product.Slug);
+                    changed++;
+                }
+
+                foreach (var image in product.Images.Where(image => IsLegacyPlaceholder(image.Url)))
+                {
+                    image.Url = Photo($"{product.Slug}-{image.DisplayOrder}");
+                    changed++;
+                }
+            }
+
+            var categories = await context.Categories.ToListAsync();
+            foreach (var category in categories.Where(category => IsLegacyPlaceholder(category.ImageUrl)))
+            {
+                category.ImageUrl = Photo($"cat-{category.Slug}", 900, 1100);
+                changed++;
+            }
+
+            var campaigns = await context.Campaigns.ToListAsync();
+            foreach (var campaign in campaigns)
+            {
+                if (IsLegacyPlaceholder(campaign.BannerUrl))
+                {
+                    campaign.BannerUrl = Photo($"campaign-{campaign.Slug}", 2000, 1000);
+                    changed++;
+                }
+
+                if (IsLegacyPlaceholder(campaign.ImageUrl))
+                {
+                    campaign.ImageUrl = Photo($"campaign-{campaign.Slug}", 1200, 900);
+                    changed++;
+                }
+            }
+
+            if (changed == 0) return;
+
+            await context.SaveChangesAsync();
+            logger.LogInformation(
+                "Replaced {Count} legacy demo image URLs with curated catalogue assets.",
+                changed);
         }
 
         /* ---------------------------------------------------------------- */

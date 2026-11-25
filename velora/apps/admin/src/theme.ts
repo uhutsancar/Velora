@@ -26,13 +26,13 @@ export const theme = createTheme({
     divider: ink[100],
   },
 
-  shape: { borderRadius: 4 },
+  shape: { borderRadius: 10 },
 
   typography: {
     fontFamily: fontStack.sans,
     h1: { fontFamily: fontStack.display, fontSize: '2rem', letterSpacing: '-0.02em' },
     h2: { fontFamily: fontStack.display, fontSize: '1.5rem', letterSpacing: '-0.01em' },
-    h3: { fontSize: '1.25rem', fontWeight: 600 },
+    h3: { fontSize: '1.25rem', fontWeight: 700 },
     h4: { fontSize: '1.125rem', fontWeight: 600 },
     h5: { fontSize: '1rem', fontWeight: 600 },
     h6: { fontSize: '0.9375rem', fontWeight: 600 },
@@ -43,14 +43,23 @@ export const theme = createTheme({
   components: {
     MuiButton: {
       defaultProps: { disableElevation: true },
-      styleOverrides: { root: { borderRadius: 2, paddingInline: 18 } },
+      styleOverrides: {
+        root: { borderRadius: 8, minHeight: 38, paddingInline: 18 },
+        contained: { boxShadow: '0 8px 20px -12px rgba(18, 16, 14, 0.75)' },
+      },
     },
     MuiPaper: {
       styleOverrides: { root: { backgroundImage: 'none' }, outlined: { borderColor: ink[100] } },
     },
     MuiCard: {
       defaultProps: { variant: 'outlined' },
-      styleOverrides: { root: { borderRadius: 4 } },
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          borderColor: '#E8E5E0',
+          boxShadow: '0 1px 2px rgba(18, 16, 14, 0.03), 0 14px 38px -32px rgba(18, 16, 14, 0.45)',
+        },
+      },
     },
     // Kart basliklarinin tamami h5; varsayilan olarak verildiginde her
     // <CardHeader> cagrisindan titleTypographyProps prop'u dusuyor.
@@ -62,7 +71,7 @@ export const theme = createTheme({
     MuiSelect: { defaultProps: { size: 'small' } },
     MuiChip: {
       styleOverrides: {
-        root: { borderRadius: 2, fontWeight: 500 },
+        root: { borderRadius: 6, fontWeight: 600 },
         sizeSmall: { height: 22, fontSize: '0.6875rem' },
       },
     },
@@ -71,7 +80,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           border: `1px solid ${ink[100]}`,
-          borderRadius: 4,
+          borderRadius: 10,
           backgroundColor: surface.DEFAULT,
           '--DataGrid-rowBorderColor': '#F1F0EE',
         },
@@ -87,6 +96,9 @@ export const theme = createTheme({
           // iki satirlik metin) aksi halde ustte asili kalir.
           display: 'flex',
           alignItems: 'center',
+        },
+        row: {
+          '&:hover': { backgroundColor: '#FAF8F5' },
         },
       },
     },

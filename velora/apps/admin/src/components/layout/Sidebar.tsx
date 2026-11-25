@@ -105,7 +105,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         collapsed ? 'w-[4.5rem]' : 'w-64',
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b border-ink-100 px-4">
+      <div className="flex h-[4.5rem] items-center justify-between border-b border-ink-100 px-4">
         <AdminLogo variant={collapsed ? 'mark' : 'full'} className={collapsed ? 'mx-auto' : undefined} />
 
         <button
@@ -118,7 +118,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </button>
       </div>
 
-      <nav aria-label={t('admin.adminMenu')} className="flex-1 overflow-y-auto py-4">
+      <nav aria-label={t('admin.adminMenu')} className="flex-1 overflow-y-auto px-2 py-5">
         {NAV_GROUPS.map((group) => (
           <NavGroup key={group.titleKey} group={group} collapsed={collapsed} onNavigate={onNavigate} />
         ))}
@@ -150,7 +150,7 @@ function NavGroup({
   return (
     <div className="mb-5">
       {!collapsed && (
-        <p className="label-caps px-4 pb-2 text-ink-300">{t(group.titleKey)}</p>
+        <p className="label-caps px-3 pb-2 text-ink-300">{t(group.titleKey)}</p>
       )}
 
       <ul>
@@ -194,11 +194,11 @@ function NavItemLink({
         title={collapsed ? t(item.labelKey) : undefined}
         className={({ isActive }) =>
           cn(
-            'relative flex items-center gap-3 border-l-2 px-4 py-2.5 text-sm transition-colors',
+            'relative my-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.925rem] transition-all',
             collapsed && 'justify-center px-0',
             isActive
-              ? 'border-tan-500 bg-tan-100/40 font-medium text-ink-900'
-              : 'border-transparent text-ink-500 hover:bg-ink-50 hover:text-ink-900',
+              ? 'bg-ink-900 font-semibold text-white shadow-sm'
+              : 'text-ink-500 hover:bg-ink-50 hover:text-ink-900',
           )
         }
       >

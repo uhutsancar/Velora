@@ -69,7 +69,7 @@ export function Hero({ campaigns, loading = false }: HeroProps) {
               loading={slideIndex === 0 ? 'eager' : 'lazy'}
               {...{ fetchpriority: slideIndex === 0 ? 'high' : 'low' }}
               decoding="async"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-[82%_center] md:object-center"
               initial={false}
               animate={{ opacity: slideIndex === index ? 1 : 0, scale: slideIndex === index ? 1 : 1.06 }}
               transition={{ opacity: { duration: 1 }, scale: { duration: 8, ease: 'linear' } }}

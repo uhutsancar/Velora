@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 
 var connectionString = Environment.GetEnvironmentVariable("EventBus__ConnectionString");
@@ -19,6 +21,112 @@ var namespaceConnectionString = string.Join(';', connectionString
 
 var management = new ServiceBusAdministrationClient(namespaceConnectionString);
 var topic = (await management.GetTopicAsync(topicName)).Value;
+
+if (action == "report")
+{
+    var endpoint = namespaceConnectionString
+        .Split(';', StringSplitOptions.RemoveEmptyEntries)
+        .FirstOrDefault(part => part.StartsWith("Endpoint=", StringComparison.OrdinalIgnoreCase))?
+        .Split('=', 2)[1]
+        .TrimEnd('/') ?? "unknown";
+
+    var subscriptions = new List<object>();
+    await foreach (var subscription in management.GetSubscriptionsAsync(topicName))
+    {
+        var reportRuntime = (await management.GetSubscriptionRuntimePropertiesAsync(topicName, subscription.SubscriptionName)).Value;
+        var rules = new List<object>();
+        await foreach (var rule in management.GetRulesAsync(topicName, subscription.SubscriptionName))
+        {
+            var filter = rule.Filter switch
+            {
+                SqlRuleFilter sql => sql.SqlExpression,
+                CorrelationRuleFilter correlation => JsonSerializer.Serialize(new
+                {
+                    correlation.CorrelationId,
+                    correlation.MessageId,
+                    correlation.Subject,
+                    correlation.SessionId,
+                    correlation.ReplyTo,
+                    correlation.ReplyToSessionId,
+                    correlation.To,
+                    correlation.ContentType,
+                    Properties = correlation.ApplicationProperties,
+                }),
+                _ => rule.Filter.GetType().Name,
+            };
+            rules.Add(new { rule.Name, FilterType = rule.Filter.GetType().Name, Filter = filter });
+        }
+
+        subscriptions.Add(new
+        {
+            subscription.SubscriptionName,
+            Status = subscription.Status.ToString(),
+            subscription.MaxDeliveryCount,
+            LockDuration = subscription.LockDuration.ToString(),
+            DefaultMessageTimeToLive = subscription.DefaultMessageTimeToLive.ToString(),
+            reportRuntime.ActiveMessageCount,
+            reportRuntime.DeadLetterMessageCount,
+            reportRuntime.TotalMessageCount,
+            reportRuntime.TransferMessageCount,
+            reportRuntime.TransferDeadLetterMessageCount,
+            Rules = rules,
+        });
+    }
+
+    var messages = new List<object>();
+    if ((await management.SubscriptionExistsAsync(topicName, subscriptionName)).Value)
+    {
+        await using var client = new ServiceBusClient(namespaceConnectionString);
+        var receiver = client.CreateReceiver(topicName, subscriptionName);
+        var peeked = await receiver.PeekMessagesAsync(100);
+        foreach (var message in peeked)
+        {
+            messages.Add(new
+            {
+                message.MessageId,
+                message.CorrelationId,
+                message.Subject,
+                message.ContentType,
+                message.SequenceNumber,
+                message.EnqueuedTime,
+                message.ExpiresAt,
+                message.DeliveryCount,
+                ApplicationProperties = message.ApplicationProperties,
+                Body = message.Body.ToString(),
+            });
+        }
+        await receiver.CloseAsync();
+    }
+
+    var report = new
+    {
+        CapturedAtUtc = DateTimeOffset.UtcNow,
+        NamespaceEndpoint = endpoint,
+        Topic = new
+        {
+            topic.Name,
+            Status = topic.Status.ToString(),
+            topic.MaxSizeInMegabytes,
+            DefaultMessageTimeToLive = topic.DefaultMessageTimeToLive.ToString(),
+            topic.RequiresDuplicateDetection,
+            DuplicateDetectionHistoryTimeWindow = topic.DuplicateDetectionHistoryTimeWindow.ToString(),
+        },
+        ObserverSubscription = subscriptionName,
+        Subscriptions = subscriptions,
+        PeekedMessages = messages,
+    };
+
+    var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+    var reportPath = Environment.GetEnvironmentVariable("AZURE_REPORT_PATH");
+    if (!string.IsNullOrWhiteSpace(reportPath))
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath))!);
+        await File.WriteAllTextAsync(reportPath, json);
+        Console.WriteLine($"Azure evidence report: {Path.GetFullPath(reportPath)}");
+    }
+    Console.WriteLine(json);
+    return 0;
+}
 
 if (action == "disable")
 {
@@ -70,7 +178,7 @@ if (action == "observe")
 
 if (action != "activate")
 {
-    Console.Error.WriteLine("AZURE_TOPIC_ACTION must be observe, activate or disable.");
+    Console.Error.WriteLine("AZURE_TOPIC_ACTION must be observe, report, activate or disable.");
     return 3;
 }
 

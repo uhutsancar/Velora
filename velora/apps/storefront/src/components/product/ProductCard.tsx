@@ -168,20 +168,35 @@ function ProductCardComponent({ product, priority = false, className }: ProductC
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col gap-1.5 pt-4">
+      <div className="flex flex-1 flex-col gap-2 pt-4">
         {product.brandName && <p className="label-caps text-ink-400">{product.brandName}</p>}
 
-        <h3 className="text-sm font-medium leading-snug text-ink-900">
+        <h3 className="text-base font-semibold leading-snug text-ink-900">
           <Link to={href} className="link-underline">
             {product.name}
           </Link>
         </h3>
 
+        {product.shortDescription && (
+          <p className="product-card-description text-sm leading-relaxed text-ink-500">
+            {product.shortDescription}
+          </p>
+        )}
+
         {product.ratingCount > 0 && (
           <Rating value={product.ratingAverage} count={product.ratingCount} showCount={false} />
         )}
 
-        <PriceBlock price={product.price} discountPrice={product.discountPrice} className="mt-auto pt-1" />
+        <PriceBlock
+          price={product.price}
+          discountPrice={product.discountPrice}
+          size="lg"
+          className="mt-auto pt-1"
+        />
+
+        {product.inStock && (
+          <p className="text-xs font-medium text-moss-600">{t('product.freeShipping')}</p>
+        )}
 
         {product.swatches.length > 0 && (
           <div className="flex items-center gap-1.5 pt-1">

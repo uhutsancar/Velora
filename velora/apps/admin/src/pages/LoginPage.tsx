@@ -28,7 +28,7 @@ export default function LoginPage() {
   const redirect = searchParams.get('redirect') ?? '/';
 
   useEffect(() => {
-    if (isAuthenticated) navigate(redirect, { replace: true });
+    if (isAuthenticated) void navigate(redirect, { replace: true });
   }, [isAuthenticated, navigate, redirect]);
 
   useEffect(() => () => void dispatch(clearAuthError()), [dispatch]);

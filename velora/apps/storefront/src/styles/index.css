@@ -73,7 +73,14 @@
   }
 
   .label-caps {
-    @apply text-2xs font-medium uppercase tracking-label;
+    @apply text-xs font-semibold uppercase tracking-[0.11em];
+  }
+
+  .product-card-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   /* Underline that grows from the left on hover — used across nav and links. */

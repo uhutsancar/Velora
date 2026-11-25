@@ -176,7 +176,7 @@ export default function ProductFormPage() {
       if (isNew) {
         const created = await createProduct(body).unwrap();
         toast.success(t('admin.saved'));
-        navigate(`/products/${created.id}`, { replace: true });
+        void navigate(`/products/${created.id}`, { replace: true });
       } else {
         await updateProduct({ id: productId, body }).unwrap();
         toast.success(t('admin.saved'));

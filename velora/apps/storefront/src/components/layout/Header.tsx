@@ -11,6 +11,7 @@ import { useGetCategoryTreeQuery } from '@/store/api/catalogApi';
 import { openCartDrawer, toggleMobileMenu, toggleSearch } from '@/store/slices/uiSlice';
 import { cn } from '@/utils/cn';
 import { Logo } from '@/components/brand/Logo';
+import { SHOWCASE_CATEGORIES } from '@/content/showcase';
 import { MegaMenu } from './MegaMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -28,7 +29,7 @@ export function Header() {
   const { isAuthenticated } = useAuth();
   const { scrolled } = useScrollDirection();
 
-  const { data: categories = [] } = useGetCategoryTreeQuery();
+  const { data: apiCategories = [] } = useGetCategoryTreeQuery();
   const { data: basket } = useGetBasketQuery(undefined, { skip: !isAuthenticated });
   const { count: wishlistCount } = useWishlist();
 
@@ -51,6 +52,7 @@ export function Header() {
 
   const basketCount = basket?.totalQuantity ?? 0;
   const isHome = location.pathname === '/';
+  const categories = apiCategories.length > 0 ? apiCategories : SHOWCASE_CATEGORIES;
 
   return (
     <>

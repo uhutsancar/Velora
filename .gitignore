@@ -229,3 +229,5 @@ velora/apps/*/.env.local
 # Uploaded product media (runtime artefact, not source)
 SellingBuddy/src/Services/CatalogService/CatalogService.Api/wwwroot/media/*
 !SellingBuddy/src/Services/CatalogService/CatalogService.Api/wwwroot/media/.gitkeep
+!SellingBuddy/src/Services/CatalogService/CatalogService.Api/wwwroot/media/catalog/
+!SellingBuddy/src/Services/CatalogService/CatalogService.Api/wwwroot/media/catalog/**

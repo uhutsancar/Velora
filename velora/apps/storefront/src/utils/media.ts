@@ -2,8 +2,10 @@ import { resolveImageUrl } from '@velora/shared';
 import { env } from '@/config/env';
 
 /** Resolves a catalogue image path against the media origin. */
-export const mediaUrl = (url: string | null | undefined): string | null =>
-  resolveImageUrl(url, env.mediaOrigin);
+export const mediaUrl = (url: string | null | undefined): string | null => {
+  if (url?.startsWith('/showcase/')) return url;
+  return resolveImageUrl(url, env.mediaOrigin);
+};
 
 /**
  * Placeholder used when a product has no artwork yet. Inline SVG so it costs no
